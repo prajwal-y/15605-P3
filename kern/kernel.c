@@ -4,8 +4,8 @@
  *  You should initialize things in kernel_main(),
  *  and then run stuff.
  *
- *  @author Harry Q. Bovik (hqbovik)
- *  @author Fred Hacker (fhacker)
+ *  @author Rohit Upadhyaya (rjupadhy)
+ *  @author Prajwal Yadapadithaya (pyadapad)
  *  @bug No known bugs.
  */
 
@@ -20,6 +20,12 @@
 
 /* x86 specific includes */
 #include <x86/asm.h>                /* enable_interrupts() */
+#include <x86/seg.h>                /* install_user_segs() */
+#include <interrupt_handlers.h>  
+#include <console/console_util.h>
+#include <console.h>
+
+static void set_default_color();
 
 /** @brief Kernel entrypoint.
  *  
@@ -29,17 +35,31 @@
  */
 int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
 {
-    /*
-     * When kernel_main() begins, interrupts are DISABLED.
-     * You should delete this comment, and enable them --
-     * when you are ready.
-     */
-
-    lprintf( "Hello from a brand new kernel!" );
+    set_default_color();
+    install_handlers();
+    enable_interrupts();
+    clear_console();
+    putbytes("foo", 3);
 
     while (1) {
         continue;
     }
 
     return 0;
+}
+
+/** @brief function to set the default color of the console
+ *
+ *  By default the console will have a background color of black (0x00)
+ *  and foreground color of white (0xF). This function also sets a 2 byte
+ *  array to the empty character which is used for backspace and for scrolling
+ *  among other things. Thi 2 byte array is memcpy'ed into video memory locations
+ *  where an empty character is required.
+ *
+ *  @return void
+ */
+void set_default_color() {
+    console_color = BGND_BLACK | FGND_WHITE;
+    empty_char[0] = ' ';
+    empty_char[1] = console_color;
 }
