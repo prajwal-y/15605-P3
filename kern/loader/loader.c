@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <exec2obj.h>
-#include <loader.h>
+#include <loader/loader.h>
 #include <elf_410.h>
 
 
