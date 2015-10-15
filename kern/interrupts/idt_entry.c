@@ -5,7 +5,7 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  */
 
-#include <idt_entry.h>
+#include <interrupts/idt_entry.h>
 #include <asm.h>
 #include <seg.h>
 #include <malloc.h>

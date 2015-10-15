@@ -5,14 +5,14 @@
  *  @bugs If no application calls readchar() and keys are pressed
  *        continuously we will run out of heap space
  */
-#include <keyboard/keyboard.h>
-#include <keyboard/keyboard_handler.h>
+#include <drivers/keyboard/keyboard.h>
+#include <drivers/keyboard/keyboard_handler.h>
 #include <keyhelp.h>
-#include <idt_entry.h>
-#include <interrupt_handlers.h>
+#include <interrupts/idt_entry.h>
+#include <interrupts/interrupt_handlers.h>
 #include <asm.h>
 #include <malloc.h>
-#include <list.h>
+#include <list/list.h>
 #include <stddef.h>
 
 /** @brief a struct which represents a node in our
@@ -45,7 +45,12 @@ void install_keyboard_handler() {
  *  @return void
  */
 void initialize_queue() {
+    disable_interrupts();
     head = ((scancode *)malloc(sizeof(scancode)))->link;
+    /*if (head == NULL) {
+        return; //TODO: use circular buffer instead
+    }*/
+    enable_interrupts();
     init_head(&head);
 }
 

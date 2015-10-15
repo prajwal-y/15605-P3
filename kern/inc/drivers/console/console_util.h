@@ -4,6 +4,7 @@
  *         of these prototypes are present in console_util.c
  *
  *  @author Rohit Upadhyaya (rjupadhy)
+ *  @author Prajwal Yadapadithaya (pyadapad)
  */
 #ifndef __CONSOLE_UTIL_H
 #define __CONSOLE_UTIL_H

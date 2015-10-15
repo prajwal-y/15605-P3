@@ -8,9 +8,9 @@
  */
 
 
-#include <console/console.h>
+#include <console.h>
 #include <x86/video_defines.h>
-#include <console/console_util.h>
+#include <drivers/console/console_util.h>
 
 /** @brief Sets the position of the cursor to the
  *         position (row, col).

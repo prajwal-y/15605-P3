@@ -21,9 +21,10 @@
 /* x86 specific includes */
 #include <x86/asm.h>                /* enable_interrupts() */
 #include <x86/seg.h>                /* install_user_segs() */
-#include <interrupt_handlers.h>  
-#include <console/console_util.h>
+#include <interrupts/interrupt_handlers.h>  
+#include <drivers/console/console_util.h>
 #include <console.h>
+#include <allocator/frame_allocator.h>
 
 static void set_default_color();
 
@@ -39,6 +40,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
     install_handlers();
     enable_interrupts();
     clear_console();
+    init_frame_allocator();
     putbytes("foo", 3);
 
     while (1) {

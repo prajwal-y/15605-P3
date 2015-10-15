@@ -10,9 +10,9 @@
 #include <seg.h>
 #include <malloc.h>
 #include <string/string.h>
-#include <idt_entry.h>
-#include <interrupt_handlers.h>
-#include <timer/timer_handler.h>
+#include <interrupts/idt_entry.h>
+#include <interrupts/interrupt_handlers.h>
+#include <drivers/timer/timer_handler.h>
 
 #define INT_FREQ 10
 #define MILLISECONDS 1000

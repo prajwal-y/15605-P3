@@ -2,6 +2,7 @@
  *  @brief prototype for functions in keyboard_handler.S
  *   
  *  @author Rohit Upadhyaya (rjupadhy)
+ *  @author Prajwal Yadapadithaya (pyadapad)
  */
 #ifndef __KEYBOARD_HANDLER_H
 #define __KEYBOARD_HANDLER_H

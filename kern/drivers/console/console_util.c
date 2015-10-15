@@ -8,7 +8,7 @@
 #include <string/string.h>
 #include <asm.h>
 #include <video_defines.h>
-#include <console/console_util.h>
+#include <drivers/console/console_util.h>
 
 #define CONSOLE_MEM_END CONSOLE_MEM_BASE + (CONSOLE_HEIGHT * CONSOLE_WIDTH * 2)
 

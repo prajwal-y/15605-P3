@@ -112,14 +112,14 @@ AUTOSTACK_OBJS = autostack.o
 #
 # Kernel object files you want included from 410kern/
 #
-410KERNEL_OBJS = load_helper.o
+410KERNEL_OBJS = load_helper.o drivers/console/console.o
 #
 # Kernel object files you provide in from kern/
 #
-KERNEL_OBJS = kernel.o loader.o malloc_wrappers.o drivers/console/console.o \
+KERNEL_OBJS = kernel.o loader/loader.o list/list.o malloc_wrappers.o drivers/console/console.o \
 			  drivers/console/console_util.o drivers/timer/timer.o drivers/timer/timer_handler.o \
-			  drivers/interrupt_handlers.o drivers/idt_entry.o drivers/keyboard/keyboard.o \
-			  drivers/keyboard/keyboard_handler.o
+			  interrupts/interrupt_handlers.o interrupts/idt_entry.o drivers/keyboard/keyboard.o \
+			  drivers/keyboard/keyboard_handler.o allocator/frame_allocator.o sync/mutex.o sync/mutex_asm.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your
