@@ -6,16 +6,10 @@
  * for the user process loader.
  */
 
-#ifndef _LOADER_H
-#define _LOADER_H
-     
+#ifndef __LOADER_H
+#define __LOADER_H
+#include <elf_410.h>
 
-/* --- Prototypes --- */
+void load_program(simple_elf_t *se_hdr);
 
-int getbytes( const char *filename, int offset, int size, char *buf );
-
-/*
- * Declare your loader prototypes here.
- */
-
-#endif /* _LOADER_H */
+#endif /* __LOADER_H */
