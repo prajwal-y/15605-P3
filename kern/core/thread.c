@@ -4,11 +4,11 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
-#include <thread.h>
 #include <lmm.h>
+#include <malloc_internal.h>
 #include <vm/vm.h>
 #include <loader/loader.h>
-#include <common/thread_struct.h>
+#include <core/thread.h>
 #include <sync/mutex.h>
 
 static int next_tid;
@@ -31,14 +31,14 @@ void thread_init() {
  */
 thread_struct_t *create_thread(task_struct_t *task, ureg_t *regs) {
     if(task == NULL) {
-        return;
+        return NULL;
     }
     mutex_lock(&mutex);
-    thread_struct_t *thr = (thread_struct_t *)lmm_alloc(malloc_lmm, 
+    thread_struct_t *thr = (thread_struct_t *)lmm_alloc(&malloc_lmm, 
                             sizeof(thread_struct_t), 0);
     if(thr == NULL) {
         mutex_unlock(&mutex);
-        return;
+        return NULL;
     }
     thr->id = ++next_tid;
     thr->regs = regs;

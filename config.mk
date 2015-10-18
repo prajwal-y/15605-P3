@@ -32,7 +32,7 @@
 # If you use tabstops set to something other than the international
 # standard of eight characters, this is your opportunity to inform
 # our print scripts.
-TABSTOP = 8
+TABSTOP = 2
 
 ###########################################################################
 # The method for acquiring project updates.
@@ -120,7 +120,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o malloc_wrappers.o drivers/con
 			  drivers/console/console_util.o drivers/timer/timer.o drivers/timer/timer_handler.o \
 			  interrupts/interrupt_handlers.o interrupts/idt_entry.o drivers/keyboard/keyboard.o \
 			  drivers/keyboard/keyboard_handler.o allocator/frame_allocator.o sync/mutex.o \
-			  sync/mutex_asm.o vm/vm.o core/task.o
+			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o asm/asm.o
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your

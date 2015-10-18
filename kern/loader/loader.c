@@ -37,22 +37,28 @@ void load_program(simple_elf_t *se_hdr) {
     char *buf;
 
     /* Load text section into memory */
-    buf = (char *)lmm_alloc(&malloc_lmm, se_hdr->e_txtlen, LMM_ANY_REGION_FLAG);
-    getbytes(se_hdr->e_fname, se_hdr->e_txtoff, se_hdr->e_txtlen, buf);
-    memcpy((void *)se_hdr->e_txtstart, buf, se_hdr->e_txtlen);
-    lmm_free(&malloc_lmm, buf, se_hdr->e_txtlen);
+	if(se_hdr->e_txtlen > 0) {
+    	buf = (char *)lmm_alloc(&malloc_lmm, se_hdr->e_txtlen, LMM_ANY_REGION_FLAG);
+    	getbytes(se_hdr->e_fname, se_hdr->e_txtoff, se_hdr->e_txtlen, buf);
+		memcpy((void *)se_hdr->e_txtstart, buf, se_hdr->e_txtlen);
+    	lmm_free(&malloc_lmm, buf, se_hdr->e_txtlen);
+	}
 
     /* Load data section into memory */
-    buf = (char *)lmm_alloc(&malloc_lmm, se_hdr->e_datlen, LMM_ANY_REGION_FLAG);
-    getbytes(se_hdr->e_fname, se_hdr->e_datoff, se_hdr->e_datlen, buf);
-    memcpy((void *)se_hdr->e_datstart, buf, se_hdr->e_datlen);
-    lmm_free(&malloc_lmm, buf, se_hdr->e_datlen);
+	if(se_hdr->e_datlen > 0) {
+    	buf = (char *)lmm_alloc(&malloc_lmm, se_hdr->e_datlen, LMM_ANY_REGION_FLAG);
+    	getbytes(se_hdr->e_fname, se_hdr->e_datoff, se_hdr->e_datlen, buf);
+    	memcpy((void *)se_hdr->e_datstart, buf, se_hdr->e_datlen);
+    	lmm_free(&malloc_lmm, buf, se_hdr->e_datlen);
+	}
 
     /* Load rodata section into memory */
-    buf = (char *)lmm_alloc(&malloc_lmm, se_hdr->e_rodatlen, LMM_ANY_REGION_FLAG);
-    getbytes(se_hdr->e_fname, se_hdr->e_rodatoff, se_hdr->e_rodatlen, buf);
-    memcpy((void *)se_hdr->e_rodatstart, buf, se_hdr->e_rodatlen);
-    lmm_free(&malloc_lmm, buf, se_hdr->e_rodatlen);
+	if(se_hdr->e_rodatlen > 0) {
+    	buf = (char *)lmm_alloc(&malloc_lmm, se_hdr->e_rodatlen, LMM_ANY_REGION_FLAG);
+    	getbytes(se_hdr->e_fname, se_hdr->e_rodatoff, se_hdr->e_rodatlen, buf);
+    	memcpy((void *)se_hdr->e_rodatstart, buf, se_hdr->e_rodatlen);
+    	lmm_free(&malloc_lmm, buf, se_hdr->e_rodatlen);
+	}
 
     /* Load bss section into memory */
     memset((void *)se_hdr->e_bssstart, 0, se_hdr->e_bsslen);

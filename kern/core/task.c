@@ -10,12 +10,16 @@
 #include <vm/vm.h>
 #include <simics.h>
 #include <stddef.h>
-#include <common/task_struct.h>
-#include <common/thread_struct.h>
+#include <eflags.h>
+#include <core/task.h>
+#include <asm/asm.h>
+#include <core/thread.h>
 #include <loader/loader.h>
 #include <ureg.h>
 #include <malloc_internal.h>
-static void set_bootstrap_regs(ureg_t *reg);
+
+//static void set_bootstrap_regs(ureg_t *reg);
+static uint32_t setup_eflags();
 
 /** @brief Creates a new task by copying the current
  *  page directory address.
@@ -72,25 +76,29 @@ void load_bootstrap_task(const char *prog_name) {
     lprintf("Set up the page table!");
 
     /* Paging enabled! */
-    //enable_paging();
+	set_cur_pd(pd_addr);
+    enable_paging();
     lprintf("enabled paging");
 
-    while(1) {
-        continue;
-    }
 
     /* Copy program into memory */
     load_program(se_hdr);
 
     /* Create the register set */
-    ureg_t *reg = (ureg_t *)lmm_alloc(&malloc_lmm, sizeof(ureg_t),
+    /*ureg_t *reg = (ureg_t *)lmm_alloc(&malloc_lmm, sizeof(ureg_t),
                                       LMM_ANY_REGION_FLAG);
-    set_bootstrap_regs(reg);
+    set_bootstrap_regs(reg);*/
 
     /* Create a thread */
     //thread_struct_t *thr = create_thread(t, reg);
 
-   // iret
+	uint32_t EFLAGS = setup_eflags();
+
+
+	lprintf("Going to call IRET to enter: %p", (void *)se_hdr->e_entry);
+
+	call_iret(EFLAGS, se_hdr->e_entry);
+   	 
 }
 
 /* ------------ Static local functions --------------*/
@@ -101,7 +109,7 @@ void load_bootstrap_task(const char *prog_name) {
  *
  *  @return Void
  */
-void set_bootstrap_regs(ureg_t *reg) {
+/*void set_bootstrap_regs(ureg_t *reg) {
     reg->cause = 0;
     reg->cr2 = 0;
     reg->ds = SEGSEL_USER_DS;
@@ -111,4 +119,13 @@ void set_bootstrap_regs(ureg_t *reg) {
     reg->ss = SEGSEL_USER_DS;
     reg->cs = SEGSEL_USER_CS;
     reg->eax = 0;
+}*/
+
+uint32_t setup_eflags() {
+	uint32_t eflags = get_eflags();
+	eflags |= 0x00000002;
+	eflags |= 0x00003000;
+	eflags |= 0x00000200;
+	eflags &= 0xFFFbFFFF;
+	return eflags;
 }

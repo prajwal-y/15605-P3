@@ -57,7 +57,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
     load_bootstrap_task("idle");
     //load_init_task();  
     /* Enable interrupts */
-    enable_interrupts();
+    //enable_interrupts();
     while (1) {
         continue;
     }

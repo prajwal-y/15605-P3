@@ -14,22 +14,11 @@
 #include <cr.h>
 #include <stddef.h>
 #include <simics.h>
+#include <seg.h>
+#include <asm/asm.h>
 #include <common/errors.h>
 #include <allocator/frame_allocator.h>
 #include <malloc/malloc_internal.h>
-
-#define PAGE_TABLE_ENTRY_SIZE 4
-#define PAGE_DIRECTORY_MASK 0xFFC0000
-#define PAGE_TABLE_MASK 0x003ff000
-#define PAGE_ROUND_DOWN 0xfffff000
-#define NUM_PAGE_TABLE_ENTRIES (PAGE_SIZE / PAGE_TABLE_ENTRY_SIZE)
-#define DEFAULT_STACK_SIZE 1 * 1024 * 1024
-#define STACK_START 0xc0000000
-
-#define GET_PD_INDEX(addr) ((unsigned int)((int)(addr) & PAGE_DIRECTORY_MASK) >> 22)
-#define GET_PT_INDEX(addr) ((unsigned int)((int)(addr) & PAGE_TABLE_MASK) >> 12)
-#define KERNEL_MAP_NUM_ENTRIES (sizeof(direct_map) / sizeof(direct_map[0]))
-
 
 static void zero_fill(void *addr, int size);
 static void direct_map_kernel_pages(void *pd_addr);
@@ -39,8 +28,13 @@ static int map_data_segment(simple_elf_t *se_hdr, void *pd_addr);
 static int map_rodata_segment(simple_elf_t *se_hdr, void *pd_addr);
 static int map_bss_segment(simple_elf_t *se_hdr, void *pd_addr);
 static int map_stack_segment(void *pd_addr);
-static int map_segment(void *start_addr, unsigned int length, int *pd_addr);
+static int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags);
 static void *direct_map[USER_MEM_START / (PAGE_SIZE * NUM_PAGE_TABLE_ENTRIES)];
+
+static void *create_page_table();
+//static void free_page_table(void *pt_addr);
+
+static void set_segment_selectors(int type);
 
 /** @brief initialize the virtual memory system
  *
@@ -53,6 +47,50 @@ void vm_init() {
     setup_direct_map();
 }
 
+/** @brief Sets the control register %cr3 with the given
+ * address of the page directory address.
+ *
+ * @param pd_addr The page directory address that needs to
+ * be set in %cr3
+ *
+ * @return Void
+ */
+void set_cur_pd(void *pd_addr) {
+	lprintf("Page directory address in cr3 : %p", pd_addr);
+	set_cr3((uint32_t)pd_addr);
+}
+
+/** @brief Sets the segment selectors
+ *
+ *  @param type : 0 - Kernel and 1 - User
+ *
+ *  @return void
+ */
+void set_segment_selectors(int type) {
+
+	lprintf("Value is cs: %d, ds: %d, ss: %d", get_cs(), get_ds(), get_ss());
+	switch(type) {
+		case 0:
+			/*set_cs(SEGSEL_KERNEL_CS);
+			set_ds(SEGSEL_KERNEL_DS);
+			set_es(SEGSEL_KERNEL_DS);
+			set_fs(SEGSEL_KERNEL_DS);
+			set_gs(SEGSEL_KERNEL_DS);
+			set_ss(SEGSEL_KERNEL_DS);*/
+			break;
+		case 1:
+			set_cs(SEGSEL_USER_CS);
+			set_ds(SEGSEL_USER_DS);
+			set_es(SEGSEL_USER_DS);
+			set_fs(SEGSEL_USER_DS);
+			set_gs(SEGSEL_USER_DS);
+			set_ss(SEGSEL_USER_DS);
+			break;
+		default:
+			break;
+	}
+}
+
 /** @brief enable VM 
  *
  *  Set bit 31 of cr0
@@ -60,6 +98,10 @@ void vm_init() {
  *  @return void
  */
 void enable_paging() {
+
+	/*Set the segment selectors*/
+	set_segment_selectors(0);
+
     unsigned int cr0 = get_cr0();
     lprintf("cr0 is %d and CR0_PG is %d",cr0, CR0_PG);
     cr0 = cr0 | CR0_PG;
@@ -72,17 +114,18 @@ void enable_paging() {
  *
  *  This function will allocate a new kernel physical frame for 
  *  a page directory and return the address of this physical frame.
- *  The frame will be zero filled before returning. If there are 
+ *  The frame will be initialized with default flags. If there are 
  *  no more physical frames available this function will return null.
  *  
  *  @return address of the frame containing the page directory
  */
 void *create_page_directory() {
-    void *frame_addr = lmm_alloc_page(&malloc_lmm, LMM_ANY_REGION_FLAG);
-    if (frame_addr != NULL) {
-        zero_fill(frame_addr, PAGE_SIZE);
-    }
-    return frame_addr;
+    int *frame_addr = lmm_alloc_page(&malloc_lmm, LMM_ANY_REGION_FLAG);
+	int i;
+	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+		frame_addr[i] = PAGE_DIR_ENTRY_DEFAULT;
+	}
+    return (void *)frame_addr;
 }
         
 /** @brief free a page directory 
@@ -99,6 +142,38 @@ void free_page_directory(void *pd_addr) {
     lmm_free(&malloc_lmm, pd_addr, PAGE_SIZE);
     return;
 }
+
+/** @brief create a new page table
+ *
+ *  This function will allocate a new kernel physical frame for 
+ *  a page table and return the address of this physical frame.
+ *  The frame will be initialized with default flags. If there are 
+ *  no more physical frames available this function will return null.
+ *  
+ *  @return address of the frame containing the page table
+ */
+void *create_page_table() {
+    int *frame_addr = lmm_alloc_page(&malloc_lmm, LMM_ANY_REGION_FLAG);
+	int i;
+	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+		frame_addr[i] = PAGE_TABLE_ENTRY_DEFAULT;
+	}
+    return (void *)frame_addr;
+}
+        
+/** @brief free a page table
+ *
+ *  frees the specified page table using lmm_free
+ *  
+ *  @return void
+ */
+/*void free_page_table(void *pt_addr) {
+    if (pt_addr == NULL) {
+        return;
+    }
+    lmm_free(&malloc_lmm, pt_addr, PAGE_SIZE);
+    return;
+}*/
 
 /** @brief setup paging for a program
  *
@@ -155,7 +230,8 @@ void zero_fill(void *addr, int size) {
  *  has been setup (setup_direct_map) and this simply copies the value in the
  *  direct_map array to the page directory.
  *
- * @param pd_addr the page directory where the direct mapping has to be performed
+ * @param pd_addr the page directory where the direct mapping has to be 
+ * 			performed
  *
  * @return void
  */
@@ -186,9 +262,8 @@ void setup_direct_map() {
     lprintf("sizeof direct-map is %d", sizeof(direct_map));
     for (; i < KERNEL_MAP_NUM_ENTRIES; i++) {
         lprintf("i is %d", i);
-        int *frame_addr = (int *)lmm_alloc_page(&malloc_lmm, LMM_ANY_REGION_FLAG);
+        int *frame_addr = (int *)create_page_table();
         if (frame_addr != NULL) {
-            zero_fill(frame_addr, PAGE_SIZE);
             for (j = 0; j < NUM_PAGE_TABLE_ENTRIES; j++) {
                 //lprintf("j is %d", j);
                 page_table_entry = mem_start | flags;
@@ -217,8 +292,9 @@ void setup_direct_map() {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_text_segment(simple_elf_t *se_hdr, void *pd_addr) {
-    lprintf("text segment startung at %p with length %d", (void *)se_hdr->e_txtstart, (int)se_hdr->e_txtlen);
-    return map_segment((void *)se_hdr->e_txtstart, se_hdr->e_txtlen, pd_addr);
+    int flags = PAGE_ENTRY_PRESENT | USER_MODE;
+    return map_segment((void *)se_hdr->e_txtstart, se_hdr->e_txtlen, 
+						pd_addr, flags);
 }
 
 /** @brief map the data segment into virtual memory
@@ -233,8 +309,9 @@ int map_text_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_data_segment(simple_elf_t *se_hdr, void *pd_addr) {
-    lprintf("data segment startung at %p with length %d", (void *)se_hdr->e_datstart, (int)se_hdr->e_datlen);
-    return map_segment((void *)se_hdr->e_datstart, se_hdr->e_datlen, pd_addr);
+    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
+    return map_segment((void *)se_hdr->e_datstart, se_hdr->e_datlen, 
+						pd_addr, flags);
 }
 
 /** @brief map the rodata segment into virtual memory
@@ -249,8 +326,9 @@ int map_data_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_rodata_segment(simple_elf_t *se_hdr, void *pd_addr) {
-    lprintf("rodata segment startung at %p with length %d", (void *)se_hdr->e_rodatstart, (int)se_hdr->e_rodatlen);
-    return map_segment((void *)se_hdr->e_rodatstart, se_hdr->e_rodatlen, pd_addr);
+    int flags = PAGE_ENTRY_PRESENT | USER_MODE;
+    return map_segment((void *)se_hdr->e_rodatstart, 
+						se_hdr->e_rodatlen, pd_addr, flags);
 }
 
 /** @brief map the bss segment into virtual memory
@@ -265,8 +343,9 @@ int map_rodata_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_bss_segment(simple_elf_t *se_hdr, void *pd_addr) {
-    lprintf("BSS segment startung at %p with length %d", (void *)se_hdr->e_bssstart, (int)se_hdr->e_bsslen);
-    return map_segment((void *)se_hdr->e_bssstart, se_hdr->e_bsslen, pd_addr);
+    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
+    return map_segment((void *)se_hdr->e_bssstart, se_hdr->e_bsslen, 
+						pd_addr, flags);
 }
 
 /** @brief map the stack segment into virtual memory
@@ -276,8 +355,9 @@ int map_bss_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_stack_segment(void *pd_addr) {
-    lprintf("stack segment startung at %p with length %d", (void *)STACK_START, DEFAULT_STACK_SIZE);
-    return map_segment((void *)STACK_START - DEFAULT_STACK_SIZE, DEFAULT_STACK_SIZE, pd_addr);   
+    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
+    return map_segment((char *)STACK_START - DEFAULT_STACK_SIZE, 
+						DEFAULT_STACK_SIZE, pd_addr, flags); 
 }
 
 /** @brief map a segment into memory
@@ -292,39 +372,42 @@ int map_stack_segment(void *pd_addr) {
  *
  *  @return int error code, 0 on success negative integer on failure
  */
-int map_segment(void *start_addr, unsigned int length, int *pd_addr) {
+int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) {
     void *end_addr = (char *)start_addr + length;
-    int flags = PAGE_ENTRY_PRESENT;
     int pd_index, pt_index;
     int *pt_addr;
 
     start_addr = (void *)((int)start_addr & PAGE_ROUND_DOWN);
-    /*if (start_addr == (void *)0x01002000) {
-        lprintf("End address is %p", end_addr);
-    }*/
-    while (start_addr < end_addr) {
+    while (start_addr <= end_addr) {
         pd_index = GET_PD_INDEX(start_addr);
         pt_index = GET_PT_INDEX(start_addr);
-        if (pd_addr[pd_index] == 0) { /* Page directory entry absent */
-            void *new_pt = lmm_alloc_page(&malloc_lmm, LMM_ANY_REGION_FLAG);
+		if ((int)start_addr >= 0xbff00000 && (int)start_addr <= 0xc0000000) {
+			lprintf("PD index is %d and PT index is %d", pd_index, pt_index);
+		}
+        if (pd_addr[pd_index] == PAGE_DIR_ENTRY_DEFAULT) { /* Page directory entry absent */
+            void *new_pt = create_page_table();
+				if ((int)start_addr >= 0xbff00000 && 
+							(int)start_addr <= 0xc0000000) {
+					lprintf("Page directory entry is absent created new page %p flags %d", new_pt, flags);
+				}
             if (new_pt != NULL) {
-                zero_fill(new_pt, PAGE_SIZE);
                 pd_addr[pd_index] = (unsigned int)new_pt | flags;
             }
             else {
                 return ERR_NOMEM;
             }
         }
-        pt_addr = (int *)pd_addr[pd_index];
-        if (pt_addr[pt_index] == 0) { /* Page table entry absent */
+        pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+        if (pt_addr[pt_index] == PAGE_TABLE_ENTRY_DEFAULT) { /* Page table entry absent */
             /* Need to allocate frame from user free frame pool */
             void *new_frame = allocate_frame(); 
-            lprintf("new frame is %p", new_frame);
+				if ((int)start_addr >= 0xbff00000 && 
+						(int)start_addr <= 0xc0000000) {
+					lprintf("Page table entry is absent created new frame %p ==> %p flags %d", start_addr, new_frame, flags);
+				}
             if (new_frame != NULL) {
                 zero_fill(new_frame, PAGE_SIZE);
-                //lprintf("Zero filled physical frame");
                 pt_addr[pt_index] = (unsigned int)new_frame | flags;
-                //lprintf("Set page teable entry");
             }
             else {
                 //TODO: Free the allocated PTE maybe???
@@ -332,6 +415,7 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr) {
             }
         }
         start_addr = (char *)start_addr + PAGE_SIZE;
+		lprintf("start_addr for next loop iteration: %p and end_addr %p", start_addr, end_addr);
     }
     return 0;
 }

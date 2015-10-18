@@ -57,4 +57,11 @@ void set_fs(uint16_t val);
  */
 void set_gs(uint16_t val);
 
+
+void call_iret(uint32_t, uint32_t);
+
+int get_cs();
+int get_ds();
+int get_ss();
+
 #endif
