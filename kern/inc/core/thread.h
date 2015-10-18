@@ -26,4 +26,7 @@ void thread_init();
 
 thread_struct_t *create_thread(task_struct_t *task, ureg_t *regs);
 
+/*Global variable to keep track of the currently running thread*/
+thread_struct_t *current_thread;
+
 #endif  /* __THREAD_H */

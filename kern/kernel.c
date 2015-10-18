@@ -47,6 +47,10 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
     install_handlers();
     /* Clear the console of crud */
     clear_console();
+
+	putbytes("Hello!", 6);
+	printf("hello from printf");
+
     /* Initialize user space physical frame allocator */
     init_frame_allocator();
     lprintf("allocator inited");

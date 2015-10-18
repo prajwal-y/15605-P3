@@ -7,6 +7,7 @@
 #include <core/task.h>
 #include <lmm.h>
 #include <seg.h>
+#include <cr.h>
 #include <vm/vm.h>
 #include <simics.h>
 #include <stddef.h>
@@ -18,7 +19,7 @@
 #include <ureg.h>
 #include <malloc_internal.h>
 
-//static void set_bootstrap_regs(ureg_t *reg);
+static void set_bootstrap_regs(ureg_t *reg);
 static uint32_t setup_eflags();
 
 /** @brief Creates a new task by copying the current
@@ -80,22 +81,30 @@ void load_bootstrap_task(const char *prog_name) {
     enable_paging();
     lprintf("enabled paging");
 
-
     /* Copy program into memory */
     load_program(se_hdr);
 
     /* Create the register set */
-    /*ureg_t *reg = (ureg_t *)lmm_alloc(&malloc_lmm, sizeof(ureg_t),
+    ureg_t *reg = (ureg_t *)lmm_alloc(&malloc_lmm, sizeof(ureg_t),
                                       LMM_ANY_REGION_FLAG);
-    set_bootstrap_regs(reg);*/
+    set_bootstrap_regs(reg);
 
     /* Create a thread */
-    //thread_struct_t *thr = create_thread(t, reg);
+	thread_init();
+    thread_struct_t *thr = create_thread(t, reg);
+
+	current_thread = thr;
 
 	uint32_t EFLAGS = setup_eflags();
 
-
 	lprintf("Going to call IRET to enter: %p", (void *)se_hdr->e_entry);
+
+	/*Set up esp0*/
+	void *stack = lmm_alloc(&malloc_lmm, 1024, LMM_ANY_REGION_FLAG);
+	if(stack != NULL) {
+		lprintf("Setting stack for returning later");
+		set_esp0((uint32_t)stack);
+	}
 
 	call_iret(EFLAGS, se_hdr->e_entry);
    	 
@@ -109,7 +118,7 @@ void load_bootstrap_task(const char *prog_name) {
  *
  *  @return Void
  */
-/*void set_bootstrap_regs(ureg_t *reg) {
+void set_bootstrap_regs(ureg_t *reg) {
     reg->cause = 0;
     reg->cr2 = 0;
     reg->ds = SEGSEL_USER_DS;
@@ -119,7 +128,7 @@ void load_bootstrap_task(const char *prog_name) {
     reg->ss = SEGSEL_USER_DS;
     reg->cs = SEGSEL_USER_CS;
     reg->eax = 0;
-}*/
+}
 
 uint32_t setup_eflags() {
 	uint32_t eflags = get_eflags();
