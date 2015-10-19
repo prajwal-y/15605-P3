@@ -29,6 +29,7 @@ void init_frame_allocator() {
     /* create the free list of frames */
     init_free_list();
 
+    lprintf("Done initing");
     mutex_init(&list_mut);
 }
 
@@ -44,16 +45,16 @@ void init_frame_allocator() {
  */
 void init_free_list() {
     int total_frames = machine_phys_frames();
-    /* Start from byte 0 of the physical memory */
-    void *frame_ptr = (void *) 0;
-    int i;
+    /* Start from byte 0x1000000 of the physical memory */
+    void *frame_ptr = (void *) USER_MEM_START;
+    int i = USER_MEM_START / PAGE_SIZE;
 
     /* Set "header" in each frame to point to the next free frame */
-    for (i = 0; i < total_frames - 1; i++) {
-        lprintf("is is %d", i);
+    for (; i < total_frames - 1; i++) {
         *(int *)frame_ptr = (i + 1) * PAGE_SIZE;
         frame_ptr = (char *)frame_ptr + PAGE_SIZE;
     }
+    free_list_head = (void *)USER_MEM_START;
     *(int *)frame_ptr = FREE_FRAME_LIST_END;
 }
 

@@ -25,8 +25,17 @@
 #include <drivers/console/console_util.h>
 #include <console.h>
 #include <allocator/frame_allocator.h>
+#include <x86/cr.h>
+#include <vm/vm.h>
+#include <simics.h>
+#include <loader/loader.h>
+#include <core/thread.h>
+#include <core/task.h>
+#include <exec2obj.h>
+#include <syscalls/syscall_handlers.h>
 
 static void set_default_color();
+thread_struct_t *curr_thread;
 
 /** @brief Kernel entrypoint.
  *  
@@ -36,13 +45,30 @@ static void set_default_color();
  */
 int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
 {
+    /* Set defaulr console color */
     set_default_color();
-    install_handlers();
-    enable_interrupts();
-    clear_console();
-    init_frame_allocator();
-    putbytes("foo", 3);
 
+    /* Install all the fault handlers we expect to use */
+    install_handlers();
+
+    install_syscall_handlers();
+
+    /* Clear the console of crud */
+    clear_console();
+
+    /* Initialize user space physical frame allocator */
+    init_frame_allocator();
+
+    /* Initialize the VM system */
+    vm_init();
+
+    /* Initialize kernel threads subsystem */
+    kernel_threads_init();
+
+    /* Load the bootstrap task in user mode */
+    load_bootstrap_task("idle");
+
+    /* Should never come here */
     while (1) {
         continue;
     }
@@ -55,7 +81,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
  *  By default the console will have a background color of black (0x00)
  *  and foreground color of white (0xF). This function also sets a 2 byte
  *  array to the empty character which is used for backspace and for scrolling
- *  among other things. Thi 2 byte array is memcpy'ed into video memory locations
+ *  among other things. This 2 byte array is memcpy'ed into video memory locations
  *  where an empty character is required.
  *
  *  @return void
