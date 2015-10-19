@@ -28,10 +28,10 @@ void tickback(unsigned int ticks) {
     return;
 }
 
-static void install_divide_error_handler();
-static void install_page_fault_handler();
+//static void install_divide_error_handler();
+//static void install_page_fault_handler();
 
-void install_handler_4();
+/*void install_handler_4();
 void install_handler_5();
 void install_handler_6();
 void install_handler_10();
@@ -39,7 +39,7 @@ void install_handler_11();
 void install_handler_12();
 void install_handler_13();
 void install_handler_17();
-void install_handler_18();
+void install_handler_18();*/
 
 /** @brief The driver-library initialization function
  *
@@ -55,10 +55,10 @@ void install_handler_18();
 int install_handlers() {
     initialize_timer(tickback);    
     install_keyboard_handler();
-    install_divide_error_handler();
-	install_page_fault_handler();
+    //install_divide_error_handler();
+	//install_page_fault_handler();
 
-	install_handler_4();
+/*	install_handler_4();
 	install_handler_5();
 	install_handler_6();
 	install_handler_10();
@@ -66,7 +66,7 @@ int install_handlers() {
 	install_handler_12();
 	install_handler_13();
 	install_handler_17();
-	install_handler_18();
+	install_handler_18();*/
 
     // Add all the handlers we require here
     return 0;
@@ -103,7 +103,7 @@ void page_fault_handler() {
  *  @return void
  */
 void install_divide_error_handler() {
-    add_idt_entry(divide_error_handler, IDT_DE);
+    add_idt_entry(divide_error_handler, IDT_DE, INTERRUPT_GATE);
 }
 
 /** @brief This function installs a handler for page fault
@@ -112,38 +112,38 @@ void install_divide_error_handler() {
  *
  */
 void install_page_fault_handler() {
-	add_idt_entry(page_fault_handler, IDT_PF);
+	add_idt_entry(page_fault_handler, IDT_PF, INTERRUPT_GATE);
 }
 
 void install_handler_4() {
-	add_idt_entry(page_fault_handler, 4);
+	add_idt_entry(page_fault_handler, 4, INTERRUPT_GATE);
 }
 void install_handler_5() {
-	add_idt_entry(page_fault_handler, 5);
+	add_idt_entry(page_fault_handler, 5, INTERRUPT_GATE);
 }
 void install_handler_6() {
-	add_idt_entry(page_fault_handler, 6);
+	add_idt_entry(page_fault_handler, 6, INTERRUPT_GATE);
 }
 void install_handler_10() {
-	add_idt_entry(page_fault_handler, 10);
+	add_idt_entry(page_fault_handler, 10, INTERRUPT_GATE);
 }
 void install_handler_11() {
-	add_idt_entry(page_fault_handler, IDT_NP);
+	add_idt_entry(page_fault_handler, IDT_NP, INTERRUPT_GATE);
 }
 
 void install_handler_12() {
-	add_idt_entry(page_fault_handler, IDT_SS);
+	add_idt_entry(page_fault_handler, IDT_SS, INTERRUPT_GATE);
 }
 
 void install_handler_13() {
-	add_idt_entry(page_fault_handler, IDT_GP);
+	add_idt_entry(page_fault_handler, IDT_GP, INTERRUPT_GATE);
 }
 
 void install_handler_17() {
-	add_idt_entry(page_fault_handler, IDT_AC);
+	add_idt_entry(page_fault_handler, IDT_AC, INTERRUPT_GATE);
 }
 void install_handler_18() {
-	add_idt_entry(page_fault_handler, 18);
+	add_idt_entry(page_fault_handler, 18, INTERRUPT_GATE);
 }
 
 /** @brief this function acknowledges the interrupt

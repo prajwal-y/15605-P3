@@ -17,16 +17,14 @@
  *  scheduling information. A task must contain atleast one thread.
  */
 typedef struct thread_struct {
-    int id;                    /* A unique identifier for a thread */
+    int id;                      /* A unique identifier for a thread */
     ureg_t *regs;                /* The set of registers for this thread */
     task_struct_t *parent_task;  /* The parent task for this thread */
+    void *k_stack;               /* The address of the kernel task */   
 } thread_struct_t;
 
-void thread_init();
+void kernel_threads_init();
 
-thread_struct_t *create_thread(task_struct_t *task, ureg_t *regs);
-
-/*Global variable to keep track of the currently running thread*/
-thread_struct_t *current_thread;
+thread_struct_t *create_thread(task_struct_t *task);
 
 #endif  /* __THREAD_H */

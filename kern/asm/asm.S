@@ -6,8 +6,8 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
-
 #include <simics.h>
+
 .globl get_cs
 get_cs:
 	movl %cs, %eax
@@ -73,8 +73,4 @@ call_iret:
 	pushl 4(%ecx)		/*EFLAGS*/
 	pushl $0x23			/*CS*/
 	pushl 8(%ecx)		/*EIP*/
-
-	movl %cr3, %edx
-	movl %edx, %cr3
-
 	iret

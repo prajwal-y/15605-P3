@@ -27,11 +27,15 @@
 #include <allocator/frame_allocator.h>
 #include <x86/cr.h>
 #include <vm/vm.h>
+#include <simics.h>
 #include <loader/loader.h>
+#include <core/thread.h>
 #include <core/task.h>
 #include <exec2obj.h>
+#include <syscalls/syscall_handlers.h>
 
 static void set_default_color();
+thread_struct_t *curr_thread;
 
 /** @brief Kernel entrypoint.
  *  
@@ -43,25 +47,28 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
 {
     /* Set defaulr console color */
     set_default_color();
+
     /* Install all the fault handlers we expect to use */
     install_handlers();
+
+    install_syscall_handlers();
+
     /* Clear the console of crud */
     clear_console();
 
-	putbytes("Hello!", 6);
-	printf("hello from printf");
-
     /* Initialize user space physical frame allocator */
     init_frame_allocator();
-    lprintf("allocator inited");
+
     /* Initialize the VM system */
     vm_init();
-    lprintf("VM inited");
-    
+
+    /* Initialize kernel threads subsystem */
+    kernel_threads_init();
+
+    /* Load the bootstrap task in user mode */
     load_bootstrap_task("idle");
-    //load_init_task();  
-    /* Enable interrupts */
-    //enable_interrupts();
+
+    /* Should never come here */
     while (1) {
         continue;
     }

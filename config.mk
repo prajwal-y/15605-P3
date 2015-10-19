@@ -99,7 +99,11 @@ THREAD_OBJS = malloc.o panic.o
 ###########################################################################
 # Object files for your syscall wrappers
 ###########################################################################
-SYSCALL_OBJS = syscall.o
+SYSCALL_OBJS = print.o set_status.o vanish.o deschedule.o exec.o fork.o \
+               getchar.o get_cursor_pos.o get_ticks.o gettid.o halt.o \
+			   make_runnable.o misbehave.o new_pages.o readfile.o readline.o \
+			   remove_pages.o set_cursor_pos.o set_term_color.o sleep.o \
+			   swexn.o task_vanish.o wait.o yield.o
 
 ###########################################################################
 # Object files for your automatic stack handling
@@ -120,7 +124,9 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o malloc_wrappers.o drivers/con
 			  drivers/console/console_util.o drivers/timer/timer.o drivers/timer/timer_handler.o \
 			  interrupts/interrupt_handlers.o interrupts/idt_entry.o drivers/keyboard/keyboard.o \
 			  drivers/keyboard/keyboard_handler.o allocator/frame_allocator.o sync/mutex.o \
-			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o asm/asm.o
+			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o asm/asm.o syscalls/syscall_handlers.o \
+			  syscalls/thread_syscalls.o syscalls/thread_syscalls_asm.o
+
 
 ###########################################################################
 # WARNING: Do not put **test** programs into the REQPROGS variables.  Your
@@ -138,7 +144,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o malloc_wrappers.o drivers/con
 # or init unless you are writing your own, and don't do that unless
 # you have a really good reason to do so.
 #
-410REQPROGS = idle init shell
+410REQPROGS = idle init shell getpid_test1
 
 ###########################################################################
 # Mandatory programs whose source is provided by you
