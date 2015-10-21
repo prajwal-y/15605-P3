@@ -11,8 +11,8 @@
 
 int main()
 {
-    int tid = gettid();
-    lprintf("Thread id is %d", tid);
+    //int tid = gettid();
+    print(3, "goo");
     while (1) {
     }
 }

@@ -29,9 +29,9 @@ void tickback(unsigned int ticks) {
 }
 
 //static void install_divide_error_handler();
-//static void install_page_fault_handler();
+static void install_page_fault_handler();
 
-/*void install_handler_4();
+void install_handler_4();
 void install_handler_5();
 void install_handler_6();
 void install_handler_10();
@@ -39,7 +39,7 @@ void install_handler_11();
 void install_handler_12();
 void install_handler_13();
 void install_handler_17();
-void install_handler_18();*/
+void install_handler_18();
 
 /** @brief The driver-library initialization function
  *
@@ -56,9 +56,9 @@ int install_handlers() {
     initialize_timer(tickback);    
     install_keyboard_handler();
     //install_divide_error_handler();
-	//install_page_fault_handler();
+	install_page_fault_handler();
 
-/*	install_handler_4();
+install_handler_4();
 	install_handler_5();
 	install_handler_6();
 	install_handler_10();
@@ -66,7 +66,7 @@ int install_handlers() {
 	install_handler_12();
 	install_handler_13();
 	install_handler_17();
-	install_handler_18();*/
+	install_handler_18();
 
     // Add all the handlers we require here
     return 0;
@@ -93,6 +93,8 @@ void divide_error_handler() {
  * @return Void
  */
 void page_fault_handler() {
+    lprintf("PD is %p", (void *)get_cr3());
+    MAGIC_BREAK;
 	lprintf("Address that caused page fault: %p", (void *)get_cr2());
 }
 

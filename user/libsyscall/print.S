@@ -9,6 +9,7 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 #include <syscall_int.h>
+#include <simics.h>
 
 .global print
 

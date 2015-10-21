@@ -88,6 +88,7 @@ void load_bootstrap_task(const char *prog_name) {
 
 	uint32_t EFLAGS = setup_user_eflags();
 
+    lprintf("About to go to userspace");
 	call_iret(EFLAGS, se_hdr->e_entry);
    	 
 }

@@ -11,6 +11,4 @@
 .globl gettid_handler
 gettid_handler:
     call gettid_handler_c
-    pushl %eax
-    popl %eax
 	iret

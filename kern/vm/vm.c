@@ -20,6 +20,8 @@
 #include <allocator/frame_allocator.h>
 #include <malloc/malloc_internal.h>
 
+#define USER_PD_ENTRY_FLAGS PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE
+
 static void zero_fill(void *addr, int size);
 static void direct_map_kernel_pages(void *pd_addr);
 static void setup_direct_map();
@@ -274,6 +276,7 @@ void setup_direct_map() {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_text_segment(simple_elf_t *se_hdr, void *pd_addr) {
+    lprintf("Text segemt: start %p, length: %d", (void *)se_hdr->e_txtstart, (int)se_hdr->e_txtlen);
     int flags = PAGE_ENTRY_PRESENT | USER_MODE;
     return map_segment((void *)se_hdr->e_txtstart, se_hdr->e_txtlen, 
 						pd_addr, flags);
@@ -291,6 +294,7 @@ int map_text_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_data_segment(simple_elf_t *se_hdr, void *pd_addr) {
+    lprintf("Data segemt: start %p, length: %d", (void *)se_hdr->e_datstart, (int)se_hdr->e_datlen);
     int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
     return map_segment((void *)se_hdr->e_datstart, se_hdr->e_datlen, 
 						pd_addr, flags);
@@ -308,6 +312,7 @@ int map_data_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_rodata_segment(simple_elf_t *se_hdr, void *pd_addr) {
+    lprintf("rodata segemt: start %p, length: %d", (void *)se_hdr->e_rodatstart, (int)se_hdr->e_rodatlen);
     int flags = PAGE_ENTRY_PRESENT | USER_MODE;
     return map_segment((void *)se_hdr->e_rodatstart, 
 						se_hdr->e_rodatlen, pd_addr, flags);
@@ -325,6 +330,7 @@ int map_rodata_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_bss_segment(simple_elf_t *se_hdr, void *pd_addr) {
+    lprintf("bss segemt: start %p, length: %d", (void *)se_hdr->e_bssstart, (int)se_hdr->e_bsslen);
     int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
     return map_segment((void *)se_hdr->e_bssstart, se_hdr->e_bsslen, 
 						pd_addr, flags);
@@ -366,7 +372,7 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
         if (pd_addr[pd_index] == PAGE_DIR_ENTRY_DEFAULT) { /* Page directory entry absent */
             void *new_pt = create_page_table();
             if (new_pt != NULL) {
-                pd_addr[pd_index] = (unsigned int)new_pt | flags;
+                pd_addr[pd_index] = (unsigned int)new_pt | USER_PD_ENTRY_FLAGS;
             }
             else {
                 return ERR_NOMEM;

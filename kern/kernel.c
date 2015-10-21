@@ -66,7 +66,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
     kernel_threads_init();
 
     /* Load the bootstrap task in user mode */
-    load_bootstrap_task("idle");
+    load_bootstrap_task("shell");
 
     /* Should never come here */
     while (1) {
