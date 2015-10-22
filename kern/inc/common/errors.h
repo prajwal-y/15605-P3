@@ -9,8 +9,9 @@
 #ifndef __THREAD_ERRORS_H
 #define __THREAD_ERRORS_H
 
-#define ERR_INVAL -1
-#define ERR_BUSY -2
-#define ERR_NOMEM -3
+#define ERR_FAILURE -1
+#define ERR_INVAL -2
+#define ERR_BUSY -3
+#define ERR_NOMEM -4
 
 #endif /* __THREAD_ERRORS_H */

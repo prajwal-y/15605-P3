@@ -5,7 +5,7 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 #include <vm/vm.h>
-#include <lmm.h>
+#include <common/lmm_wrappers.h>
 #include <util.h>
 #include <string.h>
 #include <elf_410.h>
@@ -17,8 +17,11 @@
 #include <seg.h>
 #include <asm/asm.h>
 #include <common/errors.h>
+#include <common/assert.h>
 #include <allocator/frame_allocator.h>
 #include <malloc/malloc_internal.h>
+
+#define USER_PD_ENTRY_FLAGS PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE
 
 static void zero_fill(void *addr, int size);
 static void direct_map_kernel_pages(void *pd_addr);
@@ -34,7 +37,7 @@ static void *direct_map[USER_MEM_START / (PAGE_SIZE * NUM_PAGE_TABLE_ENTRIES)];
 static void *create_page_table();
 //static void free_page_table(void *pt_addr);
 
-static void set_segment_selectors(int type);
+//static void set_segment_selectors(int type);
 
 /** @brief initialize the virtual memory system
  *
@@ -98,7 +101,8 @@ void set_segment_selectors(int type) {
 void enable_paging() {
 
 	/*Set the segment selectors*/
-	set_segment_selectors(0);
+    //TODO: Fix setting of segment selectors
+	//set_segment_selectors(0);
 
     unsigned int cr0 = get_cr0();
     cr0 = cr0 | CR0_PG;
@@ -112,10 +116,14 @@ void enable_paging() {
  *  The frame will be initialized with default flags. If there are 
  *  no more physical frames available this function will return null.
  *  
- *  @return address of the frame containing the page directory
+ *  @return address of the frame containing the page directory.
+ *          NULL on failure
  */
 void *create_page_directory() {
-    int *frame_addr = lmm_alloc_page(&malloc_lmm, LMM_ANY_REGION_FLAG);
+    int *frame_addr = lmm_alloc_page_safe(&malloc_lmm, LMM_ANY_REGION_FLAG);
+    if(frame_addr == NULL) {
+        return NULL;
+    }
 	int i;
 	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
 		frame_addr[i] = PAGE_DIR_ENTRY_DEFAULT;
@@ -134,8 +142,7 @@ void free_page_directory(void *pd_addr) {
     if (pd_addr == NULL) {
         return;
     }
-    lmm_free(&malloc_lmm, pd_addr, PAGE_SIZE);
-    return;
+    lmm_free_safe(&malloc_lmm, pd_addr, PAGE_SIZE);
 }
 
 /** @brief create a new page table
@@ -145,10 +152,13 @@ void free_page_directory(void *pd_addr) {
  *  The frame will be initialized with default flags. If there are 
  *  no more physical frames available this function will return null.
  *  
- *  @return address of the frame containing the page table
+ *  @return address of the frame containing the page table. NULL on failure
  */
 void *create_page_table() {
-    int *frame_addr = lmm_alloc_page(&malloc_lmm, LMM_ANY_REGION_FLAG);
+    int *frame_addr = lmm_alloc_page_safe(&malloc_lmm, LMM_ANY_REGION_FLAG);
+    if(frame_addr == NULL) {
+        return NULL;
+    }
 	int i;
 	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
 		frame_addr[i] = PAGE_TABLE_ENTRY_DEFAULT;
@@ -166,8 +176,7 @@ void *create_page_table() {
     if (pt_addr == NULL) {
         return;
     }
-    lmm_free(&malloc_lmm, pt_addr, PAGE_SIZE);
-    return;
+    lmm_free_safe(&malloc_lmm, pt_addr, PAGE_SIZE);
 }*/
 
 /** @brief setup paging for a program
@@ -181,15 +190,28 @@ void *create_page_table() {
  *                program to be loaded
  *  @param pd_addr the address of the page directory obtained through
  *                 a previous call to create_page_directory
+ *
+ *  @return 0 on success. Negative number on failure
  */
-void setup_page_table(simple_elf_t *se_hdr, void *pd_addr) {
+int setup_page_table(simple_elf_t *se_hdr, void *pd_addr) {
     direct_map_kernel_pages(pd_addr);
-    // TODO: If any of the mappings fail we nee to fail in some graceful way
-    map_text_segment(se_hdr, pd_addr);
-    map_data_segment(se_hdr, pd_addr);
-    map_rodata_segment(se_hdr, pd_addr);
-    map_bss_segment(se_hdr, pd_addr);
-    map_stack_segment(pd_addr);
+    int retval;
+    if((retval = map_text_segment(se_hdr, pd_addr)) < 0) {
+        return retval;
+    }
+    if((retval = map_data_segment(se_hdr, pd_addr)) < 0) {
+        return retval;
+    }
+    if((retval = map_rodata_segment(se_hdr, pd_addr)) < 0) {
+        return retval;
+    }
+    if((retval = map_bss_segment(se_hdr, pd_addr)) < 0) {
+        return retval;
+    }
+    if((retval = map_stack_segment(pd_addr)) < 0) {
+        return retval;
+    }
+    return 0;
 }
 
 /* ---------- Static local functions ----------- */
@@ -248,17 +270,15 @@ void setup_direct_map() {
 
     for (; i < KERNEL_MAP_NUM_ENTRIES; i++) {
         int *frame_addr = (int *)create_page_table();
-        if (frame_addr != NULL) {
-            for (j = 0; j < NUM_PAGE_TABLE_ENTRIES; j++) {
-                page_table_entry = mem_start | flags;
-                mem_start += PAGE_SIZE;
-                frame_addr[j] = page_table_entry;
-            }                
-            direct_map[i] = frame_addr;
-        } 
-        else {
-            //TODO: Error unrecoverable, kill OS
-        }
+
+        kernel_assert(frame_addr != NULL);
+
+        for (j = 0; j < NUM_PAGE_TABLE_ENTRIES; j++) {
+            page_table_entry = mem_start | flags;
+            mem_start += PAGE_SIZE;
+            frame_addr[j] = page_table_entry;
+        }                
+        direct_map[i] = frame_addr;
     }
 }
 
@@ -366,7 +386,7 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
         if (pd_addr[pd_index] == PAGE_DIR_ENTRY_DEFAULT) { /* Page directory entry absent */
             void *new_pt = create_page_table();
             if (new_pt != NULL) {
-                pd_addr[pd_index] = (unsigned int)new_pt | flags;
+                pd_addr[pd_index] = (unsigned int)new_pt | USER_PD_ENTRY_FLAGS;
             }
             else {
                 return ERR_NOMEM;
@@ -381,7 +401,6 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
                 pt_addr[pt_index] = (unsigned int)new_frame | flags;
             }
             else {
-                //TODO: Free the allocated PTE maybe???
                 return ERR_NOMEM;
             }
         }

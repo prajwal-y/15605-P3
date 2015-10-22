@@ -10,6 +10,6 @@
 #define __LOADER_H
 #include <elf_410.h>
 
-void load_program(simple_elf_t *se_hdr);
+int load_program(simple_elf_t *se_hdr);
 
 #endif /* __LOADER_H */

@@ -32,10 +32,10 @@
 #include <core/thread.h>
 #include <core/task.h>
 #include <exec2obj.h>
+#include <global_state.h>
 #include <syscalls/syscall_handlers.h>
 
 static void set_default_color();
-thread_struct_t *curr_thread;
 
 /** @brief Kernel entrypoint.
  *  
@@ -59,14 +59,23 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
     /* Initialize user space physical frame allocator */
     init_frame_allocator();
 
+    /* Initialize kernel data structures */
+    init_state();
+
     /* Initialize the VM system */
     vm_init();
 
     /* Initialize kernel threads subsystem */
     kernel_threads_init();
 
-    /* Load the bootstrap task in user mode */
-    load_bootstrap_task("idle");
+    /* Load the idle task in user mode. This task ALWAYS has TID 1 */
+    load_bootstrap_task("ck1");
+
+    /* Load the init task into memory. This does NOT make the init task 
+     * runnable. This is taken care of by the scheduler/context switcher */
+    //load_task("prog1"); /* TODO: Replace with init later */
+
+    //load_task("prog2"); /* TODO: Remove once we have fork/exec, init working */
 
     /* Should never come here */
     while (1) {

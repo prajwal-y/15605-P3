@@ -10,8 +10,11 @@
 #include <simics.h>
 #include <sync/mutex.h>
 #include <page.h>
+#include <stddef.h>
+#include <common/assert.h>
 
 #define FREE_FRAME_LIST_END UINT_MAX
+#define PAGE_ALIGNMENT_CHECK 0x00000fff
 
 static void *free_list_head; /* Head of free list,UINT_MAX => no free frames */
 static mutex_t list_mut;     /* Mutex to synchronize access to free frame list */
@@ -29,7 +32,6 @@ void init_frame_allocator() {
     /* create the free list of frames */
     init_free_list();
 
-    lprintf("Done initing");
     mutex_init(&list_mut);
 }
 
@@ -62,7 +64,7 @@ void init_free_list() {
  *
  *  This function locks the frame list (which functions as a stack)
  *  and returns the top of the frame list. If there are no more free frames 
- *  the function returns 0xffffffff.
+ *  the function returns null.
  *
  *  @return void * physical address of the free frame
  */
@@ -70,11 +72,14 @@ void *allocate_frame() {
     mutex_lock(&list_mut) ;
     if ((int)free_list_head == FREE_FRAME_LIST_END) {
         mutex_unlock(&list_mut);
-        return (void *)FREE_FRAME_LIST_END;
+        return NULL;
     }   
     void *frame_addr = free_list_head;
     free_list_head = (void *)(*(int *)free_list_head);
     mutex_unlock(&list_mut);
+
+    kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
+
     return frame_addr;
 }
 
@@ -87,7 +92,11 @@ void *allocate_frame() {
  *  @return void
  */
 void deallocate_frame(void *frame_addr) {
-    mutex_lock(&list_mut) ;
+    kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
+    kernel_assert(frame_addr != NULL);
+    //TODO: assert memory check
+
+    mutex_lock(&list_mut);
     *(int *)frame_addr = (int)free_list_head;
     free_list_head = frame_addr;
     mutex_unlock(&list_mut);

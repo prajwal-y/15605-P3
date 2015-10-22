@@ -125,7 +125,8 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o malloc_wrappers.o drivers/con
 			  interrupts/interrupt_handlers.o interrupts/idt_entry.o drivers/keyboard/keyboard.o \
 			  drivers/keyboard/keyboard_handler.o allocator/frame_allocator.o sync/mutex.o \
 			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o asm/asm.o syscalls/syscall_handlers.o \
-			  syscalls/thread_syscalls.o syscalls/thread_syscalls_asm.o
+			  syscalls/thread_syscalls.o syscalls/thread_syscalls_asm.o syscalls/console_syscalls.o \
+			  syscalls/console_syscalls_asm.o common/assert.o global_state.o common/lmm_wrappers.o
 
 
 ###########################################################################
@@ -144,7 +145,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o malloc_wrappers.o drivers/con
 # or init unless you are writing your own, and don't do that unless
 # you have a really good reason to do so.
 #
-410REQPROGS = idle init shell getpid_test1
+410REQPROGS = idle init shell ck1
 
 ###########################################################################
 # Mandatory programs whose source is provided by you

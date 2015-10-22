@@ -4,7 +4,7 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
-#include <lmm.h>
+#include <common/lmm_wrappers.h>
 #include <malloc_internal.h>
 #include <vm/vm.h>
 #include <loader/loader.h>
@@ -31,7 +31,7 @@ void kernel_threads_init() {
  *
  *  @param task the task under which this thread will run
  *  @param regs the register values this thread must take
- *  @return thread_struct_t the newly created thread.
+ *  @return thread_struct_t the newly created thread or null on failure.
  */
 thread_struct_t *create_thread(task_struct_t *task) {
     if(task == NULL) {
@@ -39,24 +39,34 @@ thread_struct_t *create_thread(task_struct_t *task) {
     }
     mutex_lock(&mutex);
     /* Create the register set */
-    ureg_t *reg = (ureg_t *)lmm_alloc(&malloc_lmm, sizeof(ureg_t),
+    ureg_t *reg = (ureg_t *)lmm_alloc_safe(&malloc_lmm, sizeof(ureg_t),
                                       LMM_ANY_REGION_FLAG);
+    if(reg == NULL) {
+        mutex_unlock(&mutex);
+        return NULL;
+    }
+
     set_user_thread_regs(reg);
 
     /* Create the thread struct */
-    thread_struct_t *thr = (thread_struct_t *)lmm_alloc(&malloc_lmm, 
+    thread_struct_t *thr = (thread_struct_t *)lmm_alloc_safe(&malloc_lmm, 
                             sizeof(thread_struct_t), 0);
     if(thr == NULL) {
         mutex_unlock(&mutex);
         return NULL;
     }
 	/* Allocate space for thread's kernel stack */
-	void *stack = lmm_alloc_page(&malloc_lmm, LMM_ANY_REGION_FLAG);
-	if(stack != NULL) {
-		set_esp0((uint32_t)((char *)stack + PAGE_SIZE));
-	}
-    mutex_unlock(&mutex);
+	void *stack = lmm_alloc_page_safe(&malloc_lmm, LMM_ANY_REGION_FLAG);
+    if(stack == NULL) {
+        lmm_free_safe(&malloc_lmm, thr, sizeof(thread_struct_t));
+        lmm_free_safe(&malloc_lmm, reg, sizeof(ureg_t));
+        mutex_unlock(&mutex);
+        return NULL;
+    }
+    set_esp0((uint32_t)((char *)stack + PAGE_SIZE));
     thr->id = ++next_tid;
+    mutex_unlock(&mutex);
+
     thr->regs = reg;
     thr->parent_task = task;
     thr->k_stack = stack + PAGE_SIZE;
