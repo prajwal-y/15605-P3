@@ -8,7 +8,6 @@
 #include <syscalls/thread_syscalls.h>
 #include <core/thread.h>
 #include <global_state.h>
-#include <simics.h>
 
 /** @brief implement the functionality to get the tid
  *         from the global curr_thread struct. This passes

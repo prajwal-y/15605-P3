@@ -5,7 +5,7 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 #include <core/task.h>
-#include <lmm.h>
+#include <common/lmm_wrappers.h>
 #include <seg.h>
 #include <cr.h>
 #include <vm/vm.h>
@@ -18,16 +18,23 @@
 #include <global_state.h>
 #include <loader/loader.h>
 #include <ureg.h>
+#include <common/assert.h>
 #include <malloc_internal.h>
+
+#define EFLAGS_RESERVED 0x00000002
+#define EFLAGS_IOPL 0x00003000 
+#define EFLAGS_IF 0x00000200 
+#define EFLAGS_ALIGNMENT_CHECK 0xFFFbFFFF 
 
 static uint32_t setup_user_eflags();
 
-/** @brief Creates a new task by copying the current
- *  page directory address.
+/** @brief Load a task into memory and add to runnable queue
+ *
+ *  This function 
  *
  *  @return Void
  */
-void create_task() {
+void load_task() {
 }
 
 /** @brief start a bootstrap task
@@ -49,46 +56,50 @@ void create_task() {
  *  @return void
  */
 void load_bootstrap_task(const char *prog_name) {
+
+    int retval;
+
     /* Allocate memory for a task struct from kernel memory */
-    task_struct_t *t = (task_struct_t *)lmm_alloc(&malloc_lmm, 
+    task_struct_t *t = (task_struct_t *)lmm_alloc_safe(&malloc_lmm, 
                        sizeof(task_struct_t), LMM_ANY_REGION_FLAG);
-    if (t == NULL) {
-        return;
-    }
+
+    kernel_assert(t != NULL);
+
     /* ask vm to give us a zero filled frame for the page directory */
     void *pd_addr = create_page_directory();
-    if (pd_addr == NULL) {
-        return;
-    }
+
+    kernel_assert(pd_addr != NULL);
+
     t->pdbr = pd_addr;
 
     /* Read the idle task header to set up VM */
-    simple_elf_t *se_hdr = (simple_elf_t *)lmm_alloc(&malloc_lmm,
+    simple_elf_t *se_hdr = (simple_elf_t *)lmm_alloc_safe(&malloc_lmm,
                             sizeof(simple_elf_t), LMM_ANY_REGION_FLAG);
-    if (se_hdr == NULL) {
-        return;
-    }
+
+    kernel_assert(se_hdr != NULL);
+
     elf_load_helper(se_hdr, prog_name);
     
     /* Invoke VM to setup the page directory/page table for a given binary */
-    setup_page_table(se_hdr, pd_addr);
+    retval = setup_page_table(se_hdr, pd_addr);
+    kernel_assert(retval == 0);
 
     /* Paging enabled! */
 	set_cur_pd(pd_addr);
     enable_paging();
 
     /* Copy program into memory */
-    load_program(se_hdr);
-
+    retval = load_program(se_hdr);
+    kernel_assert(retval == 0);
 
     /* Create a thread */
     thread_struct_t *thr = create_thread(t);
+    kernel_assert(thr != NULL);
 
 	curr_thread = thr;
 
 	uint32_t EFLAGS = setup_user_eflags();
 
-    lprintf("About to go to userspace");
 	call_iret(EFLAGS, se_hdr->e_entry);
    	 
 }
@@ -104,9 +115,9 @@ void load_bootstrap_task(const char *prog_name) {
  */
 uint32_t setup_user_eflags() {
 	uint32_t eflags = get_eflags();
-	eflags |= 0x00000002;
-	eflags |= 0x00003000;
-	eflags |= 0x00000200;
-	eflags &= 0xFFFbFFFF;
+    eflags |= EFLAGS_RESERVED;          /*Reserved bit*/
+	eflags |= EFLAGS_IOPL;              /*IOPL*/
+	eflags |= EFLAGS_IF;                /*IF*/
+	eflags &= EFLAGS_ALIGNMENT_CHECK;   /*Alignment check off*/
 	return eflags;
 }

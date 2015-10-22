@@ -6,13 +6,9 @@
  *  @covers
  *  @status done
  */
-#include <simics.h>
-#include <syscall.h>
 
 int main()
 {
-    //int tid = gettid();
-    print(3, "goo");
     while (1) {
     }
 }

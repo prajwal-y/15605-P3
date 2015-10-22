@@ -43,7 +43,7 @@ void *create_page_directory();
 
 void free_page_directory(void *pd_addr);
 
-void setup_page_table(simple_elf_t *se_hdr, void *pd_addr);
+int setup_page_table(simple_elf_t *se_hdr, void *pd_addr);
 
 void set_cur_pd(void *pd_addr);
 

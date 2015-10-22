@@ -126,7 +126,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o malloc_wrappers.o drivers/con
 			  drivers/keyboard/keyboard_handler.o allocator/frame_allocator.o sync/mutex.o \
 			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o asm/asm.o syscalls/syscall_handlers.o \
 			  syscalls/thread_syscalls.o syscalls/thread_syscalls_asm.o syscalls/console_syscalls.o \
-			  syscalls/console_syscalls_asm.o
+			  syscalls/console_syscalls_asm.o common/assert.o global_state.o common/lmm_wrappers.o
 
 
 ###########################################################################

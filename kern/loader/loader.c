@@ -13,16 +13,19 @@
 /* --- Includes --- */
 #include <string.h>
 #include <stdio.h>
-#include <malloc.h>
+#include <common/lmm_wrappers.h>
 #include <simics.h>
 #include <malloc_internal.h>
 #include <exec2obj.h>
 #include <loader/loader.h>
 #include <elf_410.h>
+#include <common/assert.h>
 #include <vm/vm.h>
+#include <common/errors.h>
 
 #define MAX_SECTION_NAME_LEN 10 /* longer than any we care about */
-#define FAILURE -1
+static int load_segment(const char *filename, void *start, 
+                        int len, int offset);
 
 /** @brief load a program into memory
  *
@@ -31,39 +34,54 @@
  *
  *  @pre paging is enabled and page table information has been setup
  *  @param se_hdr the struct containing ELF data about program
- *  @return void
+ *  @return int 0 on success -ve integer on failure
  */
-void load_program(simple_elf_t *se_hdr) {
-    char *buf;
+int load_program(simple_elf_t *se_hdr) {
+    int retval = 0;
 
-    /* Load text section into memory */
-	if(se_hdr->e_txtlen > 0) {
-    	buf = (char *)lmm_alloc(&malloc_lmm, se_hdr->e_txtlen, LMM_ANY_REGION_FLAG);
-    	getbytes(se_hdr->e_fname, se_hdr->e_txtoff, se_hdr->e_txtlen, buf);
-		memcpy((void *)se_hdr->e_txtstart, buf, se_hdr->e_txtlen);
-    	lmm_free(&malloc_lmm, buf, se_hdr->e_txtlen);
-	}
-
-    /* Load data section into memory */
-	if(se_hdr->e_datlen > 0) {
-    	buf = (char *)lmm_alloc(&malloc_lmm, se_hdr->e_datlen, LMM_ANY_REGION_FLAG);
-    	getbytes(se_hdr->e_fname, se_hdr->e_datoff, se_hdr->e_datlen, buf);
-    	memcpy((void *)se_hdr->e_datstart, buf, se_hdr->e_datlen);
-    	lmm_free(&malloc_lmm, buf, se_hdr->e_datlen);
-	}
-
-    /* Load rodata section into memory */
-	if(se_hdr->e_rodatlen > 0) {
-    	buf = (char *)lmm_alloc(&malloc_lmm, se_hdr->e_rodatlen, LMM_ANY_REGION_FLAG);
-    	getbytes(se_hdr->e_fname, se_hdr->e_rodatoff, se_hdr->e_rodatlen, buf);
-    	memcpy((void *)se_hdr->e_rodatstart, buf, se_hdr->e_rodatlen);
-    	lmm_free(&malloc_lmm, buf, se_hdr->e_rodatlen);
-	}
+    if ((retval = load_segment(se_hdr->e_fname, (void *)se_hdr->e_txtstart, 
+                              se_hdr->e_txtlen, se_hdr->e_txtoff)) < 0) {
+        return retval;
+    }
+    if ((retval = load_segment(se_hdr->e_fname, (void *)se_hdr->e_datstart, 
+                              se_hdr->e_datlen, se_hdr->e_datoff)) < 0) {
+        return retval;
+    }
+    if ((retval = load_segment(se_hdr->e_fname, (void *)se_hdr->e_rodatstart, 
+                              se_hdr->e_rodatlen, se_hdr->e_rodatoff)) < 0) {
+        return retval;
+    }
 
     /* Load bss section into memory */
     memset((void *)se_hdr->e_bssstart, 0, se_hdr->e_bsslen);
+    return retval;
 }
 
+/** @brief load a program segment into memory
+ *
+ *  @param start starting address of the segment
+ *  @param len length of the segment
+ *  @param offset the offset of the segment in the file
+ *  @return int 0 on success -ve integer on failure
+ */
+int load_segment(const char *filename, void *start, int len, int offset) {
+    char *buf;
+
+	if(len > 0) {
+    	buf = (char *)lmm_alloc_safe(&malloc_lmm, len, LMM_ANY_REGION_FLAG);
+        if (buf == NULL) {
+            return ERR_NOMEM;
+        }
+    	int ret = getbytes(filename, offset, len, buf);
+        if(ret < 0) {
+            lmm_free_safe(&malloc_lmm, buf, len);
+            return ret;
+        }
+		memcpy(start, buf, len);
+    	lmm_free_safe(&malloc_lmm, buf, len);
+	}
+    return 0;
+}
 /**
  * Copies data from a file into a buffer.
  *
@@ -77,7 +95,7 @@ void load_program(simple_elf_t *se_hdr) {
 int getbytes(const char *filename, int offset, int size, char *buf) {
     if (filename == NULL || size < 0 || buf == NULL || offset < 0
         || size < sizeof(buf)) {
-        return FAILURE;
+        return ERR_FAILURE;
     }
     int i;
     for (i = 0; i < exec2obj_userapp_count; i++) {
@@ -92,7 +110,7 @@ int getbytes(const char *filename, int offset, int size, char *buf) {
             return size;
         }
     }
-    return FAILURE;
+    return ERR_FAILURE;
 }
 
 /**

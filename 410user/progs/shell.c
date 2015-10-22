@@ -71,20 +71,14 @@ main(int argc, char *argv[])
   int res;
   int j;
   int ret;
-  lprintf("IN userspace!");
 
   print(strlen(startmsg), startmsg);
-  lprintf("IN userspace! after firts print");
 
   while(1) {
 
-  lprintf("IN userspace! before bzero");
     bzero(buf, MAX_LENGTH);
-  lprintf("IN userspace! after bzeroe");
     print(strlen(prompt), prompt);
-  lprintf("IN userspace! before readline");
     n = mystical_readline(MAX_LENGTH - 1, buf);
-  lprintf("IN userspace! after readline");
     if (n == 0) {
       /* Empty result; this shouldn't happen. */
       print(strlen(nothing), nothing);
@@ -225,9 +219,7 @@ static int mystical_readline(int len, char *buf) {
 
     buf[0] = '\0';
     /* If we're in the test harness, this does something very special! */
-  lprintf("IN userspace going to simcall! ^_^");
     sim_call(0x04108005, buf, len);
-  lprintf("IN userspace after simcall! ^_^");
 
     return (buf[0] ? strlen(buf) : readline(len, buf));
 }
