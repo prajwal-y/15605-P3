@@ -8,6 +8,7 @@
 #define __THREAD_H
 
 #include <ureg.h>
+#include <stdint.h>
 #include <core/task.h>
 
 /** @brief a schedulable "unit"
@@ -20,7 +21,8 @@ typedef struct thread_struct {
     int id;                      /* A unique identifier for a thread */
     ureg_t *regs;                /* The set of registers for this thread */
     task_struct_t *parent_task;  /* The parent task for this thread */
-    void *k_stack;               /* The address of the kernel task */   
+    void *k_stack;               /* The address of the kernel task base */
+	uint32_t cur_k_stack;		 /* Current value of the kernel stack */
 } thread_struct_t;
 
 void kernel_threads_init();
