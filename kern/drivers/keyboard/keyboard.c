@@ -14,6 +14,10 @@
 #include <malloc.h>
 #include <list/list.h>
 #include <stddef.h>
+#include <core/context.h>   /* TODO: REOMVE THIS! */
+
+// HACK LAND!
+static int i = 0;
 
 /** @brief a struct which represents a node in our
  *         keyboard buffer
@@ -64,6 +68,10 @@ void enqueue_scancode() {
     scancode *code = (scancode *)malloc(sizeof(scancode));
     code->code = in;
     add_to_tail(&code->link, &head);
+    if ((i % 4) == 0) {
+        context_switch();
+    }
+    i++;
     acknowledge_interrupt();
     return;
 }

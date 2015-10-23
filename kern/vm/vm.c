@@ -62,36 +62,6 @@ void set_cur_pd(void *pd_addr) {
 	set_cr3((uint32_t)pd_addr);
 }
 
-/** @brief Sets the segment selectors
- *
- *  @param type : 0 - Kernel and 1 - User
- *
- *  @return void
- */
-void set_segment_selectors(int type) {
-
-	switch(type) {
-		case 0:
-			/*set_cs(SEGSEL_KERNEL_CS);
-			set_ds(SEGSEL_KERNEL_DS);
-			set_es(SEGSEL_KERNEL_DS);
-			set_fs(SEGSEL_KERNEL_DS);
-			set_gs(SEGSEL_KERNEL_DS);
-			set_ss(SEGSEL_KERNEL_DS);*/
-			break;
-		case 1:
-			set_cs(SEGSEL_USER_CS);
-			set_ds(SEGSEL_USER_DS);
-			set_es(SEGSEL_USER_DS);
-			set_fs(SEGSEL_USER_DS);
-			set_gs(SEGSEL_USER_DS);
-			set_ss(SEGSEL_USER_DS);
-			break;
-		default:
-			break;
-	}
-}
-
 /** @brief enable VM 
  *
  *  Set bit 31 of cr0
@@ -99,11 +69,6 @@ void set_segment_selectors(int type) {
  *  @return void
  */
 void enable_paging() {
-
-	/*Set the segment selectors*/
-    //TODO: Fix setting of segment selectors
-	//set_segment_selectors(0);
-
     unsigned int cr0 = get_cr0();
     cr0 = cr0 | CR0_PG;
     set_cr0(cr0);

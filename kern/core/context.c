@@ -8,7 +8,8 @@
 
 #include <cr.h>
 #include <asm/asm.h>
-#include <global_state.h>
+#include <vm/vm.h>
+#include <core/scheduler.h>
 
 static void switch_to_thread(thread_struct_t *thread);
 
@@ -21,11 +22,11 @@ static void switch_to_thread(thread_struct_t *thread);
  *  @return Void
  */
 void context_switch() {
-	/* Get the head of the list from the runnable queue */
-
-	/* Add the current thread to the end of the runnable queue */
+	/* Get the next thread to be run from scheduler */
+    thread_struct_t *thr = next_thread();
 
 	/* Call switch_to_thread with the new thread */
+    switch_to_thread(thr);
 }
 
 /** @brief Function to switch to a new thread.
@@ -44,13 +45,18 @@ void switch_to_thread(thread_struct_t *thread) {
 	if(thread == NULL) {
 		return;
 	}
+    thread_struct_t *curr_thread = get_curr_thread();
 
-	/*Set the current value of the stack pointer*/
+	/* Set the current value of the stack pointer */
 	curr_thread->cur_k_stack = get_esp0();
 
-	/* Set ds for the new thread*/
+	/* Set ds for the new thread */
 	set_ds((thread->regs)->ds);
 
-	/*Set the esp for the new thread*/	
+    /* Set page directory for the new thread */
+    task_struct_t *parent_task = thread->parent_task;
+    set_cur_pd(parent_task->pdbr);
+
+	/* Set the esp for the new thread */	
 	set_esp0(thread->cur_k_stack);
 }

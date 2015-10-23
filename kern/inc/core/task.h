@@ -8,6 +8,8 @@
 #define __TASK_H
 
 #include <list/list.h>
+#define SCHED_IMM 0
+#define SCHED_DEF 1
 
 /** @brief the protection domain comprising a task */
 typedef struct task_struct {
@@ -18,6 +20,8 @@ typedef struct task_struct {
 void create_task();
 
 void load_bootstrap_task(const char *prog_name);
+
+void load_task(const char *prog_name);
 
 #endif  /* __TASK_H */
 

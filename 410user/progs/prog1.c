@@ -11,6 +11,6 @@
 int main()
 {
     while (1) {
-        lprintf("Idling away!");
+        lprintf("This is prog1");
     }
 }

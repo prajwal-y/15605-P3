@@ -63,7 +63,6 @@ thread_struct_t *create_thread(task_struct_t *task) {
         mutex_unlock(&mutex);
         return NULL;
     }
-    set_esp0((uint32_t)((char *)stack + PAGE_SIZE));
     thr->id = ++next_tid;
     mutex_unlock(&mutex);
 

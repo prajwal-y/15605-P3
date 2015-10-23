@@ -94,7 +94,6 @@ void divide_error_handler() {
  */
 void page_fault_handler() {
     lprintf("PD is %p", (void *)get_cr3());
-    MAGIC_BREAK;
 	lprintf("Address that caused page fault: %p", (void *)get_cr2());
 }
 
