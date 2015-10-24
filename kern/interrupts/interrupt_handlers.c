@@ -31,7 +31,7 @@ void tickback(unsigned int ticks) {
 //static void install_divide_error_handler();
 static void install_page_fault_handler();
 
-void install_handler_4();
+/*void install_handler_4();
 void install_handler_5();
 void install_handler_6();
 void install_handler_10();
@@ -39,7 +39,7 @@ void install_handler_11();
 void install_handler_12();
 void install_handler_13();
 void install_handler_17();
-void install_handler_18();
+void install_handler_18();*/
 
 /** @brief The driver-library initialization function
  *
@@ -53,12 +53,15 @@ void install_handler_18();
  *   @return A negative error code on error, or 0 on success
  **/
 int install_handlers() {
-    initialize_timer(tickback);    
+    initialize_timer(tickback);
+	lprintf("11");
     install_keyboard_handler();
+	lprintf("12");
     //install_divide_error_handler();
 	install_page_fault_handler();
+	lprintf("13");
 
-install_handler_4();
+	/*install_handler_4();
 	install_handler_5();
 	install_handler_6();
 	install_handler_10();
@@ -66,7 +69,7 @@ install_handler_4();
 	install_handler_12();
 	install_handler_13();
 	install_handler_17();
-	install_handler_18();
+	install_handler_18();*/
 
     // Add all the handlers we require here
     return 0;
@@ -95,6 +98,7 @@ void divide_error_handler() {
 void page_fault_handler() {
     lprintf("PD is %p", (void *)get_cr3());
 	lprintf("Address that caused page fault: %p", (void *)get_cr2());
+	MAGIC_BREAK;
 }
 
 /** @brief this function installs a handler for divide by zero fault conditions

@@ -11,7 +11,7 @@
 #include <interrupts/idt_entry.h>
 #include <interrupts/interrupt_handlers.h>
 #include <asm.h>
-#include <malloc.h>
+#include <common/malloc_wrappers.h>
 #include <list/list.h>
 #include <stddef.h>
 #include <core/context.h>   /* TODO: REOMVE THIS! */

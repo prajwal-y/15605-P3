@@ -4,8 +4,7 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
-#include <common/lmm_wrappers.h>
-#include <malloc_internal.h>
+#include <common/malloc_wrappers.h>
 #include <vm/vm.h>
 #include <loader/loader.h>
 #include <core/thread.h>
@@ -39,8 +38,7 @@ thread_struct_t *create_thread(task_struct_t *task) {
     }
     mutex_lock(&mutex);
     /* Create the register set */
-    ureg_t *reg = (ureg_t *)lmm_alloc_safe(&malloc_lmm, sizeof(ureg_t),
-                                      LMM_ANY_REGION_FLAG);
+	ureg_t *reg = (ureg_t *)smalloc(sizeof(ureg_t));
     if(reg == NULL) {
         mutex_unlock(&mutex);
         return NULL;
@@ -49,17 +47,16 @@ thread_struct_t *create_thread(task_struct_t *task) {
     set_user_thread_regs(reg);
 
     /* Create the thread struct */
-    thread_struct_t *thr = (thread_struct_t *)lmm_alloc_safe(&malloc_lmm, 
-                            sizeof(thread_struct_t), 0);
+	thread_struct_t *thr = (thread_struct_t *)smalloc(sizeof(thread_struct_t));
     if(thr == NULL) {
         mutex_unlock(&mutex);
         return NULL;
     }
 	/* Allocate space for thread's kernel stack */
-	void *stack = lmm_alloc_page_safe(&malloc_lmm, LMM_ANY_REGION_FLAG);
+	void *stack = smemalign(PAGE_SIZE, PAGE_SIZE);
     if(stack == NULL) {
-        lmm_free_safe(&malloc_lmm, thr, sizeof(thread_struct_t));
-        lmm_free_safe(&malloc_lmm, reg, sizeof(ureg_t));
+        sfree(thr, sizeof(thread_struct_t));
+        sfree(reg, sizeof(ureg_t));
         mutex_unlock(&mutex);
         return NULL;
     }

@@ -6,11 +6,9 @@
  *  @covers
  *  @status done
  */
-#include <simics.h>
 
 int main()
 {
     while (1) {
-        lprintf("Idling away!");
     }
 }

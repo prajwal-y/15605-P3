@@ -15,7 +15,6 @@
 #define WRITE_THROUGH_CACHING 8
 #define DISABLE_CACHING 16
 #define GLOBAL_PAGE_ENTRY 256
-#define LMM_ANY_REGION_FLAG 0
 
 /*Constants and macros*/
 
@@ -48,5 +47,7 @@ int setup_page_table(simple_elf_t *se_hdr, void *pd_addr);
 void set_cur_pd(void *pd_addr);
 
 void enable_paging();
+
+void disable_paging();
 
 #endif /* __VM_H */

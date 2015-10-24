@@ -5,7 +5,7 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 #include <core/task.h>
-#include <common/lmm_wrappers.h>
+#include <common/malloc_wrappers.h>
 #include <seg.h>
 #include <cr.h>
 #include <vm/vm.h>
@@ -21,7 +21,6 @@
 #include <syscall.h>
 #include <string.h>
 #include <common/assert.h>
-#include <malloc_internal.h>
 
 #define EFLAGS_RESERVED 0x00000002
 #define EFLAGS_IOPL 0x00003000 
@@ -52,25 +51,30 @@ static void set_task_stack(void *kernel_stack_base, int entry_addr);
 void load_bootstrap_task(const char *prog_name) {
 
     int retval;
-
-    /* Allocate memory for a task struct from kernel memory */
-    task_struct_t *t = (task_struct_t *)lmm_alloc_safe(&malloc_lmm, 
-                       sizeof(task_struct_t), LMM_ANY_REGION_FLAG);
-
-    kernel_assert(t != NULL);
-
     /* ask vm to give us a zero filled frame for the page directory */
     void *pd_addr = create_page_directory();
 
     kernel_assert(pd_addr != NULL);
+	lprintf("Created page directory %p", pd_addr);
+
+    /* Paging enabled! */
+	set_cur_pd(pd_addr);
+    enable_paging();
+
+    /* Allocate memory for a task struct from kernel memory */
+	task_struct_t *t = (task_struct_t *)smalloc(sizeof(task_struct_t));
+
+    kernel_assert(t != NULL);
+	lprintf("Created task");
+
 
     t->pdbr = pd_addr;
 
     /* Read the idle task header to set up VM */
-    simple_elf_t *se_hdr = (simple_elf_t *)lmm_alloc_safe(&malloc_lmm,
-                            sizeof(simple_elf_t), LMM_ANY_REGION_FLAG);
+	simple_elf_t *se_hdr = (simple_elf_t *)smalloc(sizeof(simple_elf_t));
 
     kernel_assert(se_hdr != NULL);
+	lprintf("Got the header");
 
     elf_load_helper(se_hdr, prog_name);
     
@@ -78,12 +82,11 @@ void load_bootstrap_task(const char *prog_name) {
     retval = setup_page_table(se_hdr, pd_addr);
     kernel_assert(retval == 0);
 
-    /* Paging enabled! */
-	set_cur_pd(pd_addr);
-    enable_paging();
 
     /* Copy program into memory */
+	lprintf("About to load program");
     retval = load_program(se_hdr);
+	lprintf("Loaded program : %d", retval);
     kernel_assert(retval == 0);
 
     /* Create a thread */
@@ -92,8 +95,13 @@ void load_bootstrap_task(const char *prog_name) {
 
 	set_running_thread(thr);
     set_esp0((uint32_t)((char *)(thr->k_stack) + PAGE_SIZE));
+	lprintf("Creaated thread");
 
 	uint32_t EFLAGS = setup_user_eflags();
+
+	lprintf("About to call iret");
+
+	MAGIC_BREAK;
 
 	call_iret(EFLAGS, se_hdr->e_entry);
    	 
@@ -102,38 +110,40 @@ void load_bootstrap_task(const char *prog_name) {
 void load_task(const char *prog_name) {
 
     int retval;
-
-    /* Allocate memory for a task struct from kernel memory */
-    task_struct_t *t = (task_struct_t *)lmm_alloc_safe(&malloc_lmm, 
-                       sizeof(task_struct_t), LMM_ANY_REGION_FLAG);
-
-    kernel_assert(t != NULL);
-
     /* ask vm to give us a zero filled frame for the page directory */
     void *pd_addr = create_page_directory();
 
     kernel_assert(pd_addr != NULL);
+	lprintf("Created page directory %p", pd_addr);
+
+    /* Paging enabled! */
+	set_cur_pd(pd_addr);
+    enable_paging();
+
+    /* Allocate memory for a task struct from kernel memory */
+	task_struct_t *t = (task_struct_t *)smalloc(sizeof(task_struct_t));
+
+    kernel_assert(t != NULL);
+
 
     t->pdbr = pd_addr;
 
     /* Read the idle task header to set up VM */
-    simple_elf_t *se_hdr = (simple_elf_t *)lmm_alloc_safe(&malloc_lmm,
-                            sizeof(simple_elf_t), LMM_ANY_REGION_FLAG);
+	simple_elf_t *se_hdr = (simple_elf_t *)smalloc(sizeof(simple_elf_t));
 
     kernel_assert(se_hdr != NULL);
 
     elf_load_helper(se_hdr, prog_name);
     
     /* Invoke VM to setup the page directory/page table for a given binary */
+	lprintf("Going tpo set page tables");
     retval = setup_page_table(se_hdr, pd_addr);
+	lprintf("setted up page tables");
     kernel_assert(retval == 0);
-
-    /* Paging enabled! */
-	set_cur_pd(pd_addr);
-    enable_paging();
 
     /* Copy program into memory */
     retval = load_program(se_hdr);
+	lprintf("Loauda program");
     kernel_assert(retval == 0);
 
     /* Create a thread and add it to the run queue*/
@@ -141,6 +151,8 @@ void load_task(const char *prog_name) {
     kernel_assert(thr != NULL);
     set_task_stack(thr->k_stack, se_hdr->e_entry);
     runq_add_thread(thr);
+
+	disable_paging();
 }
 
 void set_task_stack(void *kernel_stack_base, int entry_addr) {

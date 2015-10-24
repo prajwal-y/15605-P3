@@ -8,7 +8,7 @@
 #include <interrupts/idt_entry.h>
 #include <asm.h>
 #include <seg.h>
-#include <malloc.h>
+#include <common/malloc_wrappers.h>
 #include <string/string.h>
 
 #define TRAP_GATE_FLAGS 15

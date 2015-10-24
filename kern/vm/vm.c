@@ -5,7 +5,7 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 #include <vm/vm.h>
-#include <common/lmm_wrappers.h>
+#include <common/malloc_wrappers.h>
 #include <util.h>
 #include <string.h>
 #include <elf_410.h>
@@ -19,7 +19,6 @@
 #include <common/errors.h>
 #include <common/assert.h>
 #include <allocator/frame_allocator.h>
-#include <malloc/malloc_internal.h>
 
 #define USER_PD_ENTRY_FLAGS PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE
 
@@ -74,6 +73,12 @@ void enable_paging() {
     set_cr0(cr0);
 }
 
+void disable_paging() {
+	unsigned int cr0 = get_cr0();
+    cr0 = cr0 & (~CR0_PG);
+    set_cr0(cr0);
+}
+
 /** @brief create a new page directory 
  *
  *  This function will allocate a new kernel physical frame for 
@@ -85,12 +90,15 @@ void enable_paging() {
  *          NULL on failure
  */
 void *create_page_directory() {
-    int *frame_addr = lmm_alloc_page_safe(&malloc_lmm, LMM_ANY_REGION_FLAG);
+	int *frame_addr = (int *) smemalign(PAGE_SIZE, PAGE_SIZE);
+	lprintf("Before this or after?");
     if(frame_addr == NULL) {
+		lprintf("Frame addr is null?");
         return NULL;
     }
+    direct_map_kernel_pages(frame_addr);
 	int i;
-	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+	for(i=KERNEL_MAP_NUM_ENTRIES; i<NUM_PAGE_TABLE_ENTRIES; i++) {
 		frame_addr[i] = PAGE_DIR_ENTRY_DEFAULT;
 	}
     return (void *)frame_addr;
@@ -98,7 +106,7 @@ void *create_page_directory() {
         
 /** @brief free a page directory 
  *
- *  frees the specified page directory using lmm_free
+ *  frees the specified page directory using sfree
  *  
  *  @return void
  */
@@ -107,7 +115,7 @@ void free_page_directory(void *pd_addr) {
     if (pd_addr == NULL) {
         return;
     }
-    lmm_free_safe(&malloc_lmm, pd_addr, PAGE_SIZE);
+	sfree(pd_addr, PAGE_SIZE);
 }
 
 /** @brief create a new page table
@@ -120,7 +128,7 @@ void free_page_directory(void *pd_addr) {
  *  @return address of the frame containing the page table. NULL on failure
  */
 void *create_page_table() {
-    int *frame_addr = lmm_alloc_page_safe(&malloc_lmm, LMM_ANY_REGION_FLAG);
+	int *frame_addr = (int *) smemalign(PAGE_SIZE, PAGE_SIZE);
     if(frame_addr == NULL) {
         return NULL;
     }
@@ -133,7 +141,7 @@ void *create_page_table() {
         
 /** @brief free a page table
  *
- *  frees the specified page table using lmm_free
+ *  frees the specified page table using sfree
  *  
  *  @return void
  */
@@ -141,7 +149,7 @@ void *create_page_table() {
     if (pt_addr == NULL) {
         return;
     }
-    lmm_free_safe(&malloc_lmm, pt_addr, PAGE_SIZE);
+	sfree(pt_addr, PAGE_SIZE);
 }*/
 
 /** @brief setup paging for a program
@@ -159,7 +167,6 @@ void *create_page_table() {
  *  @return 0 on success. Negative number on failure
  */
 int setup_page_table(simple_elf_t *se_hdr, void *pd_addr) {
-    direct_map_kernel_pages(pd_addr);
     int retval;
     if((retval = map_text_segment(se_hdr, pd_addr)) < 0) {
         return retval;
@@ -212,7 +219,7 @@ void zero_fill(void *addr, int size) {
  * @return void
  */
 void direct_map_kernel_pages(void *pd_addr) {
-    int flags = PAGE_ENTRY_PRESENT;
+    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE;
     int i;
     for (i = 0; i < KERNEL_MAP_NUM_ENTRIES; i++) {
         ((int *)pd_addr)[i] = (int)direct_map[i] | flags;
@@ -230,18 +237,18 @@ void direct_map_kernel_pages(void *pd_addr) {
  *  @return void
  */
 void setup_direct_map() {
-    int flags = PAGE_ENTRY_PRESENT | GLOBAL_PAGE_ENTRY;
+    int flags = PAGE_ENTRY_PRESENT | GLOBAL_PAGE_ENTRY | READ_WRITE_ENABLE;
     int i = 0, j = 0, mem_start = 0, page_table_entry;
 
-    for (; i < KERNEL_MAP_NUM_ENTRIES; i++) {
+    for (i = 0; i < KERNEL_MAP_NUM_ENTRIES; i++) {
         int *frame_addr = (int *)create_page_table();
 
         kernel_assert(frame_addr != NULL);
 
         for (j = 0; j < NUM_PAGE_TABLE_ENTRIES; j++) {
             page_table_entry = mem_start | flags;
-            mem_start += PAGE_SIZE;
             frame_addr[j] = page_table_entry;
+            mem_start += PAGE_SIZE;
         }                
         direct_map[i] = frame_addr;
     }
@@ -362,8 +369,8 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
             /* Need to allocate frame from user free frame pool */
             void *new_frame = allocate_frame(); 
             if (new_frame != NULL) {
-                zero_fill(new_frame, PAGE_SIZE);
                 pt_addr[pt_index] = (unsigned int)new_frame | flags;
+                zero_fill(new_frame, PAGE_SIZE);
             }
             else {
                 return ERR_NOMEM;
