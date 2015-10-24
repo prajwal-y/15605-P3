@@ -235,7 +235,7 @@ void direct_map_kernel_pages(void *pd_addr) {
  *  @return void
  */
 void setup_direct_map() {
-    int flags = PAGE_ENTRY_PRESENT | GLOBAL_PAGE_ENTRY | READ_WRITE_ENABLE;
+    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE;
     int i = 0, j = 0, mem_start = 0, page_table_entry;
 
     for (i = 0; i < KERNEL_MAP_NUM_ENTRIES; i++) {
