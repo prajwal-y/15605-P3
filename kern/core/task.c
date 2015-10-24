@@ -65,8 +65,7 @@ void load_bootstrap_task(const char *prog_name) {
 	task_struct_t *t = (task_struct_t *)smalloc(sizeof(task_struct_t));
 
     kernel_assert(t != NULL);
-	lprintf("Created task");
-
+	lprintf("Created task %p", t);
 
     t->pdbr = pd_addr;
 
@@ -74,14 +73,14 @@ void load_bootstrap_task(const char *prog_name) {
 	simple_elf_t *se_hdr = (simple_elf_t *)smalloc(sizeof(simple_elf_t));
 
     kernel_assert(se_hdr != NULL);
-	lprintf("Got the header");
+	lprintf("Got the header %p", se_hdr);
 
     elf_load_helper(se_hdr, prog_name);
+	lprintf("Loaded elf");
     
     /* Invoke VM to setup the page directory/page table for a given binary */
     retval = setup_page_table(se_hdr, pd_addr);
     kernel_assert(retval == 0);
-
 
     /* Copy program into memory */
 	lprintf("About to load program");
@@ -95,11 +94,11 @@ void load_bootstrap_task(const char *prog_name) {
 
 	set_running_thread(thr);
     set_esp0((uint32_t)((char *)(thr->k_stack) + PAGE_SIZE));
-	lprintf("Creaated thread");
+	lprintf("Creaated thread %p", thr);
 
 	uint32_t EFLAGS = setup_user_eflags();
 
-	lprintf("About to call iret");
+	lprintf("About to call iret at entry: %p", (void *)se_hdr->e_entry);
 
 	MAGIC_BREAK;
 
@@ -151,8 +150,6 @@ void load_task(const char *prog_name) {
     kernel_assert(thr != NULL);
     set_task_stack(thr->k_stack, se_hdr->e_entry);
     runq_add_thread(thr);
-
-	disable_paging();
 }
 
 void set_task_stack(void *kernel_stack_base, int entry_addr) {

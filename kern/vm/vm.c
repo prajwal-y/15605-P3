@@ -91,9 +91,7 @@ void disable_paging() {
  */
 void *create_page_directory() {
 	int *frame_addr = (int *) smemalign(PAGE_SIZE, PAGE_SIZE);
-	lprintf("Before this or after?");
     if(frame_addr == NULL) {
-		lprintf("Frame addr is null?");
         return NULL;
     }
     direct_map_kernel_pages(frame_addr);
@@ -283,7 +281,8 @@ int map_text_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_data_segment(simple_elf_t *se_hdr, void *pd_addr) {
-    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
+    //int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
+    int flags = PAGE_ENTRY_PRESENT | USER_MODE;
     return map_segment((void *)se_hdr->e_datstart, se_hdr->e_datlen, 
 						pd_addr, flags);
 }
@@ -370,7 +369,7 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
             void *new_frame = allocate_frame(); 
             if (new_frame != NULL) {
                 pt_addr[pt_index] = (unsigned int)new_frame | flags;
-                zero_fill(new_frame, PAGE_SIZE);
+                zero_fill(start_addr, PAGE_SIZE);
             }
             else {
                 return ERR_NOMEM;

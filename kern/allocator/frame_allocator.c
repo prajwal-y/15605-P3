@@ -58,7 +58,7 @@ void init_free_list() {
 
 	int i;
 	for(i = 0; i < FREE_FRAMES_COUNT - 1; i++) {
-		free_frames_arr[i] = USER_MEM_START + (i * PAGE_SIZE);
+		free_frames_arr[i] = USER_MEM_START + ((i+1) * PAGE_SIZE);
 	}
 	free_frames_arr[FREE_FRAMES_COUNT - 1] = FREE_FRAME_LIST_END;
 
@@ -75,7 +75,7 @@ void init_free_list() {
     free_list_head = (void *)USER_MEM_START;
     *(int *)frame_ptr = FREE_FRAME_LIST_END;*/
 
-	free_list_head = (void *)free_frames_arr[0];
+	free_list_head = (void *)USER_MEM_START;
 }
 
 /** @brief get a free physical frame

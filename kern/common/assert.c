@@ -68,6 +68,7 @@ void kernel_panic(const char *fmt, ...)
 	vprintf(fmt, vl);
 	va_end(vl);
 	printf("\n");
+	lprintf("Assertion failed : %s", fmt);
     // TODO: Halt instead of exiting
     //exit(-1);
 }

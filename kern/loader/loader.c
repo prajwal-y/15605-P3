@@ -76,6 +76,7 @@ int load_segment(const char *filename, void *start, int len, int offset) {
 			sfree(buf, len);
             return ret;
         }
+		lprintf("Loading to %p", start);
 		memcpy(start, buf, len);
 		sfree(buf, len);
 	}

@@ -22,7 +22,6 @@
 #include <lmm/lmm.h>
 #include <lmm/lmm_types.h>
 #include <assert.h>
-#include <simics.h>
 
 void *lmm_alloc_gen(lmm_t *lmm, vm_size_t size, unsigned flags,
 		    int align_bits, vm_offset_t align_ofs,
@@ -64,7 +63,6 @@ void *lmm_alloc_gen(lmm_t *lmm, vm_size_t size, unsigned flags,
 
 			assert(((vm_offset_t)node & ALIGN_MASK) == 0);
 			assert(((vm_offset_t)node->size & ALIGN_MASK) == 0);
-			lprintf("Node is %p and node->next is %p", node, node->next);
 			assert((node->next == 0) || (node->next > node));
 			assert((vm_offset_t)node < reg->max);
 
