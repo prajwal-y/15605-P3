@@ -56,12 +56,9 @@ void install_handler_18();*/
  **/
 int install_handlers() {
     initialize_timer(tickback);
-	lprintf("11");
     install_keyboard_handler();
-	lprintf("22");
     //install_divide_error_handler();
 	install_page_fault_handler();
-	lprintf("33");
 
 	/*install_handler_4();
 	install_handler_5();
