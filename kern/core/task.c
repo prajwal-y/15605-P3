@@ -86,7 +86,7 @@ void load_bootstrap_task(const char *prog_name) {
     kernel_assert(thr != NULL);
 
 	set_running_thread(thr);
-    set_esp0((uint32_t)((char *)(thr->k_stack) + PAGE_SIZE));
+    set_esp0(thr->k_stack_base);
 
 	uint32_t EFLAGS = setup_user_eflags();
 
@@ -133,7 +133,8 @@ void load_task(const char *prog_name) {
     thread_struct_t *thr = create_thread(t);
     kernel_assert(thr != NULL);
     
-	set_task_stack(thr->k_stack, se_hdr->e_entry);
+	set_task_stack((void *)thr->k_stack_base, se_hdr->e_entry);
+	thr->cur_k_stack = (thr->k_stack_base - 6*4);
     runq_add_thread(thr);
 }
 
@@ -149,7 +150,9 @@ void set_task_stack(void *kernel_stack_base, int entry_addr) {
     *((int *)(kernel_stack_base) - 5) = entry_addr;
 
     /* Simulate a pusha for the 8 registers that are pushed */
-    memset(((int *)(kernel_stack_base) - 13), 0, 32);
+    //memset(((int *)(kernel_stack_base) - 13), 0, 32);
+
+	*((int *)(kernel_stack_base) - 6) = (int)iret_fun;
 }
 
 

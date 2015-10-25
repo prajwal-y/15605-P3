@@ -22,6 +22,7 @@ typedef struct thread_struct {
     ureg_t *regs;                /* The set of registers for this thread */
     task_struct_t *parent_task;  /* The parent task for this thread */
     void *k_stack;               /* The address of the kernel task base */
+	uint32_t k_stack_base;		 /* Top of the kernel stack for the thread */
 	uint32_t cur_k_stack;		 /* Current value of the kernel stack */
     list_head runq_link;         /* Link structure for the run queue */
 } thread_struct_t;

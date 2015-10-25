@@ -17,6 +17,7 @@
 #include <drivers/keyboard/keyboard.h>
 #include <simics.h>
 #include <interrupts/idt_entry.h>
+#include <core/context.h>
 #include <idt.h>
 #include <cr.h>
 
@@ -24,8 +25,9 @@
 #define IDT_ENTRY_SIZE 8  /* Size of each IDT */
 
 void tickback(unsigned int ticks) {
+	context_switch();
     // Add some logic to be run on each timer tick
-    return;
+    //return;
 }
 
 //static void install_divide_error_handler();
@@ -54,9 +56,12 @@ void install_handler_18();*/
  **/
 int install_handlers() {
     initialize_timer(tickback);
+	lprintf("11");
     install_keyboard_handler();
+	lprintf("22");
     //install_divide_error_handler();
 	install_page_fault_handler();
+	lprintf("33");
 
 	/*install_handler_4();
 	install_handler_5();

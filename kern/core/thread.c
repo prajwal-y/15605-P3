@@ -12,6 +12,8 @@
 #include <cr.h>
 #include <seg.h>
 #include <syscall.h>
+#include <stddef.h>
+#include <simics.h>
 
 static int next_tid;
 static mutex_t mutex;
@@ -49,6 +51,7 @@ thread_struct_t *create_thread(task_struct_t *task) {
     /* Create the thread struct */
 	thread_struct_t *thr = (thread_struct_t *)smalloc(sizeof(thread_struct_t));
     if(thr == NULL) {
+		sfree(reg, sizeof(ureg_t));
         mutex_unlock(&mutex);
         return NULL;
     }
@@ -65,7 +68,10 @@ thread_struct_t *create_thread(task_struct_t *task) {
 
     thr->regs = reg;
     thr->parent_task = task;
-    thr->k_stack = stack + PAGE_SIZE;
+    thr->k_stack = stack;
+	thr->k_stack_base = (uint32_t)((char *)stack + PAGE_SIZE);
+	thr->cur_k_stack = thr->k_stack_base;
+	lprintf("Address of cur_k_stack %p", &thr->cur_k_stack);
     return thr;
 }
 

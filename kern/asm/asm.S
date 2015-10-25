@@ -74,3 +74,19 @@ call_iret:
 	pushl $0x23			/*CS*/
 	pushl 8(%ecx)		/*EIP*/
 	iret
+
+.globl iret_fun
+iret_fun:
+	call acknowledge_interrupt
+	iret
+
+.globl set_esp
+set_esp:
+	movl 4(%esp), %ecx
+	movl %ecx, %esp
+	ret
+
+.globl get_esp
+get_esp:
+	movl %esp, %eax
+	ret

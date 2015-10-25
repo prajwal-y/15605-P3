@@ -8,6 +8,7 @@
 #include <list/list.h>
 #include <core/scheduler.h>
 #include <sync/mutex.h>
+#include <simics.h>
 
 static thread_struct_t *curr_thread; /* The thread currently being run */
 
@@ -15,6 +16,7 @@ static list_head runnable_threads;    /* List of runnable threads */
 static mutex_t runq_mutex;
 
 static thread_struct_t *runq_get_head();
+//static void print_runnable_list(); //TODO: REMOVE THIS
 
 /** @brief initialize the scheduler data structures
  *
@@ -22,6 +24,7 @@ static thread_struct_t *runq_get_head();
  */
 void init_scheduler() {
     mutex_init(&runq_mutex);
+	init_head(&runnable_threads);
 }
 
 /** @brief return the next thread to be run
@@ -40,20 +43,19 @@ thread_struct_t *next_thread() {
     }
 
     /* Add the current thread to the end of the run queue */
-    if (curr_thread->id != 3) {
+    /*if (curr_thread->id != 3) {
         runq_add_thread(curr_thread);
-    }
-
-    /* Set new curr_thread (currently running thread) */
-    curr_thread = head;
+    }*/
 
     return head;
 }
 
 thread_struct_t *runq_get_head() {
+	//print_runnable_list();
     mutex_lock(&runq_mutex);
     list_head *head = get_first(&runnable_threads);
     if (head == NULL) {
+		lprintf("Why the fuck is this null?");
         mutex_unlock(&runq_mutex);
         return NULL;
     }
@@ -65,8 +67,10 @@ thread_struct_t *runq_get_head() {
 
 void runq_add_thread(thread_struct_t *thr) {
     mutex_lock(&runq_mutex);
+	lprintf("Adding thread %d to list", thr->id);
     add_to_tail(&thr->runq_link, &runnable_threads);
     mutex_unlock(&runq_mutex);
+	//print_runnable_list();
 }
 
 /** @brief get the currently running thread
@@ -79,4 +83,14 @@ thread_struct_t *get_curr_thread() {
 
 void set_running_thread(thread_struct_t *thr) {
     curr_thread = thr;
+}
+
+void print_runnable_list() {
+	list_head *temp = get_first(&runnable_threads);
+	while(temp != NULL && temp != &runnable_threads) {
+		thread_struct_t *thr = get_entry(temp, thread_struct_t, runq_link);
+		lprintf("-------Thread %d-------", thr->id);
+		temp = temp->next;
+	}
+	lprintf("--------End of runnable threads-------");
 }

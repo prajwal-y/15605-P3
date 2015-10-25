@@ -48,27 +48,32 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
 
     /* Set defaulr console color */
     set_default_color();
+	lprintf("1");
 
     /* Install all the fault handlers we expect to use */
     install_handlers();
+	lprintf("2");
 
     install_syscall_handlers();
+	lprintf("3");
 
     /* Clear the console of crud */
     clear_console();
+	lprintf("4");
 
     /* Initialize user space physical frame allocator */
     init_frame_allocator();
+	lprintf("5");
 
     /* Initialize the VM system */
     vm_init();
+	lprintf("6");
 
     /* Initialize scheduler system */
     init_scheduler();
 
     /* Initialize kernel threads subsystem */
     kernel_threads_init();
-
 
     /* Load the init task into memory. This does NOT make the init task 
      * runnable. This is taken care of by the scheduler/context switcher */

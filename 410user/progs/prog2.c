@@ -7,10 +7,11 @@
  *  @status done
  */
 #include <simics.h>
+#include <syscall.h>
 
 int main()
 {
     while (1) {
-        lprintf("Heloo from prog2");
+        print(17, "Heloo from prog2\n");
     }
 }
