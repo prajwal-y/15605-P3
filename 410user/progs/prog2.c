@@ -8,10 +8,16 @@
  */
 #include <simics.h>
 #include <syscall.h>
+#include <stdio.h>
 
 int main()
 {
+	int a = 0;
     while (1) {
-        print(17, "Heloo from prog2\n");
+		a+= 2;
+		if(a%200000 == 0) {
+			//printf("This is prog2 %d\n", a);
+			//lprintf("This is prog2 %d\n", a);
+		}
     }
 }

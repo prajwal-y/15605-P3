@@ -26,6 +26,7 @@
 
 void tickback(unsigned int ticks) {
 	context_switch();
+	lprintf("%d", ticks);
     // Add some logic to be run on each timer tick
     //return;
 }
@@ -33,7 +34,7 @@ void tickback(unsigned int ticks) {
 //static void install_divide_error_handler();
 static void install_page_fault_handler();
 
-/*void install_handler_4();
+void install_handler_4();
 void install_handler_5();
 void install_handler_6();
 void install_handler_10();
@@ -41,7 +42,7 @@ void install_handler_11();
 void install_handler_12();
 void install_handler_13();
 void install_handler_17();
-void install_handler_18();*/
+void install_handler_18();
 
 /** @brief The driver-library initialization function
  *
@@ -60,7 +61,7 @@ int install_handlers() {
     //install_divide_error_handler();
 	install_page_fault_handler();
 
-	/*install_handler_4();
+	install_handler_4();
 	install_handler_5();
 	install_handler_6();
 	install_handler_10();
@@ -68,7 +69,7 @@ int install_handlers() {
 	install_handler_12();
 	install_handler_13();
 	install_handler_17();
-	install_handler_18();*/
+	install_handler_18();
 
     // Add all the handlers we require here
     return 0;
@@ -119,35 +120,71 @@ void install_page_fault_handler() {
 	add_idt_entry(page_fault_handler, IDT_PF, INTERRUPT_GATE);
 }
 
+void four_fault_handler() {
+	lprintf("4 fult");
+	MAGIC_BREAK;
+}
 void install_handler_4() {
-	add_idt_entry(page_fault_handler, 4, INTERRUPT_GATE);
+	add_idt_entry(four_fault_handler, 4, INTERRUPT_GATE);
+}
+void five_fault_handler() {
+	lprintf("5 fult");
+	MAGIC_BREAK;
 }
 void install_handler_5() {
-	add_idt_entry(page_fault_handler, 5, INTERRUPT_GATE);
+	add_idt_entry(five_fault_handler, 5, INTERRUPT_GATE);
+}
+void six_fault_handler() {
+	lprintf("6 fult");
+	MAGIC_BREAK;
 }
 void install_handler_6() {
-	add_idt_entry(page_fault_handler, 6, INTERRUPT_GATE);
+	add_idt_entry(six_fault_handler, 6, INTERRUPT_GATE);
+}
+void ten_fault_handler() {
+	lprintf("10 fult");
+	MAGIC_BREAK;
 }
 void install_handler_10() {
-	add_idt_entry(page_fault_handler, 10, INTERRUPT_GATE);
+	add_idt_entry(ten_fault_handler, 10, INTERRUPT_GATE);
+}
+void leven_fault_handler() {
+	lprintf("11 fult");
+	MAGIC_BREAK;
 }
 void install_handler_11() {
-	add_idt_entry(page_fault_handler, IDT_NP, INTERRUPT_GATE);
+	add_idt_entry(leven_fault_handler, IDT_NP, INTERRUPT_GATE);
 }
 
+void twel_fault_handler() {
+	lprintf("12 fult");
+	MAGIC_BREAK;
+}
 void install_handler_12() {
-	add_idt_entry(page_fault_handler, IDT_SS, INTERRUPT_GATE);
+	add_idt_entry(twel_fault_handler, IDT_SS, INTERRUPT_GATE);
 }
 
+void thirrt_fault_handler() {
+	lprintf("13 fult");
+	MAGIC_BREAK;
+}
 void install_handler_13() {
-	add_idt_entry(page_fault_handler, IDT_GP, INTERRUPT_GATE);
+	add_idt_entry(thirrt_fault_handler, IDT_GP, INTERRUPT_GATE);
 }
 
+void sevent_fault_handler() {
+	lprintf("17 fult");
+	MAGIC_BREAK;
+}
 void install_handler_17() {
-	add_idt_entry(page_fault_handler, IDT_AC, INTERRUPT_GATE);
+	add_idt_entry(sevent_fault_handler, IDT_AC, INTERRUPT_GATE);
+}
+void eighte_fault_handler() {
+	lprintf("18 fult");
+	MAGIC_BREAK;
 }
 void install_handler_18() {
-	add_idt_entry(page_fault_handler, 18, INTERRUPT_GATE);
+	add_idt_entry(eighte_fault_handler, 18, INTERRUPT_GATE);
 }
 
 /** @brief this function acknowledges the interrupt

@@ -66,7 +66,8 @@ int get_ss();
 
 void iret_fun();
 
-void set_esp(uint32_t);
+void update_esp(uint32_t, uint32_t);
+
 uint32_t get_esp();
 
 #endif

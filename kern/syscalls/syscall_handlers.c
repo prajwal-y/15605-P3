@@ -36,7 +36,7 @@ int install_syscall_handlers() {
  *  @return void
  */
 void install_gettid_handler() {
-    add_idt_entry(gettid_handler, GETTID_INT, INTERRUPT_GATE);
+    add_idt_entry(gettid_handler, GETTID_INT, TRAP_GATE);
 }
 
 /** @brief this function installs a handler for print
@@ -45,5 +45,5 @@ void install_gettid_handler() {
  *  @return void
  */
 void install_print_handler() {
-    add_idt_entry(print_handler, PRINT_INT, INTERRUPT_GATE);
+    add_idt_entry(print_handler, PRINT_INT, TRAP_GATE);
 }

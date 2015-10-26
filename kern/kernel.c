@@ -75,7 +75,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
     load_task("prog2"); /* TODO: Replace with init later */
 
     /* Load the idle task in user mode. This task ALWAYS has TID 1 */
-    load_bootstrap_task("ck1");
+    load_bootstrap_task("idle");
 
     /* Should never come here */
     while (1) {

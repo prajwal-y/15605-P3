@@ -80,8 +80,10 @@ iret_fun:
 	call acknowledge_interrupt
 	iret
 
-.globl set_esp
-set_esp:
+.globl update_esp
+update_esp:
+	movl 8(%esp), %ecx
+	movl %esp, (%ecx)
 	movl 4(%esp), %ecx
 	movl %ecx, %esp
 	ret

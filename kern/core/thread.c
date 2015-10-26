@@ -38,11 +38,9 @@ thread_struct_t *create_thread(task_struct_t *task) {
     if(task == NULL) {
         return NULL;
     }
-    mutex_lock(&mutex);
     /* Create the register set */
 	ureg_t *reg = (ureg_t *)smalloc(sizeof(ureg_t));
     if(reg == NULL) {
-        mutex_unlock(&mutex);
         return NULL;
     }
 
@@ -52,7 +50,6 @@ thread_struct_t *create_thread(task_struct_t *task) {
 	thread_struct_t *thr = (thread_struct_t *)smalloc(sizeof(thread_struct_t));
     if(thr == NULL) {
 		sfree(reg, sizeof(ureg_t));
-        mutex_unlock(&mutex);
         return NULL;
     }
 	/* Allocate space for thread's kernel stack */
@@ -60,9 +57,9 @@ thread_struct_t *create_thread(task_struct_t *task) {
     if(stack == NULL) {
         sfree(thr, sizeof(thread_struct_t));
         sfree(reg, sizeof(ureg_t));
-        mutex_unlock(&mutex);
         return NULL;
     }
+    mutex_lock(&mutex);
     thr->id = ++next_tid;
     mutex_unlock(&mutex);
 
@@ -71,7 +68,6 @@ thread_struct_t *create_thread(task_struct_t *task) {
     thr->k_stack = stack;
 	thr->k_stack_base = (uint32_t)((char *)stack + PAGE_SIZE);
 	thr->cur_k_stack = thr->k_stack_base;
-	lprintf("Address of cur_k_stack %p", &thr->cur_k_stack);
     return thr;
 }
 

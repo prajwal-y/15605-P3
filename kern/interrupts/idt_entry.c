@@ -74,7 +74,7 @@ idt_entry *get_default_trap_idt() {
     entry->seg_selector = SEGSEL_KERNEL_CS;
     entry->zeroes = 0;
     entry->flags = TRAP_GATE_FLAGS;
-    entry->dpl = 0;
+    entry->dpl = 3;
     entry->present = 1;
 
     return entry;

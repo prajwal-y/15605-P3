@@ -53,7 +53,7 @@ void switch_to_thread(thread_struct_t *thread) {
     thread_struct_t *curr_thread = get_curr_thread();
 
 	/* Set the current value of the stack pointer */
-	curr_thread->cur_k_stack = get_esp();
+	//curr_thread->cur_k_stack = get_esp();
 
 	/* Set ds for the new thread */
 	set_ds((thread->regs)->ds);
@@ -72,12 +72,13 @@ void switch_to_thread(thread_struct_t *thread) {
 
 	lprintf("Going to switch to thread id: %d", thread->id);
 	
-	if(curr_thread->id != 3) {
+	if(curr_thread->id != 3) { //TODO: fix this
 		runq_add_thread(curr_thread);
 	}
 	set_running_thread(thread);
 
-	set_esp(thread->cur_k_stack);
+	update_esp(thread->cur_k_stack, (uint32_t)&curr_thread->cur_k_stack);
 
 	lprintf("Switched to thread id: %d", thread->id);
+
 }
