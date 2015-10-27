@@ -25,10 +25,30 @@
 #define EFLAGS_RESERVED 0x00000002
 #define EFLAGS_IOPL 0x00003000 
 #define EFLAGS_IF 0x00000200 
-#define EFLAGS_ALIGNMENT_CHECK 0xFFFbFFFF 
+#define EFLAGS_ALIGNMENT_CHECK 0xFFFbFFFF
 
 static uint32_t setup_user_eflags();
 static void set_task_stack(void *kernel_stack_base, int entry_addr);
+
+/** @brief Create a new task
+ *  
+ *  @return task_struct_t The reference to the new task
+ *  NULL if task creation failed
+ */
+task_struct_t *create_task() {
+	task_struct_t *t = (task_struct_t *)smalloc(sizeof(task_struct_t));
+	if(t == NULL) {
+		return NULL;
+	}
+    thread_struct_t *thr = create_thread(t);
+	if(thr == NULL) {
+		sfree(t, sizeof(task_struct_t));
+		return NULL;
+	}
+	t->thr = thr;
+	t->id = thr->id;
+    return t;
+}
 
 /** @brief start a bootstrap task
  *
@@ -61,7 +81,7 @@ void load_bootstrap_task(const char *prog_name) {
 	enable_paging();
 
     /* Allocate memory for a task struct from kernel memory */
-	task_struct_t *t = (task_struct_t *)smalloc(sizeof(task_struct_t));
+	task_struct_t *t = create_task();
 
     kernel_assert(t != NULL);
     t->pdbr = pd_addr;
@@ -81,12 +101,8 @@ void load_bootstrap_task(const char *prog_name) {
     retval = load_program(se_hdr);
     kernel_assert(retval == 0);
 
-    /* Create a thread */
-    thread_struct_t *thr = create_thread(t);
-    kernel_assert(thr != NULL);
-
-	set_running_thread(thr);
-    set_esp0(thr->k_stack_base);
+	set_running_thread(t->thr);
+    set_esp0(t->thr->k_stack_base);
 
 	uint32_t EFLAGS = setup_user_eflags();
 
@@ -109,7 +125,7 @@ void load_task(const char *prog_name) {
 	enable_paging();
 
     /* Allocate memory for a task struct from kernel memory */
-	task_struct_t *t = (task_struct_t *)smalloc(sizeof(task_struct_t));
+	task_struct_t *t = create_task();
     kernel_assert(t != NULL);
 
     t->pdbr = pd_addr;
@@ -129,13 +145,9 @@ void load_task(const char *prog_name) {
     retval = load_program(se_hdr);
     kernel_assert(retval == 0);
 
-    /* Create a thread and add it to the run queue*/
-    thread_struct_t *thr = create_thread(t);
-    kernel_assert(thr != NULL);
-    
-	set_task_stack((void *)thr->k_stack_base, se_hdr->e_entry);
-	thr->cur_k_stack = (thr->k_stack_base - 6*4);
-    runq_add_thread(thr);
+	set_task_stack((void *)t->thr->k_stack_base, se_hdr->e_entry);
+	t->thr->cur_k_stack = (t->thr->k_stack_base - DEFAULT_STACK_OFFSET);
+    runq_add_thread(t->thr);
 }
 
 void set_task_stack(void *kernel_stack_base, int entry_addr) {
@@ -150,9 +162,9 @@ void set_task_stack(void *kernel_stack_base, int entry_addr) {
     *((int *)(kernel_stack_base) - 5) = entry_addr;
 
     /* Simulate a pusha for the 8 registers that are pushed */
-    //memset(((int *)(kernel_stack_base) - 13), 0, 32);
+    memset(((int *)(kernel_stack_base) - 13), 0, 32);
 
-	*((int *)(kernel_stack_base) - 6) = (int)iret_fun;
+	*((int *)(kernel_stack_base) - 14) = (int)iret_fun;
 }
 
 

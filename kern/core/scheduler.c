@@ -81,6 +81,14 @@ thread_struct_t *get_curr_thread() {
     return curr_thread;
 }
 
+/** @brief get the currently running task
+ *
+ *  @return task_struct_t Task info of the current task
+ */
+task_struct_t *get_curr_task() {
+	return curr_thread->parent_task;
+}
+
 void set_running_thread(thread_struct_t *thr) {
     curr_thread = thr;
 }

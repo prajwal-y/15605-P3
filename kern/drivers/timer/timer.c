@@ -54,7 +54,7 @@ void set_mode_freq() {
  *  @return void
  */
 void install_timer_handler() {
-    add_idt_entry(timer_handler, TIMER_IDT_ENTRY, INTERRUPT_GATE);
+    add_idt_entry(timer_handler, TIMER_IDT_ENTRY, INTERRUPT_GATE, KERNEL_DPL);
 }
 
 /** @brief called by interrupt to do any processing needed

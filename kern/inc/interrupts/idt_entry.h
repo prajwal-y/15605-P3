@@ -10,6 +10,10 @@
 #define TRAP_GATE 0
 #define INTERRUPT_GATE 1
 
-void add_idt_entry(void (*handler)(void), int interrupt_num, int type); 
+#define KERNEL_DPL 0
+#define USER_DPL 3
+
+void add_idt_entry(void (*handler)(void), int interrupt_num, 
+					int type, unsigned int dpl); 
 
 #endif  /* __IDT_ENTRY_H */

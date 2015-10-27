@@ -12,12 +12,22 @@
 
 int main()
 {
-	int a = 0;
+	//int a = 0;
+	int pid = fork();
+	printf("pid is %d", pid);
+	if(pid == 0) {
+		while(1) {
+			gettid();
+			//printf("Hello from CHILD %d\n", pid);
+		}
+	}
     while (1) {
-		a += 2;
-		if (a%100000 == 0) {
+		gettid();
+		//printf("Hello from parent %d\n", pid);
+		//a += 2;
+		//if (a%100000 == 0) {
 			//printf("prog1 %d\n", a);
 			//lprintf("prog1 %d\n", a);	
-		}
+		//}
     }
 }

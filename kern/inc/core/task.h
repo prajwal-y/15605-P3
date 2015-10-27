@@ -8,16 +8,20 @@
 #define __TASK_H
 
 #include <list/list.h>
-#define SCHED_IMM 0
-#define SCHED_DEF 1
+
+#define DEFAULT_STACK_OFFSET 56 
+
+struct thread_struct;
 
 /** @brief the protection domain comprising a task */
 typedef struct task_struct {
-    void *pdbr;         /* the address of the page directory */
+	int id;
+    void *pdbr;         	/* the address of the page directory */
+	struct thread_struct *thr;	/* the reference to the first thread */
     list_head thread_head;    
 } task_struct_t;
 
-void create_task();
+task_struct_t *create_task();
 
 void load_bootstrap_task(const char *prog_name);
 

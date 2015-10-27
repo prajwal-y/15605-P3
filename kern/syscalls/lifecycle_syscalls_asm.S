@@ -1,16 +1,30 @@
-/** @file console_syscalls.S
- *
- *  Implementations of console I/O
+/** @file lifecycle_syscalls_asm.S
  *  
+ *  handlers for lifecycle management system calls
+ *
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 
 #include<simics.h>
 
-.globl print_handler
-print_handler:
-    pushl %esi
-    call print_handler_c
-    popl %esi
+.globl fork_handler
+fork_handler:
+	pushl %eax
+	pushl %ecx
+	pushl %edx
+	pushl %ebx
+	pushl %esp
+	pushl %ebp
+	pushl %esi
+	pushl %edi
+    call fork_handler_c
+    popl %edi
+	popl %esi
+	popl %ebp
+	popl %esp
+	popl %ebx
+	popl %edx
+	popl %ecx
+	popl %ecx
 	iret

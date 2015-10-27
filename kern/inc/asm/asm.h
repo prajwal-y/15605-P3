@@ -57,7 +57,6 @@ void set_fs(uint16_t val);
  */
 void set_gs(uint16_t val);
 
-
 void call_iret(uint32_t, uint32_t);
 
 int get_cs();
@@ -69,5 +68,22 @@ void iret_fun();
 void update_esp(uint32_t, uint32_t);
 
 uint32_t get_esp();
+
+/** @brief Function to get the error code during a page fault
+ *  
+ *  This function uses the current stack pointer to get the 
+ *  error code causing the page fault.
+ *
+ *  @return Returns the error code
+ */
+uint32_t get_err_code();
+
+/** @brief Function to invalidate a particular page from TLB
+ *
+ *  @param addr Address to be invalidated from TLB
+ *
+ *  @return void
+ */
+void invalidate_tlb_page(void *addr);
 
 #endif

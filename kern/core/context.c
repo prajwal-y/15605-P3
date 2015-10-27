@@ -72,11 +72,11 @@ void switch_to_thread(thread_struct_t *thread) {
 
 	lprintf("Going to switch to thread id: %d", thread->id);
 	
-	if(curr_thread->id != 3) { //TODO: fix this
+	if(curr_thread->id != 2) { //TODO: fix this
 		runq_add_thread(curr_thread);
 	}
 	set_running_thread(thread);
-
+	
 	update_esp(thread->cur_k_stack, (uint32_t)&curr_thread->cur_k_stack);
 
 	lprintf("Switched to thread id: %d", thread->id);

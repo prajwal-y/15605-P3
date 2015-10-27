@@ -10,7 +10,9 @@
 
 .globl print_handler
 print_handler:
+	pusha
     pushl %esi
     call print_handler_c
     popl %esi
+	popa
 	iret

@@ -78,6 +78,8 @@ call_iret:
 .globl iret_fun
 iret_fun:
 	call acknowledge_interrupt
+	popa
+	movl $0, %eax
 	iret
 
 .globl update_esp
@@ -91,4 +93,14 @@ update_esp:
 .globl get_esp
 get_esp:
 	movl %esp, %eax
+	ret
+
+.globl get_err_code
+get_err_code:
+	movl 4(%esp), %eax	/* Get the error code from the stack pointer*/
+	ret
+
+.globl invalidate_tlb_page
+invalidate_tlb_page:
+	invlpg 4(%esp)
 	ret

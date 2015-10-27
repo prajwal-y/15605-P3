@@ -9,6 +9,7 @@
 
 #include <ureg.h>
 #include <stdint.h>
+#include <list/list.h>
 #include <core/task.h>
 
 /** @brief a schedulable "unit"

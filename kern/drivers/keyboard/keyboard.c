@@ -40,7 +40,7 @@ static void initialize_queue();
  *  @return void
  */
 void install_keyboard_handler() {
-    add_idt_entry(keyboard_handler, KEY_IDT_ENTRY, TRAP_GATE);
+    add_idt_entry(keyboard_handler, KEY_IDT_ENTRY, TRAP_GATE, KERNEL_DPL);
     initialize_queue();
 }
 
