@@ -120,13 +120,15 @@ AUTOSTACK_OBJS = autostack.o
 #
 # Kernel object files you provide in from kern/
 #
-KERNEL_OBJS = kernel.o loader/loader.o list/list.o malloc_wrappers.o drivers/console/console.o \
+KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 			  drivers/console/console_util.o drivers/timer/timer.o drivers/timer/timer_handler.o \
-			  interrupts/interrupt_handlers.o interrupts/idt_entry.o drivers/keyboard/keyboard.o \
+			  interrupts/interrupt_handlers.o interrupts/interrupt_handlers_asm.o interrupts/idt_entry.o \
+			  drivers/keyboard/keyboard.o \
 			  drivers/keyboard/keyboard_handler.o allocator/frame_allocator.o sync/mutex.o \
-			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o asm/asm.o syscalls/syscall_handlers.o \
+			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o core/fork.o asm/asm.o syscalls/syscall_handlers.o \
 			  syscalls/thread_syscalls.o syscalls/thread_syscalls_asm.o syscalls/console_syscalls.o \
-			  syscalls/console_syscalls_asm.o common/assert.o global_state.o common/lmm_wrappers.o
+			  syscalls/console_syscalls_asm.o syscalls/lifecycle_syscalls.o syscalls/lifecycle_syscalls_asm.o \
+			  common/assert.o common/malloc_wrappers.o core/context.o core/scheduler.o
 
 
 ###########################################################################
@@ -145,7 +147,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o malloc_wrappers.o drivers/con
 # or init unless you are writing your own, and don't do that unless
 # you have a really good reason to do so.
 #
-410REQPROGS = idle init shell ck1
+410REQPROGS = idle init shell ck1 prog1 prog2 prog3 prog4
 
 ###########################################################################
 # Mandatory programs whose source is provided by you

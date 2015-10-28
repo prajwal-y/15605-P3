@@ -7,7 +7,7 @@
  */
 #include <syscalls/thread_syscalls.h>
 #include <core/thread.h>
-#include <global_state.h>
+#include <core/scheduler.h>
 
 /** @brief implement the functionality to get the tid
  *         from the global curr_thread struct. This passes
@@ -17,6 +17,7 @@
  *  @return int the thread id of the current thread
  */
 int gettid_handler_c() {
+    thread_struct_t *curr_thread = get_curr_thread();
     return curr_thread->id;
 }
 

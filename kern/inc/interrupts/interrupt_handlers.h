@@ -11,4 +11,6 @@ void acknowledge_interrupt();
 
 int install_handlers();
 
+void page_fault_handler();
+
 #endif  /* __INTERRUPT_HANDLERS_H */

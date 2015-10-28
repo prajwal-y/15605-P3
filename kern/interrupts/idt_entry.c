@@ -8,7 +8,7 @@
 #include <interrupts/idt_entry.h>
 #include <asm.h>
 #include <seg.h>
-#include <malloc.h>
+#include <common/malloc_wrappers.h>
 #include <string/string.h>
 
 #define TRAP_GATE_FLAGS 15
@@ -28,8 +28,8 @@ typedef struct {
     unsigned offset_2:16;
 } idt_entry;
 
-static idt_entry *get_default_trap_idt();
-static idt_entry *get_default_interrupt_idt();
+static idt_entry *get_default_trap_idt(unsigned int);
+static idt_entry *get_default_interrupt_idt(unsigned int);
 
 /** @brief function to add a entry in the IDT table
  *
@@ -44,14 +44,14 @@ static idt_entry *get_default_interrupt_idt();
  *              (TRAP_GATE/INTERRUPT_GATE)
  *  @return void
  */
-void add_idt_entry(void (*handler)(void), int interrupt_num, int type) {
+void add_idt_entry(void (*handler)(void), int interrupt_num, int type, unsigned int dpl) {
     if (type != TRAP_GATE && type != INTERRUPT_GATE) {
         return;
     }
     void *idt_base_addr = idt_base();
     
-    idt_entry *entry = (type == TRAP_GATE) ? get_default_trap_idt()
-                       : get_default_interrupt_idt();
+    idt_entry *entry = (type == TRAP_GATE) ? get_default_trap_idt(dpl)
+                       : get_default_interrupt_idt(dpl);
 
     entry->offset_1 = (int)handler & 0xffff;
     entry->offset_2 = ((int)handler >> 16) & 0xffff;
@@ -67,14 +67,14 @@ void add_idt_entry(void (*handler)(void), int interrupt_num, int type) {
  *  @return idt_entry * a pointer to a malloc'ed idt_entry for a trap gate
  *          with default entries filled
  */
-idt_entry *get_default_trap_idt() {
+idt_entry *get_default_trap_idt(unsigned int dpl) {
     idt_entry *entry = malloc(sizeof(idt_entry));
     //TODO: Malloc check
 
     entry->seg_selector = SEGSEL_KERNEL_CS;
     entry->zeroes = 0;
     entry->flags = TRAP_GATE_FLAGS;
-    entry->dpl = 0;
+    entry->dpl = dpl;
     entry->present = 1;
 
     return entry;
@@ -86,13 +86,13 @@ idt_entry *get_default_trap_idt() {
  *  @return idt_entry * a pointer to a malloc'ed idt_entry for an interrupt 
  *          gate with default entries filled
  */
-idt_entry *get_default_interrupt_idt() {
+idt_entry *get_default_interrupt_idt(unsigned int dpl) {
     idt_entry *entry = malloc(sizeof(idt_entry));
 
     entry->seg_selector = SEGSEL_KERNEL_CS;
     entry->zeroes = 0;
     entry->flags = INTERRUPT_GATE_FLAGS;
-    entry->dpl = 3;
+    entry->dpl = dpl;
     entry->present = 1;
 
     return entry;

@@ -11,9 +11,14 @@
 #include <interrupts/idt_entry.h>
 #include <interrupts/interrupt_handlers.h>
 #include <asm.h>
-#include <malloc.h>
+#include <common/malloc_wrappers.h>
 #include <list/list.h>
 #include <stddef.h>
+#include <core/context.h>   /* TODO: REOMVE THIS! */
+#include <simics.h>
+
+// TODO: REMOVE HACK LAND!
+static int abcd = 0;
 
 /** @brief a struct which represents a node in our
  *         keyboard buffer
@@ -35,7 +40,7 @@ static void initialize_queue();
  *  @return void
  */
 void install_keyboard_handler() {
-    add_idt_entry(keyboard_handler, KEY_IDT_ENTRY, TRAP_GATE);
+    add_idt_entry(keyboard_handler, KEY_IDT_ENTRY, TRAP_GATE, KERNEL_DPL);
     initialize_queue();
 }
 
@@ -45,12 +50,10 @@ void install_keyboard_handler() {
  *  @return void
  */
 void initialize_queue() {
-    disable_interrupts();
     head = ((scancode *)malloc(sizeof(scancode)))->link;
     /*if (head == NULL) {
         return; //TODO: use circular buffer instead
     }*/
-    enable_interrupts();
     init_head(&head);
 }
 
@@ -64,6 +67,12 @@ void enqueue_scancode() {
     scancode *code = (scancode *)malloc(sizeof(scancode));
     code->code = in;
     add_to_tail(&code->link, &head);
+    if ((abcd % 4) == 0) {
+		lprintf("About to context switch");
+        context_switch();
+		lprintf("Yay! Context switched");
+    }
+    abcd++;
     acknowledge_interrupt();
     return;
 }

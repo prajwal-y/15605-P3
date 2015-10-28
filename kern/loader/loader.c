@@ -13,9 +13,8 @@
 /* --- Includes --- */
 #include <string.h>
 #include <stdio.h>
-#include <common/lmm_wrappers.h>
+#include <common/malloc_wrappers.h>
 #include <simics.h>
-#include <malloc_internal.h>
 #include <exec2obj.h>
 #include <loader/loader.h>
 #include <elf_410.h>
@@ -68,17 +67,17 @@ int load_segment(const char *filename, void *start, int len, int offset) {
     char *buf;
 
 	if(len > 0) {
-    	buf = (char *)lmm_alloc_safe(&malloc_lmm, len, LMM_ANY_REGION_FLAG);
+		buf = (char *)smalloc(len);
         if (buf == NULL) {
             return ERR_NOMEM;
         }
     	int ret = getbytes(filename, offset, len, buf);
         if(ret < 0) {
-            lmm_free_safe(&malloc_lmm, buf, len);
+			sfree(buf, len);
             return ret;
         }
 		memcpy(start, buf, len);
-    	lmm_free_safe(&malloc_lmm, buf, len);
+		sfree(buf, len);
 	}
     return 0;
 }

@@ -5,7 +5,7 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 #include <vm/vm.h>
-#include <common/lmm_wrappers.h>
+#include <common/malloc_wrappers.h>
 #include <util.h>
 #include <string.h>
 #include <elf_410.h>
@@ -19,10 +19,12 @@
 #include <common/errors.h>
 #include <common/assert.h>
 #include <allocator/frame_allocator.h>
-#include <malloc/malloc_internal.h>
 
 #define USER_PD_ENTRY_FLAGS PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE
 
+static int *frame_ref_count;
+
+static void init_frame_ref_count();
 static void zero_fill(void *addr, int size);
 static void direct_map_kernel_pages(void *pd_addr);
 static void setup_direct_map();
@@ -35,7 +37,11 @@ static int map_segment(void *start_addr, unsigned int length, int *pd_addr, int 
 static void *direct_map[USER_MEM_START / (PAGE_SIZE * NUM_PAGE_TABLE_ENTRIES)];
 
 static void *create_page_table();
-//static void free_page_table(void *pt_addr);
+static void free_page_table(int *pt);
+static void make_pages_cow(int *pd);
+static void make_pt_cow(int *pt);
+static void increment_ref_count(int *pd);
+//static void decrement_ref_count(int *pd);
 
 //static void set_segment_selectors(int type);
 
@@ -48,6 +54,18 @@ static void *create_page_table();
  */
 void vm_init() {
     setup_direct_map();
+	init_frame_ref_count();
+}
+
+/** @brief Initializes the array which stored the 
+ * 		   reference count for physical frames
+ *  @return void
+ */
+void init_frame_ref_count() {
+	int size = FREE_FRAMES_COUNT*sizeof(int);
+	frame_ref_count = (int *)malloc(size);
+	kernel_assert(frame_ref_count != NULL);
+	memset(frame_ref_count, 0, size);
 }
 
 /** @brief Sets the control register %cr3 with the given
@@ -62,36 +80,6 @@ void set_cur_pd(void *pd_addr) {
 	set_cr3((uint32_t)pd_addr);
 }
 
-/** @brief Sets the segment selectors
- *
- *  @param type : 0 - Kernel and 1 - User
- *
- *  @return void
- */
-void set_segment_selectors(int type) {
-
-	switch(type) {
-		case 0:
-			/*set_cs(SEGSEL_KERNEL_CS);
-			set_ds(SEGSEL_KERNEL_DS);
-			set_es(SEGSEL_KERNEL_DS);
-			set_fs(SEGSEL_KERNEL_DS);
-			set_gs(SEGSEL_KERNEL_DS);
-			set_ss(SEGSEL_KERNEL_DS);*/
-			break;
-		case 1:
-			set_cs(SEGSEL_USER_CS);
-			set_ds(SEGSEL_USER_DS);
-			set_es(SEGSEL_USER_DS);
-			set_fs(SEGSEL_USER_DS);
-			set_gs(SEGSEL_USER_DS);
-			set_ss(SEGSEL_USER_DS);
-			break;
-		default:
-			break;
-	}
-}
-
 /** @brief enable VM 
  *
  *  Set bit 31 of cr0
@@ -99,13 +87,14 @@ void set_segment_selectors(int type) {
  *  @return void
  */
 void enable_paging() {
-
-	/*Set the segment selectors*/
-    //TODO: Fix setting of segment selectors
-	//set_segment_selectors(0);
-
     unsigned int cr0 = get_cr0();
     cr0 = cr0 | CR0_PG;
+    set_cr0(cr0);
+}
+
+void disable_paging() {
+	unsigned int cr0 = get_cr0();
+    cr0 = cr0 & (~CR0_PG);
     set_cr0(cr0);
 }
 
@@ -120,29 +109,29 @@ void enable_paging() {
  *          NULL on failure
  */
 void *create_page_directory() {
-    int *frame_addr = lmm_alloc_page_safe(&malloc_lmm, LMM_ANY_REGION_FLAG);
+	int *frame_addr = (int *) smemalign(PAGE_SIZE, PAGE_SIZE);
     if(frame_addr == NULL) {
         return NULL;
     }
+    direct_map_kernel_pages(frame_addr);
 	int i;
-	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+	for(i=KERNEL_MAP_NUM_ENTRIES; i<NUM_PAGE_TABLE_ENTRIES; i++) {
 		frame_addr[i] = PAGE_DIR_ENTRY_DEFAULT;
 	}
     return (void *)frame_addr;
 }
-        
+ 
 /** @brief free a page directory 
  *
- *  frees the specified page directory using lmm_free
+ *  frees the specified page directory using sfree
  *  
  *  @return void
  */
-
 void free_page_directory(void *pd_addr) {
     if (pd_addr == NULL) {
         return;
     }
-    lmm_free_safe(&malloc_lmm, pd_addr, PAGE_SIZE);
+	sfree(pd_addr, PAGE_SIZE);
 }
 
 /** @brief create a new page table
@@ -155,7 +144,7 @@ void free_page_directory(void *pd_addr) {
  *  @return address of the frame containing the page table. NULL on failure
  */
 void *create_page_table() {
-    int *frame_addr = lmm_alloc_page_safe(&malloc_lmm, LMM_ANY_REGION_FLAG);
+	int *frame_addr = (int *) smemalign(PAGE_SIZE, PAGE_SIZE);
     if(frame_addr == NULL) {
         return NULL;
     }
@@ -165,19 +154,231 @@ void *create_page_table() {
 	}
     return (void *)frame_addr;
 }
-        
+
+/** @brief Creates a clone of the page table
+ * 
+ * 	@param pt Address of the page table to be cloned
+ *  
+ *  @return Address of the new page table
+ */
+void *clone_page_table(void *pt) {
+	if(pt == NULL) {
+		return NULL;
+	}
+	void *new_pt = create_page_table();
+	if(new_pt == NULL) {
+		return NULL;
+	}
+	memcpy(new_pt, pt, PAGE_SIZE);
+	return new_pt;	
+}
+
 /** @brief free a page table
  *
- *  frees the specified page table using lmm_free
+ *  frees the specified page table using sfree
  *  
  *  @return void
  */
-/*void free_page_table(void *pt_addr) {
-    if (pt_addr == NULL) {
+void free_page_table(int *pt) {
+    if (pt == NULL) {
         return;
     }
-    lmm_free_safe(&malloc_lmm, pt_addr, PAGE_SIZE);
-}*/
+	int i;
+	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+		if(frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[i]))] == 0) {
+			//TODO: DEALLOCATE PHYSICAL FRAME
+		}
+	}
+	sfree(pt, PAGE_SIZE);
+}
+
+/** @brief Creates a copy of the given page directory and
+ * 	the corresponding valid page tables.
+ *
+ *  @param pd Address of the page directory
+ *
+ *  @return Address of the clone of the given page directory
+ */
+void *clone_paging_info(int *pd) {
+	if(pd == NULL) {
+		return NULL;
+	}
+	int *new_pd = create_page_directory();
+	if(new_pd == NULL) {
+		return NULL;
+	}
+	int i;
+	for(i=KERNEL_MAP_NUM_ENTRIES; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+        if(pd[i] != PAGE_DIR_ENTRY_DEFAULT) {
+			void *new_pt = clone_page_table((void *)GET_ADDR_FROM_ENTRY(pd[i]));
+			if(new_pt == NULL) {
+				free_paging_info(new_pd);
+				return NULL;
+			}
+			new_pd[i] = (unsigned int)new_pt | GET_FLAGS_FROM_ENTRY(pd[i]);
+		}
+    }
+	increment_ref_count(pd);
+	make_pages_cow(pd);
+	make_pages_cow(new_pd);
+	return new_pd;
+}
+      
+/** @brief Frees the paging frames of a given page directory
+ *
+ *  @param pd Address of the page directory
+ *
+ *  @return Void
+ */
+void free_paging_info(int *pd) {
+	if(pd == NULL) {
+		return;
+	}
+	int i;
+	for(i=KERNEL_MAP_NUM_ENTRIES; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+        if(pd[i] != PAGE_DIR_ENTRY_DEFAULT) {
+			free_page_table((void *)GET_ADDR_FROM_ENTRY(pd[i]));	
+		}
+    }
+	free_page_directory(pd);
+}
+
+/** @brief Increments the reference count for all the physical frames
+ *  allocated for a given page directory
+ *
+ *  @return void
+ */
+void increment_ref_count(int *pd) {
+	if(pd == NULL) {
+		return;
+	}
+	int i, j;
+	for(i=KERNEL_MAP_NUM_ENTRIES; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+		if(pd[i] != PAGE_DIR_ENTRY_DEFAULT) {
+			int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[i]);
+			for(j=0; j<NUM_PAGE_TABLE_ENTRIES; j++) {
+				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
+					frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]++;
+				}
+			}
+		}
+	}
+}
+
+/** @brief Decrements the reference count for all the physical frames
+ *  allocated for a given page directory
+ *
+ *  @return void
+ */
+void decrement_ref_count(int *pd) {
+	if(pd == NULL) {
+		return;
+	}
+	int i, j;
+	for(i=KERNEL_MAP_NUM_ENTRIES; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+		if(pd[i] != PAGE_DIR_ENTRY_DEFAULT) {
+			int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[i]);
+			for(j=0; j<NUM_PAGE_TABLE_ENTRIES; j++) {
+				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
+					frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]--;
+				}
+			}
+		}
+	}
+}
+
+/*********************COPY-ON-WRITE FUNCTIONS***************************/
+
+/** @brief Function to make the pages for a task copy-on-write
+ * 
+ *  @param pd Page directory
+ *
+ *  @return Void
+ */
+void make_pages_cow(int *pd) {
+	if(pd == NULL) {
+		return;
+	}
+	int i;
+	for(i=KERNEL_MAP_NUM_ENTRIES; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+		if(pd[i] != PAGE_DIR_ENTRY_DEFAULT) {
+			make_pt_cow((int *)GET_ADDR_FROM_ENTRY(pd[i]));	
+		}
+	}
+}
+
+/** @brief Functions to make a page table COW
+ *
+ *  This function iterates through each page table entry and makes
+ *  the writable entries read only along with adding the COW flag.
+ *
+ *  @return void
+ */
+void make_pt_cow(int *pt) {
+	if(pt == NULL) {
+		return;
+	}
+	int i;
+	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+		if(pt[i] == PAGE_TABLE_ENTRY_DEFAULT) {
+			continue;
+		}
+		if(GET_FLAGS_FROM_ENTRY(pt[i]) & READ_WRITE_ENABLE) {
+			pt[i] = (pt[i] | COW_MODE) & WRITE_DISABLE_MASK;
+		}
+	}
+}
+
+/** @brief Function to check if a particular address is COW
+ *
+ *  @param addr Virtual address to be checked.
+ *
+ *  @return 1 if COW, 0 if not
+ */
+int is_addr_cow(void *addr) {
+	int *pd = (void *)get_cr3();
+	int pd_index = GET_PD_INDEX(addr);
+	int pt_index = GET_PT_INDEX(addr);
+	int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[pd_index]);
+	if((pt[pt_index] | COW_MODE) && !(pt[pt_index] & READ_WRITE_ENABLE)) {
+		return 1;
+	}
+	return 0;
+}
+
+/** @brief Function to handle COW
+ *
+ *  This function allocates a new physical frame for the given virtual address
+ *  and adjusts the frame reference count accordingly
+ *
+ *  @return int
+ */
+int handle_cow(void *addr) {
+	int *pd = (void *)get_cr3();
+    int pd_index = GET_PD_INDEX(addr);
+    int pt_index = GET_PT_INDEX(addr);
+    int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[pd_index]);
+	void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[pt_index]);
+	if(frame_ref_count[FRAME_INDEX(frame_addr)] == 1) {
+		pt[pt_index] &= COW_MODE_DISABLE_MASK;
+	} else {
+		void *new_frame = allocate_frame();
+		if(new_frame == NULL) {
+			return ERR_FAILURE;
+		}
+		int flags = GET_FLAGS_FROM_ENTRY(pt[pt_index]);
+		pt[pt_index] = (unsigned int)new_frame | flags;
+		
+		/* Adjust reference counts */
+		frame_ref_count[FRAME_INDEX(frame_addr)]--;
+		frame_ref_count[FRAME_INDEX(new_frame)]++;
+	}
+	pt[pt_index] |= READ_WRITE_ENABLE;
+	invalidate_tlb_page(addr);
+	return 0;
+}
+
+/******************COPY-ON-WRITE FUNCTIONS END*************************/
 
 /** @brief setup paging for a program
  *
@@ -194,7 +395,6 @@ void *create_page_table() {
  *  @return 0 on success. Negative number on failure
  */
 int setup_page_table(simple_elf_t *se_hdr, void *pd_addr) {
-    direct_map_kernel_pages(pd_addr);
     int retval;
     if((retval = map_text_segment(se_hdr, pd_addr)) < 0) {
         return retval;
@@ -211,6 +411,7 @@ int setup_page_table(simple_elf_t *se_hdr, void *pd_addr) {
     if((retval = map_stack_segment(pd_addr)) < 0) {
         return retval;
     }
+	increment_ref_count(pd_addr);
     return 0;
 }
 
@@ -247,7 +448,7 @@ void zero_fill(void *addr, int size) {
  * @return void
  */
 void direct_map_kernel_pages(void *pd_addr) {
-    int flags = PAGE_ENTRY_PRESENT;
+    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE;
     int i;
     for (i = 0; i < KERNEL_MAP_NUM_ENTRIES; i++) {
         ((int *)pd_addr)[i] = (int)direct_map[i] | flags;
@@ -265,18 +466,18 @@ void direct_map_kernel_pages(void *pd_addr) {
  *  @return void
  */
 void setup_direct_map() {
-    int flags = PAGE_ENTRY_PRESENT | GLOBAL_PAGE_ENTRY;
+    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE;
     int i = 0, j = 0, mem_start = 0, page_table_entry;
 
-    for (; i < KERNEL_MAP_NUM_ENTRIES; i++) {
+    for (i = 0; i < KERNEL_MAP_NUM_ENTRIES; i++) {
         int *frame_addr = (int *)create_page_table();
 
         kernel_assert(frame_addr != NULL);
 
         for (j = 0; j < NUM_PAGE_TABLE_ENTRIES; j++) {
             page_table_entry = mem_start | flags;
-            mem_start += PAGE_SIZE;
             frame_addr[j] = page_table_entry;
+            mem_start += PAGE_SIZE;
         }                
         direct_map[i] = frame_addr;
     }
@@ -395,10 +596,11 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
         pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
         if (pt_addr[pt_index] == PAGE_TABLE_ENTRY_DEFAULT) { /* Page table entry absent */
             /* Need to allocate frame from user free frame pool */
-            void *new_frame = allocate_frame(); 
+            void *new_frame = allocate_frame();
             if (new_frame != NULL) {
-                zero_fill(new_frame, PAGE_SIZE);
                 pt_addr[pt_index] = (unsigned int)new_frame | flags;
+                zero_fill(start_addr, PAGE_SIZE);
+				kernel_assert(frame_ref_count[FRAME_INDEX(new_frame)] == 0);
             }
             else {
                 return ERR_NOMEM;

@@ -12,11 +12,14 @@
 
 #include <asm.h>
 #include <interrupts/interrupt_handlers.h>
+#include <interrupts/interrupt_handlers_asm.h>
 #include <interrupt_defines.h>
 #include <drivers/timer/timer.h>
+#include <vm/vm.h>
 #include <drivers/keyboard/keyboard.h>
 #include <simics.h>
 #include <interrupts/idt_entry.h>
+#include <core/context.h>
 #include <idt.h>
 #include <cr.h>
 
@@ -24,8 +27,10 @@
 #define IDT_ENTRY_SIZE 8  /* Size of each IDT */
 
 void tickback(unsigned int ticks) {
+	context_switch();
+	lprintf("%d", ticks);
     // Add some logic to be run on each timer tick
-    return;
+    //return;
 }
 
 //static void install_divide_error_handler();
@@ -53,12 +58,12 @@ void install_handler_18();
  *   @return A negative error code on error, or 0 on success
  **/
 int install_handlers() {
-    initialize_timer(tickback);    
+    initialize_timer(tickback);
     install_keyboard_handler();
     //install_divide_error_handler();
 	install_page_fault_handler();
 
-install_handler_4();
+	install_handler_4();
 	install_handler_5();
 	install_handler_6();
 	install_handler_10();
@@ -92,10 +97,21 @@ void divide_error_handler() {
  *
  * @return Void
  */
-void page_fault_handler() {
+void page_fault_handler_c() {
+
+	void *page_fault_addr = (void *)get_cr2();
+
     lprintf("PD is %p", (void *)get_cr3());
-    MAGIC_BREAK;
-	lprintf("Address that caused page fault: %p", (void *)get_cr2());
+	lprintf("Address that caused page fault: %p", page_fault_addr);
+	//MAGIC_BREAK;
+
+	if(is_addr_cow(page_fault_addr)) {
+		handle_cow(page_fault_addr);
+	}
+
+	//MAGIC_BREAK;
+
+	//TODO: HANDLE OTHER CASES OF PAGE FAULT. AND MOVE THIS TO OTHER FILE
 }
 
 /** @brief this function installs a handler for divide by zero fault conditions
@@ -105,7 +121,7 @@ void page_fault_handler() {
  *  @return void
  */
 void install_divide_error_handler() {
-    add_idt_entry(divide_error_handler, IDT_DE, INTERRUPT_GATE);
+    add_idt_entry(divide_error_handler, IDT_DE, INTERRUPT_GATE, KERNEL_DPL);
 }
 
 /** @brief This function installs a handler for page fault
@@ -114,38 +130,74 @@ void install_divide_error_handler() {
  *
  */
 void install_page_fault_handler() {
-	add_idt_entry(page_fault_handler, IDT_PF, INTERRUPT_GATE);
+	add_idt_entry(page_fault_handler, IDT_PF, INTERRUPT_GATE, KERNEL_DPL);
 }
 
+void four_fault_handler() {
+	lprintf("4 fult");
+	MAGIC_BREAK;
+}
 void install_handler_4() {
-	add_idt_entry(page_fault_handler, 4, INTERRUPT_GATE);
+	add_idt_entry(four_fault_handler, 4, INTERRUPT_GATE, KERNEL_DPL);
+}
+void five_fault_handler() {
+	lprintf("5 fult");
+	MAGIC_BREAK;
 }
 void install_handler_5() {
-	add_idt_entry(page_fault_handler, 5, INTERRUPT_GATE);
+	add_idt_entry(five_fault_handler, 5, INTERRUPT_GATE, KERNEL_DPL);
+}
+void six_fault_handler() {
+	lprintf("6 fult");
+	MAGIC_BREAK;
 }
 void install_handler_6() {
-	add_idt_entry(page_fault_handler, 6, INTERRUPT_GATE);
+	add_idt_entry(six_fault_handler, 6, INTERRUPT_GATE, KERNEL_DPL);
+}
+void ten_fault_handler() {
+	lprintf("10 fult");
+	MAGIC_BREAK;
 }
 void install_handler_10() {
-	add_idt_entry(page_fault_handler, 10, INTERRUPT_GATE);
+	add_idt_entry(ten_fault_handler, 10, INTERRUPT_GATE, KERNEL_DPL);
+}
+void leven_fault_handler() {
+	lprintf("11 fult");
+	MAGIC_BREAK;
 }
 void install_handler_11() {
-	add_idt_entry(page_fault_handler, IDT_NP, INTERRUPT_GATE);
+	add_idt_entry(leven_fault_handler, IDT_NP, INTERRUPT_GATE, KERNEL_DPL);
 }
 
+void twel_fault_handler() {
+	lprintf("12 fult");
+	MAGIC_BREAK;
+}
 void install_handler_12() {
-	add_idt_entry(page_fault_handler, IDT_SS, INTERRUPT_GATE);
+	add_idt_entry(twel_fault_handler, IDT_SS, INTERRUPT_GATE, KERNEL_DPL);
 }
 
+void thirrt_fault_handler() {
+	lprintf("13 fult");
+	MAGIC_BREAK;
+}
 void install_handler_13() {
-	add_idt_entry(page_fault_handler, IDT_GP, INTERRUPT_GATE);
+	add_idt_entry(thirrt_fault_handler, IDT_GP, INTERRUPT_GATE, KERNEL_DPL);
 }
 
+void sevent_fault_handler() {
+	lprintf("17 fult");
+	MAGIC_BREAK;
+}
 void install_handler_17() {
-	add_idt_entry(page_fault_handler, IDT_AC, INTERRUPT_GATE);
+	add_idt_entry(sevent_fault_handler, IDT_AC, INTERRUPT_GATE, KERNEL_DPL);
+}
+void eighte_fault_handler() {
+	lprintf("18 fult");
+	MAGIC_BREAK;
 }
 void install_handler_18() {
-	add_idt_entry(page_fault_handler, 18, INTERRUPT_GATE);
+	add_idt_entry(eighte_fault_handler, 18, INTERRUPT_GATE, KERNEL_DPL);
 }
 
 /** @brief this function acknowledges the interrupt

@@ -8,6 +8,8 @@
 #define __THREAD_H
 
 #include <ureg.h>
+#include <stdint.h>
+#include <list/list.h>
 #include <core/task.h>
 
 /** @brief a schedulable "unit"
@@ -17,10 +19,14 @@
  *  scheduling information. A task must contain atleast one thread.
  */
 typedef struct thread_struct {
-    int id;                      /* A unique identifier for a thread */
-    ureg_t *regs;                /* The set of registers for this thread */
-    task_struct_t *parent_task;  /* The parent task for this thread */
-    void *k_stack;               /* The address of the kernel task */   
+    int id;                     /* A unique identifier for a thread */
+    ureg_t *regs;               /* The set of registers for this thread */
+    task_struct_t *parent_task; /* The parent task for this thread */
+    void *k_stack;              /* The address of the kernel task base */
+	uint32_t k_stack_base;		/* Top of the kernel stack for the thread */
+	uint32_t cur_esp;		 	/* Current value of the kernel stack %esp */
+	uint32_t cur_ebp;			/* Current value of the kernel stack %ebp */
+    list_head runq_link;        /* Link structure for the run queue */
 } thread_struct_t;
 
 void kernel_threads_init();

@@ -57,11 +57,48 @@ void set_fs(uint16_t val);
  */
 void set_gs(uint16_t val);
 
-
 void call_iret(uint32_t, uint32_t);
 
 int get_cs();
 int get_ds();
 int get_ss();
+
+void iret_fun();
+
+/** @brief Function to change the kernel stack during
+ * 			context switching.
+ * 
+ *  This is the core of context switching
+ *
+ *  @param esp esp of the new stack
+ *  @param ebp ebp of the new stack
+ *  @param addr_esp Address where the esp of the current stack
+ *  				must be saved
+ * 	@param addr_epb Address where the ebp of the current stack
+ * 					must be saved
+ *
+ *  @return void
+ */
+void update_stack(uint32_t esp, uint32_t ebp, 
+					uint32_t addr_esp, uint32_t addr_ebp);
+
+uint32_t get_esp();
+
+/** @brief Function to get the error code during a page fault
+ *  
+ *  This function uses the current stack pointer to get the 
+ *  error code causing the page fault.
+ *
+ *  @return Returns the error code
+ */
+uint32_t get_err_code();
+
+/** @brief Function to invalidate a particular page from TLB
+ *
+ *  @param addr Address to be invalidated from TLB
+ *
+ *  @return void
+ */
+void invalidate_tlb_page(void *addr);
 
 #endif
