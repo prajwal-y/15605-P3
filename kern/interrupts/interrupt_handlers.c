@@ -103,7 +103,6 @@ void page_fault_handler_c() {
 
     lprintf("PD is %p", (void *)get_cr3());
 	lprintf("Address that caused page fault: %p", page_fault_addr);
-	//MAGIC_BREAK;
 
 	if(is_addr_cow(page_fault_addr)) {
 		handle_cow(page_fault_addr);

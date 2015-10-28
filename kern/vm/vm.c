@@ -340,7 +340,8 @@ int is_addr_cow(void *addr) {
 	int pd_index = GET_PD_INDEX(addr);
 	int pt_index = GET_PT_INDEX(addr);
 	int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[pd_index]);
-	if((pt[pt_index] | COW_MODE) && !(pt[pt_index] & READ_WRITE_ENABLE)) {
+	if((pt[pt_index] | COW_MODE) && !(pt[pt_index] & READ_WRITE_ENABLE)
+		&& (pt[pt_index]&PAGE_ENTRY_PRESENT)) {
 		return 1;
 	}
 	return 0;
