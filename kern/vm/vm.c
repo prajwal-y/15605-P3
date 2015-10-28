@@ -361,7 +361,7 @@ int is_addr_cow(void *addr) {
  *  This function allocates a new physical frame for the given virtual address
  *  and adjusts the frame reference count accordingly
  *
- *  @return int
+ *  @return int 0 on success. Negative number on failure
  */
 int handle_cow(void *addr) {
 	int *pd = (void *)get_cr3();
@@ -374,8 +374,11 @@ int handle_cow(void *addr) {
 		pt[pt_index] &= COW_MODE_DISABLE_MASK;
 	} else {
         /* Copy the data from the old frame to a kernel frame */
-        void *frame_contents = smemalign(PAGE_SIZE, PAGE_SIZE);
-        memcpy(frame_contents, page_addr, PAGE_SIZE);
+		void *frame_contents = smemalign(PAGE_SIZE, PAGE_SIZE);
+		if(frame_contents == NULL) {
+			return ERR_FAILURE;
+		}
+		memcpy(frame_contents, page_addr, PAGE_SIZE);
 
 		void *new_frame = allocate_frame();
 		if(new_frame == NULL) {
