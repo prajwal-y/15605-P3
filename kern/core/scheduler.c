@@ -55,7 +55,6 @@ thread_struct_t *runq_get_head() {
     mutex_lock(&runq_mutex);
     list_head *head = get_first(&runnable_threads);
     if (head == NULL) {
-		lprintf("Why the fuck is this null?");
         mutex_unlock(&runq_mutex);
         return NULL;
     }
@@ -67,7 +66,6 @@ thread_struct_t *runq_get_head() {
 
 void runq_add_thread(thread_struct_t *thr) {
     mutex_lock(&runq_mutex);
-	lprintf("Adding thread %d to list", thr->id);
     add_to_tail(&thr->runq_link, &runnable_threads);
     mutex_unlock(&runq_mutex);
 	//print_runnable_list();

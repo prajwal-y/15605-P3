@@ -67,7 +67,8 @@ thread_struct_t *create_thread(task_struct_t *task) {
     thr->parent_task = task;
     thr->k_stack = stack;
 	thr->k_stack_base = (uint32_t)((char *)stack + PAGE_SIZE);
-	thr->cur_k_stack = thr->k_stack_base;
+	thr->cur_esp = thr->k_stack_base;
+	thr->cur_ebp = thr->k_stack_base;
     return thr;
 }
 

@@ -39,8 +39,8 @@ int do_fork() {
 
 	/* Clone the kernel stack */
 	memcpy(child_task->thr->k_stack, curr_task->thr->k_stack, PAGE_SIZE);
-	*((int *)(child_task->thr->k_stack_base) - 14) = (int)iret_fun;
-	child_task->thr->cur_k_stack = child_task->thr->k_stack_base 
+	*((int *)(child_task->thr->k_stack_base) - 14) = (int)iret_fun; //TODO: REMOVE THAT CONSTANT
+	child_task->thr->cur_esp = child_task->thr->k_stack_base 
 									- DEFAULT_STACK_OFFSET;
 
 	/* Add the first thread of the new task to runnable queue */

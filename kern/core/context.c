@@ -45,16 +45,11 @@ void context_switch() {
  *  @return Void
  */
 void switch_to_thread(thread_struct_t *thread) {
-	lprintf("In switch to thread!");
 	if(thread == NULL) {
-		lprintf("Thread is null?");
 		return;
 	}
     thread_struct_t *curr_thread = get_curr_thread();
-
-	/* Set the current value of the stack pointer */
-	//curr_thread->cur_k_stack = get_esp();
-
+	
 	/* Set ds for the new thread */
 	set_ds((thread->regs)->ds);
 	set_es((thread->regs)->es);
@@ -65,20 +60,22 @@ void switch_to_thread(thread_struct_t *thread) {
     task_struct_t *parent_task = thread->parent_task;
     set_cur_pd(parent_task->pdbr);
 
-	lprintf("pd_addr is %p. Stack %p and cur_k_stack %p", parent_task->pdbr, (void *)thread->k_stack_base, (void *)thread->cur_k_stack);
-	
 	/* Set the esp for the new thread */	
 	set_esp0(thread->k_stack_base);
 
-	lprintf("Going to switch to thread id: %d", thread->id);
+	//lprintf("Going to switch to thread id: %d", thread->id);
 	
-	if(curr_thread->id != 2) { //TODO: fix this
+	if(curr_thread->id != 5) { //TODO: fix this
 		runq_add_thread(curr_thread);
 	}
 	set_running_thread(thread);
-	
-	update_esp(thread->cur_k_stack, (uint32_t)&curr_thread->cur_k_stack);
 
-	lprintf("Switched to thread id: %d", thread->id);
+	//lprintf("Going to switch to thread id %d with stack_base %p", thread->id, (void *)thread->k_stack_base);
+
+	update_stack(thread->cur_esp, thread->cur_ebp, 
+				(uint32_t)&curr_thread->cur_esp, 
+				(uint32_t)&curr_thread->cur_ebp);
+
+	//lprintf("Switched to thread id: %d", thread->id);
 
 }

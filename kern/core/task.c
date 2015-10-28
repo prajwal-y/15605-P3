@@ -146,7 +146,7 @@ void load_task(const char *prog_name) {
     kernel_assert(retval == 0);
 
 	set_task_stack((void *)t->thr->k_stack_base, se_hdr->e_entry);
-	t->thr->cur_k_stack = (t->thr->k_stack_base - DEFAULT_STACK_OFFSET);
+	t->thr->cur_esp = (t->thr->k_stack_base - DEFAULT_STACK_OFFSET);
     runq_add_thread(t->thr);
 }
 

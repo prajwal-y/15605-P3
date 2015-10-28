@@ -14,9 +14,9 @@ int main()
 {
 	int a = 0;
     while (1) {
-		a+= 2;
-		if(a%200000 == 0) {
-			printf("This is prog2 %d TID: %d\n", a, gettid());
+		a += 1;
+		if(a%100000 == 0) {
+			printf("This is prog3 %d, TID: %d\n", a, gettid());
 		}
     }
 }

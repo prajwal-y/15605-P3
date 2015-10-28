@@ -65,7 +65,22 @@ int get_ss();
 
 void iret_fun();
 
-void update_esp(uint32_t, uint32_t);
+/** @brief Function to change the kernel stack during
+ * 			context switching.
+ * 
+ *  This is the core of context switching
+ *
+ *  @param esp esp of the new stack
+ *  @param ebp ebp of the new stack
+ *  @param addr_esp Address where the esp of the current stack
+ *  				must be saved
+ * 	@param addr_epb Address where the ebp of the current stack
+ * 					must be saved
+ *
+ *  @return void
+ */
+void update_stack(uint32_t esp, uint32_t ebp, 
+					uint32_t addr_esp, uint32_t addr_ebp);
 
 uint32_t get_esp();
 

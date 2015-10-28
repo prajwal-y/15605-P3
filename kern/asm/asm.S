@@ -82,12 +82,16 @@ iret_fun:
 	movl $0, %eax
 	iret
 
-.globl update_esp
-update_esp:
-	movl 8(%esp), %ecx
-	movl %esp, (%ecx)
-	movl 4(%esp), %ecx
-	movl %ecx, %esp
+.globl update_stack
+update_stack:
+	movl 16(%esp), %ecx	/* Address where current ebp must be stored */
+	movl %ebp, (%ecx)	/* Save the current ebp */
+	movl 12(%esp), %ecx	/* Address where current esp must be stored */
+	movl %esp, (%ecx)	/* Save the current esp */
+	movl 8(%esp), %ecx	/* The new ebp */
+	movl %ecx, %ebp		/* Set the new ebp */
+	movl 4(%esp), %ecx	/* The new esp */
+	movl %ecx, %esp		/* Set the new esp */
 	ret
 
 .globl get_esp
