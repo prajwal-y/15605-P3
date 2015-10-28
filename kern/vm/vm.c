@@ -16,6 +16,7 @@
 #include <simics.h>
 #include <seg.h>
 #include <asm/asm.h>
+#include <sync/mutex.h>
 #include <common/errors.h>
 #include <common/assert.h>
 #include <allocator/frame_allocator.h>
@@ -23,6 +24,7 @@
 #define USER_PD_ENTRY_FLAGS PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE
 
 static int *frame_ref_count;
+static mutex_t frame_ref_mutex;
 
 static void init_frame_ref_count();
 static void zero_fill(void *addr, int size);
@@ -68,6 +70,7 @@ void init_frame_ref_count() {
 	frame_ref_count = (int *)malloc(size);
 	kernel_assert(frame_ref_count != NULL);
 	memset(frame_ref_count, 0, size);
+	mutex_init(&frame_ref_mutex);
 }
 
 /** @brief Sets the control register %cr3 with the given
@@ -258,6 +261,7 @@ void free_paging_info(int *pd) {
  *  @return void
  */
 void increment_ref_count(int *pd) {
+	mutex_lock(&frame_ref_mutex);
 	if(pd == NULL) {
 		return;
 	}
@@ -272,6 +276,7 @@ void increment_ref_count(int *pd) {
 			}
 		}
 	}
+	mutex_unlock(&frame_ref_mutex);
 }
 
 /** @brief Decrements the reference count for all the physical frames
@@ -280,6 +285,7 @@ void increment_ref_count(int *pd) {
  *  @return void
  */
 void decrement_ref_count(int *pd) {
+	mutex_lock(&frame_ref_mutex);
 	if(pd == NULL) {
 		return;
 	}
@@ -294,6 +300,7 @@ void decrement_ref_count(int *pd) {
 			}
 		}
 	}
+	mutex_unlock(&frame_ref_mutex);
 }
 
 /*********************COPY-ON-WRITE FUNCTIONS***************************/
@@ -370,6 +377,7 @@ int handle_cow(void *addr) {
     int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[pd_index]);
 	void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[pt_index]);
     void *page_addr = (void *)((int)addr & PAGE_ROUND_DOWN);
+	mutex_lock(&frame_ref_mutex); /* Need to lock the data structure */
 	if(frame_ref_count[FRAME_INDEX(frame_addr)] == 1) {
 		pt[pt_index] &= COW_MODE_DISABLE_MASK;
 	} else {
@@ -399,6 +407,7 @@ int handle_cow(void *addr) {
 		frame_ref_count[FRAME_INDEX(frame_addr)]--;
 		frame_ref_count[FRAME_INDEX(new_frame)]++;
 	}
+	mutex_unlock(&frame_ref_mutex);
 	pt[pt_index] |= READ_WRITE_ENABLE;
 	return 0;
 }
@@ -625,7 +634,6 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
             if (new_frame != NULL) {
                 pt_addr[pt_index] = (unsigned int)new_frame | flags;
                 zero_fill(start_addr, PAGE_SIZE);
-				kernel_assert(frame_ref_count[FRAME_INDEX(new_frame)] == 0);
             }
             else {
                 return ERR_NOMEM;

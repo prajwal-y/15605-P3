@@ -8,8 +8,8 @@
 
 .globl page_fault_handler
 page_fault_handler:
-	pusha
-	call page_fault_handler_c
-	popa
-	popl %ecx
+	pusha						/* Save the general purpose registers */
+	call page_fault_handler_c	/* Call the C handler for page fault */
+	popa						/* Restore the registers */
+	popl %ecx 					/* Pop the error code */
 	iret
