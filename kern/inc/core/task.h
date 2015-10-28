@@ -8,6 +8,7 @@
 #define __TASK_H
 
 #include <list/list.h>
+#include <core/task.h>
 
 #define DEFAULT_STACK_OFFSET 56 
 
@@ -25,7 +26,10 @@ task_struct_t *create_task();
 
 void load_bootstrap_task(const char *prog_name);
 
-void load_task(const char *prog_name);
+void load_kernel_task(const char *prog_name);
+
+void load_task(const char *prog_name, int num_arg, char **argvec, 
+               task_struct_t *t);
 
 #endif  /* __TASK_H */
 

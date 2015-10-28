@@ -28,7 +28,9 @@
 #define EFLAGS_ALIGNMENT_CHECK 0xFFFbFFFF
 
 static uint32_t setup_user_eflags();
-static void set_task_stack(void *kernel_stack_base, int entry_addr);
+static void set_task_stack(void *kernel_stack_base, int entry_addr,
+                           void *user_stack_top);
+static void *copy_user_args(int num_args, char **argvec);
 
 /** @brief Create a new task
  *  
@@ -49,6 +51,15 @@ task_struct_t *create_task() {
 	t->id = thr->id;
     return t;
 }
+
+void load_kernel_task(const char *prog_name) {
+    /* Allocate memory for a task struct from kernel memory */
+	task_struct_t *t = create_task();
+    kernel_assert(t != NULL);
+
+    load_task(prog_name, 0, NULL, t);
+}
+
 
 /** @brief start a bootstrap task
  *
@@ -106,13 +117,11 @@ void load_bootstrap_task(const char *prog_name) {
 
 	uint32_t EFLAGS = setup_user_eflags();
 
-	lprintf("About to call iret at entry: %p", (void *)se_hdr->e_entry);
-
 	call_iret(EFLAGS, se_hdr->e_entry);
-   	 
 }
 
-void load_task(const char *prog_name) {
+void load_task(const char *prog_name, int num_args, char **argvec,
+               task_struct_t *t) {
 
 	int retval;
     /* ask vm to give us a zero filled frame for the page directory */
@@ -123,10 +132,6 @@ void load_task(const char *prog_name) {
     /* Paging enabled! */
 	set_cur_pd(pd_addr);
 	enable_paging();
-
-    /* Allocate memory for a task struct from kernel memory */
-	task_struct_t *t = create_task();
-    kernel_assert(t != NULL);
 
     t->pdbr = pd_addr;
 
@@ -145,18 +150,22 @@ void load_task(const char *prog_name) {
     retval = load_program(se_hdr);
     kernel_assert(retval == 0);
 
-	set_task_stack((void *)t->thr->k_stack_base, se_hdr->e_entry);
+    /* Copy arguments onto user stack */
+    void *user_stack_top = copy_user_args(num_args, argvec);
+
+	set_task_stack((void *)t->thr->k_stack_base, se_hdr->e_entry, user_stack_top);
 	t->thr->cur_esp = (t->thr->k_stack_base - DEFAULT_STACK_OFFSET);
     runq_add_thread(t->thr);
 }
 
-void set_task_stack(void *kernel_stack_base, int entry_addr) {
+void set_task_stack(void *kernel_stack_base, int entry_addr, 
+                    void *user_stack_top) {
     /* Hand craft the kernel stack for these tasks */
     /* Add the registers required for IRET */
 	uint32_t EFLAGS = setup_user_eflags();
 
     *((int *)(kernel_stack_base) - 1) = SEGSEL_USER_DS;
-    *((int *)(kernel_stack_base) - 2) = STACK_START;
+    *((int *)(kernel_stack_base) - 2) = (int)user_stack_top;
     *((int *)(kernel_stack_base) - 3) = EFLAGS;
     *((int *)(kernel_stack_base) - 4) = SEGSEL_USER_CS;
     *((int *)(kernel_stack_base) - 5) = entry_addr;
@@ -165,6 +174,34 @@ void set_task_stack(void *kernel_stack_base, int entry_addr) {
     memset(((int *)(kernel_stack_base) - 13), 0, 32);
 
 	*((int *)(kernel_stack_base) - 14) = (int)iret_fun;
+}
+
+void *copy_user_args(int num_args, char **argvec) {
+    char *user_stack_top = (char *)STACK_START;
+    int i;
+    for (i = 0; i < num_args; i++) {
+        user_stack_top -= strlen(argvec[i]) + 1;
+        strcpy((void *)user_stack_top, argvec[i]);
+        argvec[i] = user_stack_top;
+    }
+    user_stack_top -= 1;
+    *user_stack_top ='\0';
+    argvec[i] = (char *)user_stack_top;
+    user_stack_top -= (num_args + 1) * sizeof(char *);
+    memcpy(user_stack_top, (void *)argvec, (num_args + 1) * sizeof(char *));
+    char **argvec_usr = (char **)user_stack_top;
+    user_stack_top -= sizeof(int *);
+    *(int *)user_stack_top = STACK_END;
+    user_stack_top -= sizeof(int *);
+    *(int *)user_stack_top = STACK_START;
+    user_stack_top -= sizeof(int *);
+    *(int *)user_stack_top = (int)argvec_usr;
+    user_stack_top -= sizeof(int *);
+    *user_stack_top = (int)num_args;
+    user_stack_top -= sizeof(int *);
+    *user_stack_top = (int)0;    /* Add exit handler function here */
+
+    return user_stack_top;
 }
 
 

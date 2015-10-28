@@ -128,7 +128,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o core/fork.o asm/asm.o syscalls/syscall_handlers.o \
 			  syscalls/thread_syscalls.o syscalls/thread_syscalls_asm.o syscalls/console_syscalls.o \
 			  syscalls/console_syscalls_asm.o syscalls/lifecycle_syscalls.o syscalls/lifecycle_syscalls_asm.o \
-			  common/assert.o common/malloc_wrappers.o core/context.o core/scheduler.o
+			  common/assert.o common/malloc_wrappers.o core/context.o core/scheduler.o core/exec.o
 
 
 ###########################################################################
@@ -147,7 +147,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 # or init unless you are writing your own, and don't do that unless
 # you have a really good reason to do so.
 #
-410REQPROGS = idle init shell ck1 prog1 prog2 prog3 prog4
+410REQPROGS = idle init shell ck1 peon merchant
 
 ###########################################################################
 # Mandatory programs whose source is provided by you

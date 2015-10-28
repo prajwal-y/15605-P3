@@ -75,7 +75,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
     //load_task("prog2"); /* TODO: Replace with init later */
     //load_task("prog3"); /* TODO: Replace with init later */
 	//load_task("prog4");
-	load_task("knife");
+	load_kernel_task("peon");
 
     /* Load the idle task in user mode. This task ALWAYS has TID 1 */
     load_bootstrap_task("idle");
