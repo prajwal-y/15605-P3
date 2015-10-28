@@ -41,6 +41,7 @@ static void free_page_table(int *pt);
 static void make_pages_cow(int *pd);
 static void make_pt_cow(int *pt);
 static void increment_ref_count(int *pd);
+static void enable_page_pinning();
 //static void decrement_ref_count(int *pd);
 
 //static void set_segment_selectors(int type);
@@ -55,6 +56,7 @@ static void increment_ref_count(int *pd);
 void vm_init() {
     setup_direct_map();
 	init_frame_ref_count();
+    enable_page_pinning();
 }
 
 /** @brief Initializes the array which stored the 
@@ -96,6 +98,13 @@ void disable_paging() {
 	unsigned int cr0 = get_cr0();
     cr0 = cr0 & (~CR0_PG);
     set_cr0(cr0);
+}
+
+
+void enable_page_pinning() {
+    unsigned int cr4 = get_cr4();
+    cr4 = cr4 | CR4_PGE;
+    set_cr4(cr4);
 }
 
 /** @brief create a new page directory 
@@ -360,22 +369,34 @@ int handle_cow(void *addr) {
     int pt_index = GET_PT_INDEX(addr);
     int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[pd_index]);
 	void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[pt_index]);
+    void *page_addr = (void *)((int)addr & PAGE_ROUND_DOWN);
 	if(frame_ref_count[FRAME_INDEX(frame_addr)] == 1) {
 		pt[pt_index] &= COW_MODE_DISABLE_MASK;
 	} else {
+        /* Copy the data from the old frame to a kernel frame */
+        void *frame_contents = smemalign(PAGE_SIZE, PAGE_SIZE);
+        memcpy(frame_contents, page_addr, PAGE_SIZE);
+
 		void *new_frame = allocate_frame();
 		if(new_frame == NULL) {
 			return ERR_FAILURE;
 		}
+
 		int flags = GET_FLAGS_FROM_ENTRY(pt[pt_index]);
 		pt[pt_index] = (unsigned int)new_frame | flags;
-		
+		pt[pt_index] &= COW_MODE_DISABLE_MASK;
+        invalidate_tlb_page(addr);
+
+        /* Copy data from kernel frame into the new allocated frame and free 
+         * the kernel scratch space */
+        memcpy(page_addr, frame_contents, PAGE_SIZE);
+        sfree(frame_contents, PAGE_SIZE);
+
 		/* Adjust reference counts */
 		frame_ref_count[FRAME_INDEX(frame_addr)]--;
 		frame_ref_count[FRAME_INDEX(new_frame)]++;
 	}
 	pt[pt_index] |= READ_WRITE_ENABLE;
-	invalidate_tlb_page(addr);
 	return 0;
 }
 
