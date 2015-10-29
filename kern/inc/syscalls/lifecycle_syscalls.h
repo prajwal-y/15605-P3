@@ -12,4 +12,8 @@ void fork_handler();
 
 int fork_handler_c();
 
+void exec_handler();
+
+int exec_handler_c();
+
 #endif  /* __LIFECYCLE_SYSCALLS_H */

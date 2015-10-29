@@ -28,3 +28,12 @@ fork_handler:
 	popl %ecx
 	popl %ecx
 	iret
+
+.globl exec_handler
+exec_handler:
+    pusha
+    push %esi
+    call exec_handler_c
+    pop %esi
+    popa
+    iret

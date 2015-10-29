@@ -11,4 +11,4 @@
 
 int do_fork();
 
-#endif
+#endif  /* __FORK_H */

@@ -21,6 +21,7 @@
 static void install_gettid_handler();
 static void install_print_handler();
 static void install_fork_handler();
+static void install_exec_handler();
 
 /** @brief The syscall handlers initialization function
  *
@@ -30,6 +31,7 @@ int install_syscall_handlers() {
     install_gettid_handler();
     install_print_handler();
 	install_fork_handler();
+	install_exec_handler();
     return 0;
 }
 
@@ -55,4 +57,12 @@ void install_print_handler() {
  */
 void install_fork_handler() {
 	add_idt_entry(fork_handler, FORK_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for exec
+ *
+ *  @return void
+ */
+void install_exec_handler() {
+	add_idt_entry(exec_handler, EXEC_INT, TRAP_GATE, USER_DPL);
 }
