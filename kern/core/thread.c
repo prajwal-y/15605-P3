@@ -72,7 +72,7 @@ thread_struct_t *create_thread(task_struct_t *task) {
     return thr;
 }
 
-/* --------------- Static local function ----------------*/
+/* --------------- Static local functions ----------------*/
 /** @brief Creates the register set for the thread
  *
  *  @param reg Register set which needs to be initialized
@@ -88,4 +88,3 @@ void set_user_thread_regs(ureg_t *reg) {
     reg->cs = SEGSEL_USER_CS;
     reg->eax = 0;
 }
-

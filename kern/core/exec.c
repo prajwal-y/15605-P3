@@ -22,12 +22,16 @@ static void free_argvec(int num_args, char **argvec);
 
 /** @brief The entry point for exec
  *
+ *  @param arg_packet The address of argument packet containing 
+ *  the required arguments for exec.
+ *
  *  @return nothing if the call succeeds. If exec
  *  fails, then a negative number is returned.
  */
 int do_exec(void *arg_packet) {
 
-    //TODO: Sanitize every byte of input
+    //TODO: Sanitize every byte of input. Possibly to move it to a common file
+    //since it will be used by many system calls.
     char *execname = (char *)(*((int *)arg_packet));
     char **argvec = (char **)(*((int *)arg_packet + 1));
     int num_args = get_num_args(argvec);
@@ -59,22 +63,45 @@ int do_exec(void *arg_packet) {
     return 0;
 }
 
+/** @brief Function to copy the arguments to kernel memory
+ *
+ *  @param num_args Number of arguments
+ *  @param argvec Character array of arguments
+ *
+ *  @return char** copied character vector in kernel memory.
+ *  NULL on failure.
+ */
 char **copy_args(int num_args,char **argvec) {
     int i;
     char *arg;
     char **argvec_kern = (char **)smalloc((num_args + 1) * sizeof(char *));
+	if(argvec_kern == NULL) {
+		return NULL;
+	}
     for (i = 0; i < num_args; i++) {
         int arg_len = strlen(argvec[i]);
         arg = (char *)smalloc(arg_len + 1);
+		if(arg == NULL) {
+			return NULL;
+		}
         strncpy(arg, argvec[i], arg_len + 1);
         argvec_kern[i] = arg;
     }
     arg = (char *)smalloc(sizeof(char));
+	if(arg == NULL) {
+		return NULL; //TODO: Free allocated memory so far?
+	}
     *arg = '\0';
     argvec_kern[i] = arg;
     return argvec_kern;
 }
 
+/** @brief Function to get the number of arguments from
+ * the argument vector
+ *
+ *  @param argvec The argument vector
+ *  @return int The number of arguments
+ */
 int get_num_args(char **argvec) {
     int count = 0;
     while (argvec[count] != '\0') {
@@ -83,6 +110,14 @@ int get_num_args(char **argvec) {
     return count;
 }
 
+/** @brief Function to free the kernel memory allocated for
+ * storing the arguments from exec
+ *
+ *  @param num_args Number of arguments
+ *  @param argvec The character array of arguments
+ *
+ *  @return void
+ */
 void free_argvec(int num_args, char **argvec) {
     int i;
     for (i = 0; i < num_args; i++) {

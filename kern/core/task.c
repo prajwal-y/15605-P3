@@ -33,6 +33,10 @@ static void set_task_stack(void *kernel_stack_base, int entry_addr,
 static void *copy_user_args(int num_args, char **argvec);
 
 /** @brief Create a new task
+ *
+ *  Creates a new task and adds the first thread to the task.
+ *  The id of the first thread in the task is set to be the
+ *  task ID.
  *  
  *  @return task_struct_t The reference to the new task
  *  NULL if task creation failed
@@ -52,10 +56,19 @@ task_struct_t *create_task() {
     return t;
 }
 
+
+/** @brief Creates a task for a given program and calls
+ * the function to load the task
+ *
+ * @param prog_name Program for which the task has to be
+ * created and loaded.
+ *
+ * @return void
+ */
 void load_kernel_task(const char *prog_name) {
     /* Allocate memory for a task struct from kernel memory */
 	task_struct_t *t = create_task();
-    kernel_assert(t != NULL);
+    kernel_assert(t != NULL); //TODO: !!!!SHOULD NOT BE KERNEL ASSERT!!!!
 
     load_task(prog_name, 0, NULL, t);
 }
@@ -120,6 +133,16 @@ void load_bootstrap_task(const char *prog_name) {
 	call_iret(EFLAGS, se_hdr->e_entry);
 }
 
+/** @brief Function to load a program into a given task.
+ *
+ *  @param prog_name Name of the program to be loaded
+ *  @param num_args Number of arguments to the program
+ *  @param argvec Character array of the arguments to the program
+ *  @param t Reference to the task to which the program must be 
+ *  		 loaded
+ *
+ *  @return void
+ */
 void load_task(const char *prog_name, int num_args, char **argvec,
                task_struct_t *t) {
 
@@ -131,7 +154,7 @@ void load_task(const char *prog_name, int num_args, char **argvec,
 
     /* Paging enabled! */
 	set_cur_pd(pd_addr);
-	enable_paging();
+	enable_paging(); //TODO: REMOVE THIS IN EACH load_task
 
     t->pdbr = pd_addr;
 
@@ -153,17 +176,30 @@ void load_task(const char *prog_name, int num_args, char **argvec,
     /* Copy arguments onto user stack */
     void *user_stack_top = copy_user_args(num_args, argvec);
 
-	set_task_stack((void *)t->thr->k_stack_base, se_hdr->e_entry, user_stack_top);
+	set_task_stack((void *)t->thr->k_stack_base, 
+					se_hdr->e_entry, user_stack_top);
 	t->thr->cur_esp = (t->thr->k_stack_base - DEFAULT_STACK_OFFSET);
     runq_add_thread(t->thr);
 }
 
+/* ------------ Static local functions --------------*/
+
+/** @brief Function to hand create the stack for a new task to
+ *          start executing
+ *
+ *  @param kernel_stack_base Stack high for the kernel stack of the task
+ *  @param entry_addr Entry point for the program
+ *  @param user_stack_top The stack low for the program
+ *
+ *  @return void
+ */
 void set_task_stack(void *kernel_stack_base, int entry_addr, 
                     void *user_stack_top) {
     /* Hand craft the kernel stack for these tasks */
     /* Add the registers required for IRET */
 	uint32_t EFLAGS = setup_user_eflags();
 
+	//TODO: !!! REMOVE THE CONSTANTS !!!
     *((int *)(kernel_stack_base) - 1) = SEGSEL_USER_DS;
     *((int *)(kernel_stack_base) - 2) = (int)user_stack_top;
     *((int *)(kernel_stack_base) - 3) = EFLAGS;
@@ -176,6 +212,14 @@ void set_task_stack(void *kernel_stack_base, int entry_addr,
 	*((int *)(kernel_stack_base) - 14) = (int)iret_fun;
 }
 
+/** @brief Function to copy the arguments to a given program
+ *  on to the user space task stack
+ *
+ *  @param num_args Number of arguments to the program
+ *  @param argvec Character array of the argument vector
+ *
+ *  @return void* Address of the top of user stack
+ */
 void *copy_user_args(int num_args, char **argvec) {
     char *user_stack_top = (char *)STACK_START;
     int i;
@@ -199,13 +243,10 @@ void *copy_user_args(int num_args, char **argvec) {
     user_stack_top -= sizeof(int *);
     *user_stack_top = (int)num_args;
     user_stack_top -= sizeof(int *);
-    *user_stack_top = (int)0;    /* Add exit handler function here */
+    *user_stack_top = (int)0;    /* TODO: Add exit handler function here */
 
     return user_stack_top;
 }
-
-
-/* ------------ Static local functions --------------*/
 
 /** @brief set user EFLAGS 
  *
