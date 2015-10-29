@@ -156,6 +156,7 @@ thread_struct_t *get_thread_from_id(int thr_id) {
         thread_struct_t *thr = get_entry(thr_node, thread_struct_t, 
                                           thread_map_link);
         if (thr->id == thr_id) {
+            mutex_unlock(&map_mutex);
             return thr;
         }
 		thr_node = thr_node->next;
@@ -179,6 +180,7 @@ void remove_thread_from_map(int thr_id) {
                                           thread_map_link);
         if (thr->id == thr_id) {
             del_entry(thr_node);
+            mutex_unlock(&map_mutex);
             return;
         }
 		thr_node = thr_node->next;
