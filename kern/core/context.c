@@ -7,13 +7,28 @@
  */
 
 #include <cr.h>
+#include <asm.h>
 #include <asm/asm.h>
 #include <vm/vm.h>
 #include <syscall.h>
 #include <core/scheduler.h>
 #include <simics.h>
 
-static void switch_to_thread(thread_struct_t *thread);
+static void switch_to_thread(thread_struct_t *curr_thread, 
+								thread_struct_t *new_thread);
+
+/** @brief Function to context switch to a different thread
+ * 	
+ * 	In this path, the current thread is not added to the end
+ * 	of the runnable queue immediately.
+ *
+ * 	@return void
+ */
+void context_switch_wait() {
+	thread_struct_t *thr = next_thread();
+	thread_struct_t *curr_thread = get_curr_thread();
+	switch_to_thread(curr_thread, thr);
+}
 
 /** @brief Function to context switch to a different thread
  *
@@ -27,9 +42,14 @@ void context_switch() {
 
 	/* Get the next thread to be run from scheduler */
     thread_struct_t *thr = next_thread();
+    
+	thread_struct_t *curr_thread = get_curr_thread();
+	if(curr_thread->id != 5) { //TODO: fix this
+		runq_add_thread(curr_thread);
+	}
 
 	/* Call switch_to_thread with the new thread */
-    switch_to_thread(thr);
+    switch_to_thread(curr_thread, thr);
 }
 
 /** @brief Function to switch to a new thread.
@@ -43,36 +63,34 @@ void context_switch() {
  *  @param thread The thread to which we need to switch to
  *
  *  @return Void
+ *  TODO: Need to fix a possible race condition in this function 
+ *  because context switch can be invoked from two places now.
  */
-void switch_to_thread(thread_struct_t *thread) {
-	if(thread == NULL) {
+void switch_to_thread(thread_struct_t *curr_thread, 
+						thread_struct_t *next_thread) {
+	if(next_thread == NULL) {
 		return;
 	}
-    thread_struct_t *curr_thread = get_curr_thread();
 	
 	/* Set ds for the new thread */
-	set_ds((thread->regs)->ds);
-	set_es((thread->regs)->es);
-	set_fs((thread->regs)->fs);
-	set_gs((thread->regs)->gs);
+	set_ds((next_thread->regs)->ds);
+	set_es((next_thread->regs)->es);
+	set_fs((next_thread->regs)->fs);
+	set_gs((next_thread->regs)->gs);
 
     /* Set page directory for the new thread */
-    task_struct_t *parent_task = thread->parent_task;
+    task_struct_t *parent_task = next_thread->parent_task;
     set_cur_pd(parent_task->pdbr);
 
 	/* Set the esp for the new thread */	
-	set_esp0(thread->k_stack_base);
+	set_esp0(next_thread->k_stack_base);
 
-	//lprintf("Going to switch to thread id: %d", thread->id);
-	
-	if(curr_thread->id != 5) { //TODO: fix this
-		runq_add_thread(curr_thread);
-	}
-	set_running_thread(thread);
+	/* Set the new thread as the currently running thread */
+	set_running_thread(next_thread);
 
 	//lprintf("Going to switch to thread id %d with stack_base %p", thread->id, (void *)thread->k_stack_base);
 
-	update_stack(thread->cur_esp, thread->cur_ebp, 
+	update_stack(next_thread->cur_esp, next_thread->cur_ebp, 
 				(uint32_t)&curr_thread->cur_esp, 
 				(uint32_t)&curr_thread->cur_ebp);
 

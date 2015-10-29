@@ -28,6 +28,7 @@ typedef struct thread_struct {
 	uint32_t cur_ebp;			/* Current value of the kernel stack %ebp */
     list_head runq_link;        /* Link structure for the run queue */
     list_head thread_map_link;  /* Link structure for the hash map */
+	list_head cond_wait_link;	/* Link structure for cond_wait */
 } thread_struct_t;
 
 void kernel_threads_init();
