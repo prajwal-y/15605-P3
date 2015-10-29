@@ -86,7 +86,7 @@ STUDENTFILES =
 ###########################################################################
 # Object files for your thread library
 ###########################################################################
-THREAD_OBJS = malloc.o panic.o
+THREAD_OBJS = malloc.o panic.o mutex.o asm.o cond_var.o thread.o rwlock.o sem.o list.o
 
 # Thread Group Library Support.
 #

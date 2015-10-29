@@ -24,6 +24,10 @@
 #include <stdlib.h>
 #include <simics.h>
 
+#define die(expression)  \
+	((void)((expression) ? 0 : (panic_exit("PANIC! `%s' at %s:%u." \
+                                "Program will exit", expression, \
+                                __FILE__, __LINE__))))
 /*
  * This function is called by the assert() macro defined in assert.h;
  * it's also a nice simple general-purpose panic function.
@@ -31,18 +35,38 @@
 void panic(const char *fmt, ...)
 {
 	va_list vl;
+	char buf[80];
+
+	va_start(vl, fmt);
+	vsnprintf(buf, sizeof (buf), fmt, vl);
+	va_end(vl);
+	lprintf(buf);
 
 	va_start(vl, fmt);
 	vprintf(fmt, vl);
 	va_end(vl);
-
 	printf("\n");
 
 	volatile static int side_effect = 0;
-	while (1) {
-		// exact authorship uncertain, popularized by Heinlein
-		printf("When in danger or in doubt, run in circles, scream and shout.\n");
-		lprintf("When in danger or in doubt, run in circles, scream and shout.");
-		++side_effect;
-	}
+    // exact authorship uncertain, popularized by Heinlein
+    printf("When in danger or in doubt, run in circles, scream and shout.\n");
+    lprintf("When in danger or in doubt, run in circles, scream and shout.");
+    ++side_effect;
+}
+
+void panic_exit(const char *fmt, ...)
+{
+	va_list vl;
+	char buf[80];
+
+	va_start(vl, fmt);
+	vsnprintf(buf, sizeof (buf), fmt, vl);
+	va_end(vl);
+	lprintf(buf);
+
+	va_start(vl, fmt);
+	vprintf(fmt, vl);
+	va_end(vl);
+	printf("\n");
+    exit(-1);
 }
