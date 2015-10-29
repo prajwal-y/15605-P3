@@ -14,10 +14,20 @@
 #include <syscall.h>
 #include <stddef.h>
 #include <simics.h>
+#include <list/list.h>
+#include <common/assert.h>
+
+#define HASHMAP_SIZE (PAGE_SIZE * 2)
 
 static int next_tid;
 static mutex_t mutex;
+static mutex_t map_mutex;
+static list_head *thread_map[HASHMAP_SIZE];
+
 static void set_user_thread_regs(ureg_t *reg);
+static void init_thread_map();
+static void add_thread_to_map(thread_struct_t *thr);
+//static void remove_thread_from_map(int thr_id);
 
 /** @brief Initializes the thread creation module
  *
@@ -26,9 +36,12 @@ static void set_user_thread_regs(ureg_t *reg);
 void kernel_threads_init() {
     next_tid = 0;
     mutex_init(&mutex);
+    init_thread_map();
 }
 
 /** @brief create a new thread.
+ *
+ *  Create thread and add mapping in the hash map
  *
  *  @param task the task under which this thread will run
  *  @param regs the register values this thread must take
@@ -52,6 +65,14 @@ thread_struct_t *create_thread(task_struct_t *task) {
 		sfree(reg, sizeof(ureg_t));
         return NULL;
     }
+    /* Assign thread id to thread */
+    mutex_lock(&mutex);
+    thr->id = ++next_tid;
+    mutex_unlock(&mutex);
+
+    /* Add thread tCB to hash map */
+    add_thread_to_map(thr);
+
 	/* Allocate space for thread's kernel stack */
 	void *stack = smemalign(PAGE_SIZE, PAGE_SIZE);
     if(stack == NULL) {
@@ -59,9 +80,6 @@ thread_struct_t *create_thread(task_struct_t *task) {
         sfree(reg, sizeof(ureg_t));
         return NULL;
     }
-    mutex_lock(&mutex);
-    thr->id = ++next_tid;
-    mutex_unlock(&mutex);
 
     thr->regs = reg;
     thr->parent_task = task;
@@ -88,3 +106,83 @@ void set_user_thread_regs(ureg_t *reg) {
     reg->cs = SEGSEL_USER_CS;
     reg->eax = 0;
 }
+
+/** @brief Initialize the buckets of the hash map
+ *
+ *  Hash map mapping thread id to tCB. The super complicated hash function
+ *  used is thread_id % HASHMAP_SIZE. Each bucket is a linked list to handle
+ *  collisions. Since thread IDs are in increasing order we will not be having
+ *  any collision till the first 2048 threads have been created.
+ *  
+ *  @return void
+ */
+void init_thread_map() {
+    int i;
+    for (i = 0; i < HASHMAP_SIZE; i++) {
+        thread_map[i] = (list_head *)smalloc(sizeof(list_head *));
+        kernel_assert(thread_map[i] != NULL);
+        init_head(thread_map[i]);
+    }
+    mutex_init(&map_mutex);
+}
+
+/** @brief add a thread to the hashmap
+ *
+ *  calculate the index of the thread using thr->id % HASHMAP_SIZE
+ *  Add it to tail of the bucket
+ *
+ *  @param thr thread_struct_t of the thread to be added
+ *  @return void
+ */
+void add_thread_to_map(thread_struct_t *thr) {
+    int index = thr->id % HASHMAP_SIZE;
+    mutex_lock(&map_mutex);
+    add_to_tail(&thr->thread_map_link, thread_map[index]);
+    mutex_unlock(&map_mutex);
+}
+
+/** @brief return thread struct for a given thread id
+ *
+ *  @param thr_id thread id of thread struct we wih to retrieve
+ *  @return thread_struct_t* thread struct corresponding to the thread id
+ *                            null if not found
+ */
+thread_struct_t *get_thread_from_id(int thr_id) {
+    int index = thr_id % HASHMAP_SIZE;
+    list_head *bucket_head = thread_map[index];
+    mutex_lock(&map_mutex);
+    list_head *thr_node = get_first(bucket_head);
+	while(thr_node != NULL && thr_node != bucket_head) {
+        thread_struct_t *thr = get_entry(thr_node, thread_struct_t, 
+                                          thread_map_link);
+        if (thr->id == thr_id) {
+            return thr;
+        }
+		thr_node = thr_node->next;
+	}
+    mutex_unlock(&map_mutex);
+    return NULL;
+}
+
+/** @brief remove thread struct from hashmap for given thread id
+ *
+ *  @param thr_id thread id of thread to be removed from thread map
+ *  @return void
+ */
+void remove_thread_from_map(int thr_id) {
+    int index = thr_id % HASHMAP_SIZE;
+    list_head *bucket_head = thread_map[index];
+    mutex_lock(&map_mutex);
+    list_head *thr_node = get_first(bucket_head);
+	while(thr_node != NULL && thr_node != bucket_head) {
+        thread_struct_t *thr = get_entry(thr_node, thread_struct_t, 
+                                          thread_map_link);
+        if (thr->id == thr_id) {
+            del_entry(thr_node);
+            return;
+        }
+		thr_node = thr_node->next;
+	}
+    mutex_unlock(&map_mutex);
+}
+
