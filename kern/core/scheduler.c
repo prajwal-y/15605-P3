@@ -42,11 +42,6 @@ thread_struct_t *next_thread() {
         return NULL;
     }
 
-    /* Add the current thread to the end of the run queue */
-    /*if (curr_thread->id != 3) {
-        runq_add_thread(curr_thread);
-    }*/
-
     return head;
 }
 

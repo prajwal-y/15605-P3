@@ -12,6 +12,13 @@
 #include <list/list.h>
 #include <core/task.h>
 
+enum thread_status {
+	RUNNING,
+	RUNNABLE,
+	WAITING,
+	EXITED
+};
+
 /** @brief a schedulable "unit"
  *
  *  Tasks contain threads. A thread contains all the context (registers) 
@@ -26,8 +33,10 @@ typedef struct thread_struct {
 	uint32_t k_stack_base;		/* Top of the kernel stack for the thread */
 	uint32_t cur_esp;		 	/* Current value of the kernel stack %esp */
 	uint32_t cur_ebp;			/* Current value of the kernel stack %ebp */
+	enum thread_status status;	/* Status of the thread */
     list_head runq_link;        /* Link structure for the run queue */
     list_head thread_map_link;  /* Link structure for the hash map */
+	list_head cond_wait_link;	/* Link structure for cond_wait */
 } thread_struct_t;
 
 void kernel_threads_init();
