@@ -82,9 +82,14 @@ void cond_wait(cond_t *cv, mutex_t *mp, list_head *link) {
     add_to_tail(link, &cv->waiting);
     mutex_unlock(&cv->queue_mutex);
 
-	/* Release the mutex and call context switch */
+	disable_interrupts();
+	thread_struct_t *curr_thread = get_curr_thread();
+	curr_thread->status = WAITING;
 	mutex_unlock(mp);
-	context_switch_wait();
+	enable_interrupts();
+
+	/* Release the mutex and call context switch */
+	context_switch();
 
 	/* Acquire the mutex again before returning */
 	mutex_lock(mp);
@@ -117,6 +122,7 @@ void cond_signal(cond_t *cv) {
     if (waiting_thread != NULL) {
         thread_struct_t *thr = get_entry(waiting_thread, thread_struct_t, 
                                           cond_wait_link);
+		thr->status = RUNNABLE;
 		runq_add_thread(thr);
 		del_entry(&thr->cond_wait_link);
     }
@@ -143,6 +149,7 @@ void cond_broadcast(cond_t *cv) {
 	while(waiting_thread != NULL && waiting_thread != &cv->waiting) {
         thread_struct_t *thr = get_entry(waiting_thread, thread_struct_t, 
                                           cond_wait_link);
+		thr->status = RUNNABLE;
 		runq_add_thread(thr);
 		waiting_thread = waiting_thread->next;
 		del_entry(&thr->cond_wait_link);

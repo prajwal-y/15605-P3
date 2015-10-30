@@ -12,23 +12,11 @@
 #include <vm/vm.h>
 #include <syscall.h>
 #include <core/scheduler.h>
+#include <core/thread.h>
 #include <simics.h>
 
 static void switch_to_thread(thread_struct_t *curr_thread, 
 								thread_struct_t *new_thread);
-
-/** @brief Function to context switch to a different thread
- * 	
- * 	In this path, the current thread is not added to the end
- * 	of the runnable queue immediately.
- *
- * 	@return void
- */
-void context_switch_wait() {
-	thread_struct_t *thr = next_thread();
-	thread_struct_t *curr_thread = get_curr_thread();
-	switch_to_thread(curr_thread, thr);
-}
 
 /** @brief Function to context switch to a different thread
  *
@@ -40,16 +28,21 @@ void context_switch_wait() {
  */
 void context_switch() {
 
+	disable_interrupts();	/* Context switching is a critical section */
+
 	/* Get the next thread to be run from scheduler */
     thread_struct_t *thr = next_thread();
     
 	thread_struct_t *curr_thread = get_curr_thread();
-	if(curr_thread->id != 5) { //TODO: fix this
+	if(curr_thread->id != 5 && curr_thread->status != WAITING) { //TODO: fix this
+		curr_thread->status = RUNNABLE;
 		runq_add_thread(curr_thread);
 	}
 
 	/* Call switch_to_thread with the new thread */
     switch_to_thread(curr_thread, thr);
+
+	enable_interrupts();
 }
 
 /** @brief Function to switch to a new thread.
@@ -87,6 +80,7 @@ void switch_to_thread(thread_struct_t *curr_thread,
 
 	/* Set the new thread as the currently running thread */
 	set_running_thread(next_thread);
+	next_thread->status = RUNNING;
 
 	//lprintf("Going to switch to thread id %d with stack_base %p", thread->id, (void *)thread->k_stack_base);
 

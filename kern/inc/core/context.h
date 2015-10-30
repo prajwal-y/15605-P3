@@ -9,7 +9,6 @@
 #ifndef __CONTEXT_H
 #define __CONTEXT_H
 
-void context_switch_wait();
 void context_switch();
 
 #endif /* __CONTEXT_H*/

@@ -68,7 +68,7 @@ call_iret:
 	mov %ax, %fs
 	mov %ax, %gs
 	
-	pushl $0x2b			/*SS*/
+	pushl $0x2b			/*SS*/ //TODO: REMOVE THE CONSTANTS
 	pushl $0xc0000000	/*ESP*/
 	pushl 4(%ecx)		/*EFLAGS*/
 	pushl $0x23			/*CS*/
@@ -78,6 +78,7 @@ call_iret:
 .globl iret_fun
 iret_fun:
 	call acknowledge_interrupt
+	sti
 	popa
 	movl $0, %eax
 	iret
