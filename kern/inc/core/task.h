@@ -17,9 +17,10 @@ struct thread_struct;
 /** @brief the protection domain comprising a task */
 typedef struct task_struct {
 	int id;
-    void *pdbr;         	/* the address of the page directory */
+    void *pdbr;         	    /* the address of the page directory */
 	struct thread_struct *thr;	/* the reference to the first thread */
-    list_head thread_head;    
+    list_head thread_head;      /* List of threads in the task */
+    int exit_status;            /* Exit status of task */
 } task_struct_t;
 
 task_struct_t *create_task();

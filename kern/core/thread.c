@@ -65,9 +65,10 @@ thread_struct_t *create_thread(task_struct_t *task) {
 		sfree(reg, sizeof(ureg_t));
         return NULL;
     }
-    /* Assign thread id to thread */
+    /* Assign thread id to thread and add it to task's thread list*/
     mutex_lock(&mutex);
     thr->id = ++next_tid;
+    add_to_tail(&thr->task_thread_link, &task->thread_head);
     mutex_unlock(&mutex);
 
     /* Add thread tCB to hash map */

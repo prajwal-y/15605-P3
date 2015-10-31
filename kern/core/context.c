@@ -34,7 +34,7 @@ void context_switch() {
     thread_struct_t *thr = next_thread();
     
 	thread_struct_t *curr_thread = get_curr_thread();
-	if(curr_thread->id != 5 && curr_thread->status != WAITING) { //TODO: fix this
+	if(curr_thread->id != 5 && curr_thread->status == RUNNING) { //TODO: fix this
 		curr_thread->status = RUNNABLE;
 		runq_add_thread(curr_thread);
 	}

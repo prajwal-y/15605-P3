@@ -16,4 +16,8 @@ int exec_handler();
 
 int exec_handler_c();
 
+void set_status_handler();
+
+void set_status_handler_c();
+
 #endif  /* __LIFECYCLE_SYSCALLS_H */

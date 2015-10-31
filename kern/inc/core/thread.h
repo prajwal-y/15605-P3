@@ -29,14 +29,15 @@ typedef struct thread_struct {
     int id;                     /* A unique identifier for a thread */
     ureg_t *regs;               /* The set of registers for this thread */
     task_struct_t *parent_task; /* The parent task for this thread */
-    void *k_stack;              /* The address of the kernel task base */
-	uint32_t k_stack_base;		/* Top of the kernel stack for the thread */
+    void *k_stack;              /* The address of the kernel task base (low) */
+	uint32_t k_stack_base;		/* Top of the kernel stack for the thread (top) */
 	uint32_t cur_esp;		 	/* Current value of the kernel stack %esp */
 	uint32_t cur_ebp;			/* Current value of the kernel stack %ebp */
-	enum thread_status status;	/* Status of the thread */
+	enum thread_status status;	/* Life state of the thread */
     list_head runq_link;        /* Link structure for the run queue */
     list_head thread_map_link;  /* Link structure for the hash map */
 	list_head cond_wait_link;	/* Link structure for cond_wait */
+    list_head task_thread_link; /* Link structure for list of threads in parent */
 } thread_struct_t;
 
 void kernel_threads_init();

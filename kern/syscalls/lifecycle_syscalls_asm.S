@@ -49,3 +49,12 @@ exec_handler:
 	popl %ecx
 	popl %ecx
     iret
+
+.globl set_status_handler
+set_status_handler:
+    pusha
+    pushl %esi
+    call set_status_handler_c
+    popl %esi
+    popa
+    iret
