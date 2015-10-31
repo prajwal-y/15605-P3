@@ -31,9 +31,21 @@ fork_handler:
 
 .globl exec_handler
 exec_handler:
-    pusha
+	pushl %eax
+	pushl %ecx
+	pushl %edx
+	pushl %ebx
+	pushl %esp
+	pushl %ebp
+	pushl %edi
     push %esi
     call exec_handler_c
     pop %esi
-    popa
+    popl %edi
+	popl %ebp
+	popl %esp
+	popl %ebx
+	popl %edx
+	popl %ecx
+	popl %ecx
     iret

@@ -290,3 +290,28 @@ int elf_check_header(const char *fname) {
 
     return ELF_SUCCESS;
 }
+
+/** @brief function to verify a program
+ *
+ *  This function verifies that the program name passed in exists 
+ *  in the filesystem and has a valid ELF header
+ *
+ *  @param prog_name the program which we need verify
+ *
+ *  @return int PROG_PRESENT_VALID if prog_name is a valid file and has a 
+ *              valid ELF header. PROG_ABSENT_INVALID if the prog_name does not
+ *              exist or has invalid header
+ */
+int check_program(const char *prog_name) {
+    int i;
+    for (i = 0; i < exec2obj_userapp_count; i++) {
+        if (!strncmp(prog_name, exec2obj_userapp_TOC[i].execname, 
+                    MAX_EXECNAME_LEN)) {
+            if (elf_check_header(prog_name) == ELF_SUCCESS) {
+                return PROG_PRESENT_VALID;
+            }
+            
+        }
+    }
+    return PROG_ABSENT_INVALID;
+}

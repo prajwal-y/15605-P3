@@ -8,7 +8,7 @@
 #ifndef __THREAD_SYSCALLS_H
 #define __THREAD_SYSCALLS_H
 
-void gettid_handler();
+int gettid_handler();
 
 int gettid_handler_c();
 

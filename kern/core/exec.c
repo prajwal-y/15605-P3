@@ -13,8 +13,10 @@
 #include <string/string.h>
 #include <vm/vm.h>
 #include <cr.h>
+#include <common/errors.h>
 #include <core/task.h>
 #include <core/scheduler.h>
+#include <loader/loader.h>
 
 static int get_num_args(char **argvec);
 static char **copy_args(int num_args,char **argvec);
@@ -33,6 +35,10 @@ int do_exec(void *arg_packet) {
     //TODO: Sanitize every byte of input. Possibly to move it to a common file
     //since it will be used by many system calls.
     char *execname = (char *)(*((int *)arg_packet));
+    int retval = check_program(execname);
+    if (retval == PROG_ABSENT_INVALID) {
+        return ERR_FAILURE;
+    }
     char **argvec = (char **)(*((int *)arg_packet + 1));
     int num_args = get_num_args(argvec);
     int execname_len;

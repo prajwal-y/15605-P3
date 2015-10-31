@@ -147,7 +147,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 # or init unless you are writing your own, and don't do that unless
 # you have a really good reason to do so.
 #
-410REQPROGS = idle init shell ck1 peon merchant
+410REQPROGS = idle init shell ck1 peon merchant exec_nonexist
 
 ###########################################################################
 # Mandatory programs whose source is provided by you

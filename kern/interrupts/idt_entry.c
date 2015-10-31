@@ -44,7 +44,7 @@ static idt_entry *get_default_interrupt_idt(unsigned int);
  *              (TRAP_GATE/INTERRUPT_GATE)
  *  @return void
  */
-void add_idt_entry(void (*handler)(void), int interrupt_num, int type, unsigned int dpl) {
+void add_idt_entry(void *handler, int interrupt_num, int type, unsigned int dpl) {
     if (type != TRAP_GATE && type != INTERRUPT_GATE) {
         return;
     }
