@@ -46,6 +46,7 @@ task_struct_t *create_task() {
 	if(t == NULL) {
 		return NULL;
 	}
+    init_head(&t->thread_head);
     thread_struct_t *thr = create_thread(t);
 	if(thr == NULL) {
 		sfree(t, sizeof(task_struct_t));
