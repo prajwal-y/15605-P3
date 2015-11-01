@@ -57,7 +57,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory.
 #
-410TESTS = knife prog1 prog2 prog3 prog4
+410TESTS = knife prog1 prog2 prog3 prog4 fork_wait
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -128,7 +128,8 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o core/fork.o asm/asm.o syscalls/syscall_handlers.o \
 			  syscalls/thread_syscalls.o syscalls/thread_syscalls_asm.o syscalls/console_syscalls.o \
 			  syscalls/console_syscalls_asm.o syscalls/lifecycle_syscalls.o syscalls/lifecycle_syscalls_asm.o \
-			  common/assert.o common/malloc_wrappers.o core/context.o core/scheduler.o core/exec.o
+			  common/assert.o common/malloc_wrappers.o core/context.o core/scheduler.o core/exec.o syscalls/misc_syscalls.o \
+			  syscalls/misc_syscalls_asm.o core/wait_vanish.o
 
 
 ###########################################################################

@@ -101,8 +101,8 @@ void page_fault_handler_c() {
 
 	void *page_fault_addr = (void *)get_cr2();
 
-    lprintf("PD is %p", (void *)get_cr3());
-	lprintf("Address that caused page fault: %p", page_fault_addr);
+    //lprintf("PD is %p", (void *)get_cr3());
+	//lprintf("Address that caused page fault: %p", page_fault_addr);
 
 	if(is_addr_cow(page_fault_addr)) {
 		handle_cow(page_fault_addr);

@@ -37,8 +37,12 @@ void add_to_tail(list_head *new_node, list_head *head);
 
 void add_to_head(list_head *new_node, list_head *head);
 
+void concat_lists(list_head *first_list_head, list_head *second_list_head);
+
 void del_entry(list_head *node);
 
 list_head *get_first(list_head *head);
+
+list_head *get_last(list_head *head);
 
 #endif  /* __LIST_H */

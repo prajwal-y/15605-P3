@@ -22,15 +22,16 @@
  *  fails, then a negative number is returned.
  */
 int do_fork() {
+	task_struct_t *curr_task = get_curr_task();
 
 	/* Create a child task */
-	task_struct_t *child_task = create_task();
+	task_struct_t *child_task = create_task(curr_task);
+    add_to_tail(&child_task->child_task_link, &curr_task->child_task_head);
 	if(child_task == NULL) {
 		return ERR_NOMEM;
 	}
 	
 	/* Clone the address space */
-	task_struct_t *curr_task = get_curr_task();
 	void *new_pd_addr = clone_paging_info(curr_task->pdbr);
 	if(new_pd_addr == NULL) {
 		return ERR_FAILURE;

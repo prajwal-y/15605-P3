@@ -14,6 +14,7 @@
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <simics.h>
+#include <common/malloc_wrappers.h>
 
 static void switch_to_thread(thread_struct_t *curr_thread, 
 								thread_struct_t *new_thread);
@@ -34,10 +35,14 @@ void context_switch() {
     thread_struct_t *thr = next_thread();
     
 	thread_struct_t *curr_thread = get_curr_thread();
-	if(curr_thread->id != 5 && curr_thread->status != WAITING) { //TODO: fix this
+	if(curr_thread->status == RUNNING) {
 		curr_thread->status = RUNNABLE;
 		runq_add_thread(curr_thread);
 	}
+    if (curr_thread->status == EXITED) {
+        sfree(curr_thread, sizeof(thread_struct_t));
+        curr_thread = NULL;
+    }
 
 	/* Call switch_to_thread with the new thread */
     switch_to_thread(curr_thread, thr);
@@ -84,9 +89,14 @@ void switch_to_thread(thread_struct_t *curr_thread,
 
 	//lprintf("Going to switch to thread id %d with stack_base %p", thread->id, (void *)thread->k_stack_base);
 
-	update_stack(next_thread->cur_esp, next_thread->cur_ebp, 
-				(uint32_t)&curr_thread->cur_esp, 
-				(uint32_t)&curr_thread->cur_ebp);
+    if (curr_thread != NULL) {
+        update_stack(next_thread->cur_esp, next_thread->cur_ebp, 
+                    (uint32_t)&curr_thread->cur_esp, 
+                    (uint32_t)&curr_thread->cur_ebp);
+    }
+    else {
+        update_stack_single(next_thread->cur_esp, next_thread->cur_ebp); 
+    }
 
 	//lprintf("Switched to thread id: %d", thread->id);
 

@@ -11,6 +11,9 @@
 #include <stdint.h>
 #include <list/list.h>
 #include <core/task.h>
+#include <syscall.h>
+
+#define KERNEL_STACK_SIZE PAGE_SIZE
 
 enum thread_status {
 	RUNNING,
@@ -45,5 +48,7 @@ void kernel_threads_init();
 thread_struct_t *create_thread(task_struct_t *task);
 
 thread_struct_t *get_thread_from_id(int thr_id);
+
+void remove_thread_from_map(int thr_id);
 
 #endif  /* __THREAD_H */

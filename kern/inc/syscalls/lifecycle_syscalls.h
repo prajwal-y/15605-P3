@@ -20,4 +20,12 @@ void set_status_handler();
 
 void set_status_handler_c();
 
+int wait_handler(int *status_ptr);
+
+int wait_handler_c(int *status_ptr);
+
+int vanish_handler();
+
+int vanish_handler_c();
+
 #endif  /* __LIFECYCLE_SYSCALLS_H */
