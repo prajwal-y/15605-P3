@@ -4,6 +4,8 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
+
+#include <asm.h>
 #include <core/thread.h>
 #include <list/list.h>
 #include <core/scheduler.h>
@@ -13,7 +15,7 @@
 static thread_struct_t *curr_thread; /* The thread currently being run */
 
 static list_head runnable_threads;    /* List of runnable threads */
-static mutex_t runq_mutex;
+//static mutex_t runq_mutex;
 
 static thread_struct_t *runq_get_head();
 //static void print_runnable_list(); //TODO: REMOVE THIS
@@ -23,7 +25,7 @@ static thread_struct_t *runq_get_head();
  *  @return void
  */
 void init_scheduler() {
-    mutex_init(&runq_mutex);
+    //mutex_init(&runq_mutex);
 	init_head(&runnable_threads);
 }
 
@@ -47,22 +49,27 @@ thread_struct_t *next_thread() {
 
 thread_struct_t *runq_get_head() {
 	//print_runnable_list();
-    mutex_lock(&runq_mutex);
+    //mutex_lock(&runq_mutex);
+    disable_interrupts();
     list_head *head = get_first(&runnable_threads);
     if (head == NULL) {
-        mutex_unlock(&runq_mutex);
+        //mutex_unlock(&runq_mutex);
+        enable_interrupts();
         return NULL;
     }
     del_entry(head);
-    mutex_unlock(&runq_mutex);
+    //mutex_unlock(&runq_mutex);
+    enable_interrupts();
     thread_struct_t *head_thread = get_entry(head, thread_struct_t, runq_link);
     return head_thread;
 }
 
 void runq_add_thread(thread_struct_t *thr) {
-    mutex_lock(&runq_mutex);
+    //mutex_lock(&runq_mutex);
+    disable_interrupts();
     add_to_tail(&thr->runq_link, &runnable_threads);
-    mutex_unlock(&runq_mutex);
+    enable_interrupts();
+    //mutex_unlock(&runq_mutex);
 	//print_runnable_list();
 }
 

@@ -11,6 +11,7 @@
 #include <core/thread.h>
 #include <core/context.h>
 #include <common/malloc_wrappers.h>
+#include <vm/vm.h>
 #include <simics.h>
 
 #define ALIVE_TASK 0
@@ -32,7 +33,6 @@ int do_wait(void *arg_packet) {
 
     //TODO: Sanitize every byte of input. Possibly to move it to a common file
     //since it will be used by many system calls.
-    //int *status_ptr = (int *)(*((int *)arg_packet));
     int *status_ptr = (int *)arg_packet;
     
     task_struct_t *curr_task = get_curr_task();
@@ -112,6 +112,8 @@ void do_vanish() {
         else {
             cond_signal(&parent_task->exit_cond_var);
         }
+        set_kernel_pd();
+        decrement_ref_count_and_free_pages(curr_task->pdbr);
     }
     curr_thread->status = EXITED;
     context_switch();

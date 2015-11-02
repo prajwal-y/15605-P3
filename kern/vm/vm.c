@@ -24,12 +24,14 @@
 #define USER_PD_ENTRY_FLAGS PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE
 
 static int *frame_ref_count;
+static void *kernel_pd;
 static mutex_t frame_ref_mutex;
 
 static void init_frame_ref_count();
 static void zero_fill(void *addr, int size);
 static void direct_map_kernel_pages(void *pd_addr);
 static void setup_direct_map();
+static void setup_kernel_pd();
 static int map_text_segment(simple_elf_t *se_hdr, void *pd_addr);
 static int map_data_segment(simple_elf_t *se_hdr, void *pd_addr);
 static int map_rodata_segment(simple_elf_t *se_hdr, void *pd_addr);
@@ -43,8 +45,8 @@ static void free_page_table(int *pt);
 static void make_pages_cow(int *pd);
 static void make_pt_cow(int *pt);
 static void increment_ref_count(int *pd);
+static void decrement_ref_count(int *pd);
 static void enable_page_pinning();
-//static void decrement_ref_count(int *pd);
 
 //static void set_segment_selectors(int type);
 
@@ -57,8 +59,19 @@ static void enable_page_pinning();
  */
 void vm_init() {
     setup_direct_map();
+    setup_kernel_pd();
 	init_frame_ref_count();
     enable_page_pinning();
+}
+
+/** @brief Function to set the the special kernel page
+ *         directory
+ *
+ *  @return void
+ */
+void setup_kernel_pd() {
+    kernel_pd = create_page_directory();
+    kernel_assert(kernel_pd != NULL);
 }
 
 /** @brief Initializes the array which stored the 
@@ -71,6 +84,15 @@ void init_frame_ref_count() {
 	kernel_assert(frame_ref_count != NULL);
 	memset(frame_ref_count, 0, size);
 	mutex_init(&frame_ref_mutex);
+}
+
+/** @brief Set the current page directory to kernel page
+ *   directory
+ * 
+ *  @return void
+ */
+void set_kernel_pd() {
+    set_cur_pd(kernel_pd);
 }
 
 /** @brief Sets the control register %cr3 with the given
@@ -108,6 +130,17 @@ void enable_page_pinning() {
     unsigned int cr4 = get_cr4();
     cr4 = cr4 | CR4_PGE;
     set_cr4(cr4);
+}
+
+/** @brief Function to decrement the reference count and free 
+ * the paging info
+ *
+ * @param pd The address of the page directory
+ * @return void
+ */
+void decrement_ref_count_and_free_pages(void *pd) {
+    decrement_ref_count(pd);
+    free_paging_info(pd);
 }
 
 /** @brief create a new page directory 
@@ -197,9 +230,11 @@ void free_page_table(int *pt) {
     }
 	int i;
 	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+        //mutex_lock(&frame_ref_mutex); /* Need to lock the data structure */
 		if(frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[i]))] == 0) {
 			//TODO: DEALLOCATE PHYSICAL FRAME
 		}
+        //mutex_unlock(&frame_ref_mutex); /* Need to lock the data structure */
 	}
 	sfree(pt, PAGE_SIZE);
 }
@@ -261,7 +296,7 @@ void free_paging_info(int *pd) {
  *  @return void
  */
 void increment_ref_count(int *pd) {
-	mutex_lock(&frame_ref_mutex);
+	//mutex_lock(&frame_ref_mutex);
 	if(pd == NULL) {
 		return;
 	}
@@ -271,12 +306,13 @@ void increment_ref_count(int *pd) {
 			int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[i]);
 			for(j=0; j<NUM_PAGE_TABLE_ENTRIES; j++) {
 				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
-					frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]++;
+					//frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]++;
+                    atomic_increment(&frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]);
 				}
 			}
 		}
 	}
-	mutex_unlock(&frame_ref_mutex);
+	//mutex_unlock(&frame_ref_mutex);
 }
 
 /** @brief Decrements the reference count for all the physical frames
@@ -285,7 +321,7 @@ void increment_ref_count(int *pd) {
  *  @return void
  */
 void decrement_ref_count(int *pd) {
-	mutex_lock(&frame_ref_mutex);
+	//mutex_lock(&frame_ref_mutex);
 	if(pd == NULL) {
 		return;
 	}
@@ -295,12 +331,13 @@ void decrement_ref_count(int *pd) {
 			int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[i]);
 			for(j=0; j<NUM_PAGE_TABLE_ENTRIES; j++) {
 				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
-					frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]--;
+					//frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]--;
+                    atomic_decrement(&frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]);
 				}
 			}
 		}
 	}
-	mutex_unlock(&frame_ref_mutex);
+	//mutex_unlock(&frame_ref_mutex);
 }
 
 /*********************COPY-ON-WRITE FUNCTIONS***************************/
@@ -404,8 +441,10 @@ int handle_cow(void *addr) {
         sfree(frame_contents, PAGE_SIZE);
 
 		/* Adjust reference counts */
-		frame_ref_count[FRAME_INDEX(frame_addr)]--;
-		frame_ref_count[FRAME_INDEX(new_frame)]++;
+		//frame_ref_count[FRAME_INDEX(frame_addr)]--;
+		//frame_ref_count[FRAME_INDEX(new_frame)]++;
+		atomic_decrement(&frame_ref_count[FRAME_INDEX(frame_addr)]);
+		atomic_increment(&frame_ref_count[FRAME_INDEX(new_frame)]);
 	}
 	mutex_unlock(&frame_ref_mutex);
 	pt[pt_index] |= READ_WRITE_ENABLE;

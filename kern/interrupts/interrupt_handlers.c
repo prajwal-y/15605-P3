@@ -120,7 +120,7 @@ void page_fault_handler_c() {
  *  @return void
  */
 void install_divide_error_handler() {
-    add_idt_entry(divide_error_handler, IDT_DE, INTERRUPT_GATE, KERNEL_DPL);
+    add_idt_entry(divide_error_handler, IDT_DE, TRAP_GATE, KERNEL_DPL);
 }
 
 /** @brief This function installs a handler for page fault
@@ -129,7 +129,7 @@ void install_divide_error_handler() {
  *
  */
 void install_page_fault_handler() {
-	add_idt_entry(page_fault_handler, IDT_PF, INTERRUPT_GATE, KERNEL_DPL);
+	add_idt_entry(page_fault_handler, IDT_PF, TRAP_GATE, KERNEL_DPL);
 }
 
 void four_fault_handler() {
@@ -177,8 +177,8 @@ void install_handler_12() {
 }
 
 void thirrt_fault_handler() {
-	lprintf("13 fult");
 	MAGIC_BREAK;
+	lprintf("13 fult");
 }
 void install_handler_13() {
 	add_idt_entry(thirrt_fault_handler, IDT_GP, INTERRUPT_GATE, KERNEL_DPL);

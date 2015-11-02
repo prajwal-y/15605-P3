@@ -112,3 +112,17 @@ get_err_code:
 invalidate_tlb_page:
 	invlpg 4(%esp)
 	ret
+
+.globl atomic_increment
+atomic_increment:
+    movl 4(%esp), %ecx
+    lock 
+    incl (%ecx)
+    ret
+
+.globl atomic_decrement
+atomic_decrement:
+    movl 4(%esp), %ecx
+    lock 
+    decl (%ecx)
+    ret
