@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include "410_tests.h"
 #include <report.h>
-#include <simics.h>
 
 DEF_TEST_NAME("fork_wait:");
 
@@ -21,7 +20,6 @@ int main()
 
   report_start(START_CMPLT);
   pid = fork();
-  lprintf("pid in for_exec is %d", pid);
 
   if (pid < 0) {
     report_end(END_FAIL);
@@ -30,18 +28,15 @@ int main()
   
   if (pid == 0) {
     exit(17);
-    lprintf("should not come herw");
     report_end(END_FAIL);   /* panic("vanish() didn't"); */
   }
 
   if (wait(&status) != pid) {
-    lprintf("wait != pid ?");
     report_end(END_FAIL);
     exit(-1);
   }
 
   if (status != 17) {
-    lprintf("status si != 17 is %d", status);
     report_end(END_FAIL);
     exit(-1);
   }

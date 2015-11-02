@@ -27,8 +27,8 @@
 #define IDT_ENTRY_SIZE 8  /* Size of each IDT */
 
 void tickback(unsigned int ticks) {
+	lprintf("%d - time for context switch", ticks);
 	context_switch();
-	lprintf("%d", ticks);
     // Add some logic to be run on each timer tick
     //return;
 }

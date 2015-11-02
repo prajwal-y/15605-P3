@@ -100,8 +100,9 @@ void load_kernel_task(const char *prog_name) {
     kernel_assert(t != NULL); //TODO: !!!!SHOULD NOT BE KERNEL ASSERT!!!!
 
     load_task(prog_name, 0, NULL, t);
+	
+    runq_add_thread(t->thr);
 }
-
 
 /** @brief start a bootstrap task
  *
@@ -160,6 +161,7 @@ void load_bootstrap_task(const char *prog_name) {
     kernel_assert(retval == 0);
 
 	set_running_thread(t->thr);
+	t->thr->status = RUNNING;
     set_esp0(t->thr->k_stack_base);
 
 	uint32_t EFLAGS = setup_user_eflags();
@@ -213,7 +215,6 @@ void load_task(const char *prog_name, int num_args, char **argvec,
 	set_task_stack((void *)t->thr->k_stack_base, 
 					se_hdr->e_entry, user_stack_top);
 	t->thr->cur_esp = (t->thr->k_stack_base - DEFAULT_STACK_OFFSET);
-    runq_add_thread(t->thr);
 }
 
 /* ------------ Static local functions --------------*/

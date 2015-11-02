@@ -44,6 +44,7 @@ int do_fork() {
 	child_task->thr->cur_esp = child_task->thr->k_stack_base 
 									- DEFAULT_STACK_OFFSET;
 
+	lprintf("Adding thread %d to run queue in do_fork()", child_task->thr->id);
 	/* Add the first thread of the new task to runnable queue */
 	runq_add_thread(child_task->thr);
 

@@ -29,7 +29,6 @@ static void reparent_to_init(list_head *task_list, int task_type,
  *          -1 if wait cannot wait on any task exiting in the future.
  */
 int do_wait(void *arg_packet) {
-    lprintf("going to dowait");
 
     //TODO: Sanitize every byte of input. Possibly to move it to a common file
     //since it will be used by many system calls.
@@ -46,12 +45,10 @@ int do_wait(void *arg_packet) {
     /* We will block wait if there are no dead tasks and there are still some 
      * tasks alive */
     while (dead_head == NULL && alive_head != NULL) {
-        lprintf("going to slep %d", curr_thread->id);
         cond_wait(&curr_task->exit_cond_var, &curr_task->child_list_mutex,
                   &curr_thread->cond_wait_link);
         dead_head = get_first(&curr_task->dead_child_head);
         alive_head = get_first(&curr_task->child_task_head);
-        lprintf("Awoken %d", curr_thread->id);
     }
 
     /* If there is something in the dead task list */
@@ -62,16 +59,13 @@ int do_wait(void *arg_packet) {
         task_struct_t *dead_task = get_entry(dead_head, task_struct_t,
                                              dead_child_link);
         int dead_task_id = dead_task->id;
-        lprintf("dead_task_id is %d", dead_task_id);
         if (status_ptr != NULL) {
-            lprintf("going to set statu_ptr to %d", dead_task->exit_status);
             *status_ptr = dead_task->exit_status;
         }
         sfree(dead_task, sizeof(task_struct_t));
         return dead_task_id;
     }
     mutex_unlock(&curr_task->child_list_mutex);
-    lprintf("going to retuern -1");
     return ERR_FAILURE;
 }
 

@@ -57,7 +57,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory.
 #
-410TESTS = knife prog1 prog2 prog3 prog4 fork_wait
+410TESTS = knife prog1 prog2 prog3 prog4 wait_getpid stack_test1
 
 ###########################################################################
 # Test programs you have written which you wish to run
