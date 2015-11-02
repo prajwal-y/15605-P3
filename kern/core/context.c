@@ -43,7 +43,8 @@ void context_switch() {
 		curr_thread->status = RUNNABLE;
 		runq_add_thread(curr_thread);
 	}
-    if (curr_thread->status == EXITED) {
+    if (curr_thread->status == EXITED) { //TODO: where exactly to free the stack?
+		sfree(curr_thread->k_stack, KERNEL_STACK_SIZE);
         sfree(curr_thread, sizeof(thread_struct_t));
         curr_thread = NULL;
     }

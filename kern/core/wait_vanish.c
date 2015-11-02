@@ -11,6 +11,7 @@
 #include <core/thread.h>
 #include <core/context.h>
 #include <common/malloc_wrappers.h>
+#include <vm/vm.h>
 #include <simics.h>
 
 #define ALIVE_TASK 0
@@ -32,7 +33,6 @@ int do_wait(void *arg_packet) {
 
     //TODO: Sanitize every byte of input. Possibly to move it to a common file
     //since it will be used by many system calls.
-    //int *status_ptr = (int *)(*((int *)arg_packet));
     int *status_ptr = (int *)arg_packet;
     
     task_struct_t *curr_task = get_curr_task();
@@ -79,8 +79,8 @@ void do_vanish() {
     thread_vanish(curr_thread);
     list_head *thread_head = get_first(&curr_task->thread_head);
     mutex_unlock(&curr_task->thread_list_mutex);
-    /* If this is the last thread in the task set exit status and
-     * take care of dead and alive tasks in the current task */
+    /* If this is the last thread in the task, take care 
+ 	 * of dead and alive tasks in the current task */
     if (thread_head == NULL) {
         task_struct_t *parent_task = curr_task->parent;
     
@@ -112,6 +112,8 @@ void do_vanish() {
         else {
             cond_signal(&parent_task->exit_cond_var);
         }
+        set_kernel_pd();
+        decrement_ref_count_and_free_pages(curr_task->pdbr);
     }
     curr_thread->status = EXITED;
     context_switch();
@@ -126,7 +128,7 @@ void do_vanish() {
  *  @return void
  */ 
 void thread_vanish(thread_struct_t *thr) {
-    sfree(thr->k_stack, KERNEL_STACK_SIZE);
+    //sfree(thr->k_stack, KERNEL_STACK_SIZE);
     remove_thread_from_map(thr->id);
     del_entry(&thr->task_thread_link);
 }

@@ -111,4 +111,20 @@ uint32_t get_err_code();
  */
 void invalidate_tlb_page(void *addr);
 
+/** @brief Function to atomically increment a memory location
+ *
+ *  @param addr Memory location of variable to be incremented
+ *
+ *  @return void
+ */
+void atomic_increment(void *addr);
+
+/** @brief Function to atomically decrement a memory location
+ *
+ *  @param addr Memory location of variable to be decremented
+ *
+ *  @return void
+ */
+void atomic_decrement(void *addr);
+
 #endif

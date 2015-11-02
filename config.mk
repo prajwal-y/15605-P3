@@ -57,7 +57,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory.
 #
-410TESTS = knife prog1 prog2 prog3 prog4 wait_getpid stack_test1
+410TESTS = prog1 prog2 prog3 prog4 fork_exit_bomb fork_wait_bomb fork_bomb fork_wait
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -148,7 +148,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 # or init unless you are writing your own, and don't do that unless
 # you have a really good reason to do so.
 #
-410REQPROGS = idle init shell ck1 peon merchant exec_nonexist
+410REQPROGS = idle init shell
 
 ###########################################################################
 # Mandatory programs whose source is provided by you
