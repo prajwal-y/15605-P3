@@ -57,7 +57,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory.
 #
-410TESTS = prog1 prog2 prog3 prog4 fork_exit_bomb fork_wait_bomb fork_bomb
+410TESTS = prog1 prog2 prog3 prog4 fork_exit_bomb fork_wait_bomb fork_bomb fork_wait
 
 ###########################################################################
 # Test programs you have written which you wish to run

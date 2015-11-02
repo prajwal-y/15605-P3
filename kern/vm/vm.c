@@ -59,9 +59,9 @@ static void enable_page_pinning();
  */
 void vm_init() {
     setup_direct_map();
-    setup_kernel_pd();
 	init_frame_ref_count();
     enable_page_pinning();
+    setup_kernel_pd();
 }
 
 /** @brief Function to set the the special kernel page
@@ -230,11 +230,9 @@ void free_page_table(int *pt) {
     }
 	int i;
 	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
-        //mutex_lock(&frame_ref_mutex); /* Need to lock the data structure */
 		if(frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[i]))] == 0) {
 			//TODO: DEALLOCATE PHYSICAL FRAME
 		}
-        //mutex_unlock(&frame_ref_mutex); /* Need to lock the data structure */
 	}
 	sfree(pt, PAGE_SIZE);
 }
@@ -296,7 +294,6 @@ void free_paging_info(int *pd) {
  *  @return void
  */
 void increment_ref_count(int *pd) {
-	//mutex_lock(&frame_ref_mutex);
 	if(pd == NULL) {
 		return;
 	}
@@ -306,13 +303,11 @@ void increment_ref_count(int *pd) {
 			int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[i]);
 			for(j=0; j<NUM_PAGE_TABLE_ENTRIES; j++) {
 				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
-					//frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]++;
                     atomic_increment(&frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]);
 				}
 			}
 		}
 	}
-	//mutex_unlock(&frame_ref_mutex);
 }
 
 /** @brief Decrements the reference count for all the physical frames
@@ -321,7 +316,6 @@ void increment_ref_count(int *pd) {
  *  @return void
  */
 void decrement_ref_count(int *pd) {
-	//mutex_lock(&frame_ref_mutex);
 	if(pd == NULL) {
 		return;
 	}
@@ -331,13 +325,11 @@ void decrement_ref_count(int *pd) {
 			int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[i]);
 			for(j=0; j<NUM_PAGE_TABLE_ENTRIES; j++) {
 				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
-					//frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]--;
                     atomic_decrement(&frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]);
 				}
 			}
 		}
 	}
-	//mutex_unlock(&frame_ref_mutex);
 }
 
 /*********************COPY-ON-WRITE FUNCTIONS***************************/
