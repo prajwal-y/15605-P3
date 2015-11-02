@@ -14,6 +14,7 @@
 #include <syscalls/thread_syscalls.h>
 #include <syscalls/console_syscalls.h>
 #include <syscalls/lifecycle_syscalls.h>
+#include <syscalls/misc_syscalls.h>
 
 #define NUM_INTERRUPTS 10 /* The number of interrupts we have defined handlers for */
 #define IDT_ENTRY_SIZE 8  /* Size of each IDT */
@@ -22,6 +23,10 @@ static void install_gettid_handler();
 static void install_print_handler();
 static void install_fork_handler();
 static void install_exec_handler();
+static void install_set_status_handler();
+static void install_halt_handler();
+static void install_wait_handler();
+static void install_vanish_handler();
 
 /** @brief The syscall handlers initialization function
  *
@@ -32,6 +37,10 @@ int install_syscall_handlers() {
     install_print_handler();
 	install_fork_handler();
 	install_exec_handler();
+	install_set_status_handler();
+	install_halt_handler();
+    install_wait_handler();
+    install_vanish_handler();
     return 0;
 }
 
@@ -65,4 +74,35 @@ void install_fork_handler() {
  */
 void install_exec_handler() {
 	add_idt_entry(exec_handler, EXEC_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for set_status
+ *
+ *  @return void
+ */
+void install_set_status_handler() {
+	add_idt_entry(set_status_handler, SET_STATUS_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for halt
+ *
+ *  @return void
+ */
+void install_halt_handler() {
+	add_idt_entry(halt_handler, HALT_INT, TRAP_GATE, USER_DPL);
+}
+/** @brief Function to install a handler for wait syscall
+ *
+ *  @return void
+ */
+void install_wait_handler() {
+	add_idt_entry(wait_handler, WAIT_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for vanish syscall
+ *
+ *  @return void
+ */
+void install_vanish_handler() {
+	add_idt_entry(vanish_handler, VANISH_INT, TRAP_GATE, USER_DPL);
 }

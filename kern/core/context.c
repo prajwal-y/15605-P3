@@ -14,6 +14,7 @@
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <simics.h>
+#include <common/malloc_wrappers.h>
 
 static void switch_to_thread(thread_struct_t *curr_thread, 
 								thread_struct_t *new_thread);
@@ -32,15 +33,27 @@ void context_switch() {
 
 	/* Get the next thread to be run from scheduler */
     thread_struct_t *thr = next_thread();
+	
+	if(thr == NULL) { /* There are no other threads to schedule */
+		return;
+	}
     
 	thread_struct_t *curr_thread = get_curr_thread();
-	if(curr_thread->id != 5 && curr_thread->status != WAITING) { //TODO: fix this
+	if(curr_thread->status == RUNNING) {
 		curr_thread->status = RUNNABLE;
 		runq_add_thread(curr_thread);
 	}
+    if (curr_thread->status == EXITED) {
+        sfree(curr_thread, sizeof(thread_struct_t));
+        curr_thread = NULL;
+    }
 
+	//lprintf("Going to switch to thread id %d with stack_base %p", thr->id, (void *)thr->k_stack_base);
+	
 	/* Call switch_to_thread with the new thread */
     switch_to_thread(curr_thread, thr);
+
+	//lprintf("Switched to thread id: %d from thread %d", thr->id, curr_thread->id);
 
 	enable_interrupts();
 }
@@ -61,6 +74,7 @@ void context_switch() {
  */
 void switch_to_thread(thread_struct_t *curr_thread, 
 						thread_struct_t *next_thread) {
+	/* This should never happpen as this check exists in the calling function */
 	if(next_thread == NULL) {
 		return;
 	}
@@ -82,12 +96,13 @@ void switch_to_thread(thread_struct_t *curr_thread,
 	set_running_thread(next_thread);
 	next_thread->status = RUNNING;
 
-	//lprintf("Going to switch to thread id %d with stack_base %p", thread->id, (void *)thread->k_stack_base);
-
-	update_stack(next_thread->cur_esp, next_thread->cur_ebp, 
-				(uint32_t)&curr_thread->cur_esp, 
-				(uint32_t)&curr_thread->cur_ebp);
-
-	//lprintf("Switched to thread id: %d", thread->id);
+    if (curr_thread != NULL) {
+        update_stack(next_thread->cur_esp, next_thread->cur_ebp, 
+                    (uint32_t)&curr_thread->cur_esp, 
+                    (uint32_t)&curr_thread->cur_ebp);
+    }
+    else {
+        update_stack_single(next_thread->cur_esp, next_thread->cur_ebp); 
+    }
 
 }

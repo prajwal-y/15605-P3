@@ -82,7 +82,17 @@ void iret_fun();
 void update_stack(uint32_t esp, uint32_t ebp, 
 					uint32_t addr_esp, uint32_t addr_ebp);
 
-uint32_t get_esp();
+/** @brief Function to change the kernel stack during
+ * 			context switching.
+ * 
+ *  This is the core of context switching
+ *
+ *  @param esp esp of the new stack
+ *  @param ebp ebp of the new stack
+ *
+ *  @return void
+ */
+void update_stack_single(uint32_t esp, uint32_t ebp);
 
 /** @brief Function to get the error code during a page fault
  *  

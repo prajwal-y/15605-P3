@@ -27,25 +27,38 @@
 #define EFLAGS_IF 0x00000200 
 #define EFLAGS_ALIGNMENT_CHECK 0xFFFbFFFF
 
+static task_struct_t *init_task;
 static uint32_t setup_user_eflags();
 static void set_task_stack(void *kernel_stack_base, int entry_addr,
                            void *user_stack_top);
 static void *copy_user_args(int num_args, char **argvec);
+static void init_task_structures(task_struct_t *t);
+
 
 /** @brief Create a new task
  *
  *  Creates a new task and adds the first thread to the task.
  *  The id of the first thread in the task is set to be the
- *  task ID.
+ *  task ID. This function sets its parent to the parent struct passed
+ *  in.
  *  
+ *  @param parent the parent task of the new task
+ *
  *  @return task_struct_t The reference to the new task
  *  NULL if task creation failed
  */
-task_struct_t *create_task() {
+task_struct_t *create_task(task_struct_t *parent) {
 	task_struct_t *t = (task_struct_t *)smalloc(sizeof(task_struct_t));
 	if(t == NULL) {
 		return NULL;
 	}
+
+    /* Set the parent of this task */
+    t->parent = parent;
+
+    /* Initialize various task data structures */
+    init_task_structures(t);
+
     thread_struct_t *thr = create_thread(t);
 	if(thr == NULL) {
 		sfree(t, sizeof(task_struct_t));
@@ -56,6 +69,22 @@ task_struct_t *create_task() {
     return t;
 }
 
+void init_task_structures(task_struct_t *t) {
+    /* Initialize the thread list */
+    init_head(&t->thread_head);
+
+    /* Initialize the alive child task list */
+    init_head(&t->child_task_head);
+
+    /* Initialize the dead child task list */
+    init_head(&t->dead_child_head);
+
+    /* Initialize mutexes and cond_vars */
+    mutex_init(&t->child_list_mutex);
+    mutex_init(&t->thread_list_mutex);
+    mutex_init(&t->vanish_mutex);
+    cond_init(&t->exit_cond_var);           
+}
 
 /** @brief Creates a task for a given program and calls
  * the function to load the task
@@ -67,12 +96,13 @@ task_struct_t *create_task() {
  */
 void load_kernel_task(const char *prog_name) {
     /* Allocate memory for a task struct from kernel memory */
-	task_struct_t *t = create_task();
+	task_struct_t *t = create_task(NULL); //TODO: should it be NULL or init ?
     kernel_assert(t != NULL); //TODO: !!!!SHOULD NOT BE KERNEL ASSERT!!!!
 
     load_task(prog_name, 0, NULL, t);
+	
+    runq_add_thread(t->thr);
 }
-
 
 /** @brief start a bootstrap task
  *
@@ -105,10 +135,15 @@ void load_bootstrap_task(const char *prog_name) {
 	enable_paging();
 
     /* Allocate memory for a task struct from kernel memory */
-	task_struct_t *t = create_task();
+	task_struct_t *t = create_task(NULL); //TODO: NUll or init?
 
     kernel_assert(t != NULL);
     t->pdbr = pd_addr;
+
+    //TODO: Remove this condition
+    //if (!strncmp(prog_name,"init", 4)) {
+        init_task = t;
+    //}
 
     /* Read the idle task header to set up VM */
 	simple_elf_t *se_hdr = (simple_elf_t *)smalloc(sizeof(simple_elf_t));
@@ -126,6 +161,7 @@ void load_bootstrap_task(const char *prog_name) {
     kernel_assert(retval == 0);
 
 	set_running_thread(t->thr);
+	t->thr->status = RUNNING;
     set_esp0(t->thr->k_stack_base);
 
 	uint32_t EFLAGS = setup_user_eflags();
@@ -179,7 +215,6 @@ void load_task(const char *prog_name, int num_args, char **argvec,
 	set_task_stack((void *)t->thr->k_stack_base, 
 					se_hdr->e_entry, user_stack_top);
 	t->thr->cur_esp = (t->thr->k_stack_base - DEFAULT_STACK_OFFSET);
-    runq_add_thread(t->thr);
 }
 
 /* ------------ Static local functions --------------*/
@@ -262,4 +297,12 @@ uint32_t setup_user_eflags() {
 	eflags |= EFLAGS_IF;                /*IF*/
 	eflags &= EFLAGS_ALIGNMENT_CHECK;   /*Alignment check off*/
 	return eflags;
+}
+
+/** @brief get a pointer to the init task
+ *
+ * @return task_struct_t* pointer to the init task
+ */
+task_struct_t *get_init_task() {
+    return init_task;
 }

@@ -27,7 +27,6 @@ static list_head *thread_map[HASHMAP_SIZE];
 static void set_user_thread_regs(ureg_t *reg);
 static void init_thread_map();
 static void add_thread_to_map(thread_struct_t *thr);
-//static void remove_thread_from_map(int thr_id);
 
 /** @brief Initializes the thread creation module
  *
@@ -65,16 +64,17 @@ thread_struct_t *create_thread(task_struct_t *task) {
 		sfree(reg, sizeof(ureg_t));
         return NULL;
     }
-    /* Assign thread id to thread */
+    /* Assign thread id to thread and add it to task's thread list*/
     mutex_lock(&mutex);
     thr->id = ++next_tid;
+    add_to_tail(&thr->task_thread_link, &task->thread_head);
     mutex_unlock(&mutex);
 
     /* Add thread tCB to hash map */
     add_thread_to_map(thr);
 
 	/* Allocate space for thread's kernel stack */
-	void *stack = smemalign(PAGE_SIZE, PAGE_SIZE);
+	void *stack = smemalign(PAGE_SIZE, KERNEL_STACK_SIZE);
     if(stack == NULL) {
         sfree(thr, sizeof(thread_struct_t));
         sfree(reg, sizeof(ureg_t));
@@ -188,4 +188,3 @@ void remove_thread_from_map(int thr_id) {
 	}
     mutex_unlock(&map_mutex);
 }
-

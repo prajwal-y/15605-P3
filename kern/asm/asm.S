@@ -95,9 +95,12 @@ update_stack:
 	movl %ecx, %esp		/* Set the new esp */
 	ret
 
-.globl get_esp
-get_esp:
-	movl %esp, %eax
+.globl update_stack_single
+update_stack_single:
+	movl 8(%esp), %ecx	/* The new ebp */
+	movl %ecx, %ebp		/* Set the new ebp */
+	movl 4(%esp), %ecx	/* The new esp */
+	movl %ecx, %esp		/* Set the new esp */
 	ret
 
 .globl get_err_code

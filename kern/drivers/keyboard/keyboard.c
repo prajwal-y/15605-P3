@@ -69,7 +69,7 @@ void enqueue_scancode() {
     add_to_tail(&code->link, &head);
     if ((abcd % 4) == 0) {
 		lprintf("About to context switch");
-        context_switch();
+        //context_switch();
 		lprintf("Yay! Context switched");
     }
     abcd++;

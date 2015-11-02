@@ -75,3 +75,50 @@ list_head *get_first(list_head *head) {
     }
     return head->next;
 }
+
+/** @brief get the last entry in the list
+ *
+ *  @param head the head of the list
+ *  @return the first node in the list
+ */
+list_head *get_last(list_head *head) {
+    if (head->prev == head) {
+        return NULL;
+    }
+    return head->prev;
+}
+
+/** @brief concatenate two lists. 
+ *
+ *  Add the second list to the first. The head of the new list is the 
+ *  head of the first list. Both the lists have to be locked appropriately
+ *  by the caller.
+ *
+ *  @param first_list_head the dummy head of the first list
+ *  @param second_list_head the dummy head of the second list
+ *  @return the first node in the list
+ */
+void concat_lists(list_head *first_list_head, list_head *second_list_head) {
+    list_head *head_one = get_first(first_list_head);
+    list_head *tail_one = get_last(first_list_head);
+    list_head *head_two = get_first(second_list_head);
+    list_head *tail_two = get_last(second_list_head);
+
+    if ((head_one == NULL && head_two == NULL) || 
+        head_two == NULL) {
+        return;
+    }
+
+    if (head_one == NULL) {
+        first_list_head->next = head_two;
+        first_list_head->prev = tail_two;
+        head_two->prev = first_list_head;
+        tail_two->next = first_list_head;
+        init_head(second_list_head);
+        return;
+    }
+    tail_one->next = head_two;
+    head_two->prev = tail_one;
+    tail_two->next = first_list_head;
+    first_list_head->prev = tail_two;
+}
