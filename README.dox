@@ -5,6 +5,64 @@
 @author Prajwal Yadapadithaya (pyadapad)
 @author Rohit Upadhyaya (rjupadhy)
 
-Need to document soon
+Pebbles Kernel
+--------------
+
+The aim of this project is to implement a Unix-type kernel. We describe the design
+and implementation of various modules that make up the kernel in this README. We
+will describe the modules one after another with each module explaining the various
+code files and the design decisions taken.
+
+VM
+--
+
+Physical Frame Allocator
+------------------------
+
+Loader
+------
+
+Scheduler
+---------
+
+Context Switch
+--------------
+
+System calls
+------------
+We classify the system calls into the following categories. In each category, we describe
+the implementation and design decisions taken for each system call.
+
+Task and Thread IDs:
+
+Life Cycle:
+
+Thread Management:
+
+Memory Management:
+
+Console I/O:
+
+Miscellaneous System Interaction:
+
+
+Faults and Exceptions
+---------------------
+
+
+Locking Architecture
+--------------------
+
+
+Key Data Structures
+-------------------
+
+Generic doubly linked list:
+
+A Simple map for threads:
+
+
+Limitations and Bugs
+--------------------
 
 */
