@@ -29,6 +29,7 @@ static void install_halt_handler();
 static void install_wait_handler();
 static void install_vanish_handler();
 static void install_new_pages_handler();
+static void install_readline_handler();
 
 /** @brief The syscall handlers initialization function
  *
@@ -44,6 +45,7 @@ int install_syscall_handlers() {
     install_wait_handler();
     install_vanish_handler();
     install_new_pages_handler();
+    install_readline_handler();
     return 0;
 }
 
@@ -116,4 +118,12 @@ void install_vanish_handler() {
  */
 void install_new_pages_handler() {
 	add_idt_entry(new_pages_handler, NEW_PAGES_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for readline syscall
+ *
+ *  @return void
+ */
+void install_readline_handler() {
+	add_idt_entry(readline_handler, READLINE_INT, TRAP_GATE, USER_DPL);
 }

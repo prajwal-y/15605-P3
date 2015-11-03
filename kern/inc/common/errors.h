@@ -13,5 +13,6 @@
 #define ERR_INVAL -2
 #define ERR_BUSY -3
 #define ERR_NOMEM -4
+#define ERR_NOTAVAIL -5
 
 #endif /* __THREAD_ERRORS_H */

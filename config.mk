@@ -58,7 +58,7 @@ UPDATE_METHOD = afs
 # directory.
 #
 410TESTS = prog1 prog2 prog3 prog4 fork_exit_bomb fork_wait_bomb fork_bomb fork_wait \
-		   new_pages mem_permissions
+		   new_pages mem_permissions readline_basic
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -130,7 +130,8 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 			  syscalls/thread_syscalls.o syscalls/thread_syscalls_asm.o syscalls/console_syscalls.o \
 			  syscalls/console_syscalls_asm.o syscalls/lifecycle_syscalls.o syscalls/lifecycle_syscalls_asm.o \
 			  common/assert.o common/malloc_wrappers.o core/context.o core/scheduler.o core/exec.o syscalls/misc_syscalls.o \
-			  syscalls/misc_syscalls_asm.o core/wait_vanish.o syscalls/memory_syscalls.o syscalls/memory_syscalls_asm.o
+			  syscalls/misc_syscalls_asm.o core/wait_vanish.o syscalls/memory_syscalls.o syscalls/memory_syscalls_asm.o \
+			  drivers/keyboard/keyboard_circular_buffer.o
 
 
 ###########################################################################

@@ -6,6 +6,7 @@
  *        continuously we will run out of heap space
  */
 #include <drivers/keyboard/keyboard.h>
+#include <drivers/keyboard/keyboard_circular_buffer.h>
 #include <drivers/keyboard/keyboard_handler.h>
 #include <keyhelp.h>
 #include <interrupts/idt_entry.h>
@@ -14,11 +15,12 @@
 #include <common/malloc_wrappers.h>
 #include <list/list.h>
 #include <stddef.h>
-#include <core/context.h>   /* TODO: REOMVE THIS! */
 #include <simics.h>
+#include <console.h>
+#include <sync/cond_var.h>
 
-// TODO: REMOVE HACK LAND!
-static int abcd = 0;
+cond_t readline_cond_var;
+mutex_t readline_mutex;
 
 /** @brief a struct which represents a node in our
  *         keyboard buffer
@@ -32,7 +34,6 @@ typedef struct {
     list_head link;
 } scancode;
 static list_head head; /* Dummy node which does not have any data */
-static void initialize_queue();
 
 /** @brief function to install the handler and initialize
  *         our scancode buffer 
@@ -41,20 +42,8 @@ static void initialize_queue();
  */
 void install_keyboard_handler() {
     add_idt_entry(keyboard_handler, KEY_IDT_ENTRY, TRAP_GATE, KERNEL_DPL);
-    initialize_queue();
-}
-
-/** @brief initialize our queue by setting a dummy head and 
- *         setting the head to point to itself
- *
- *  @return void
- */
-void initialize_queue() {
-    head = ((scancode *)malloc(sizeof(scancode)))->link;
-    /*if (head == NULL) {
-        return; //TODO: use circular buffer instead
-    }*/
-    init_head(&head);
+    cond_init(&readline_cond_var);
+    mutex_init(&readline_mutex);
 }
 
 /** @brief add the scancode to the end of our queue and return
@@ -64,15 +53,15 @@ void initialize_queue() {
 void enqueue_scancode() {
     unsigned char in = inb(KEYBOARD_PORT);
 
-    scancode *code = (scancode *)malloc(sizeof(scancode));
-    code->code = in;
-    add_to_tail(&code->link, &head);
-    if ((abcd % 4) == 0) {
-		lprintf("About to context switch");
-        //context_switch();
-		lprintf("Yay! Context switched");
+    kh_type key = process_scancode(in);
+    if ((KH_HASDATA(key) != 0) && (KH_ISMAKE(key) == 0)) {
+        char c = KH_GETCHAR(key);
+        putbyte(c);
+        add_keystroke(KH_GETCHAR(key));
+        if (c == '\n') {
+            cond_signal(&readline_cond_var);
+        }
     }
-    abcd++;
     acknowledge_interrupt();
     return;
 }
@@ -97,4 +86,15 @@ int readchar() {
         }
     }
     return -1;
+}
+
+/** @brief get the nextline 
+ *
+ * @param buf user buffer to put the line in
+ * @param len number of bytes
+ *
+ * @return int 0 if success and -ve integer on failure
+ */
+int nextline(char *buf, int len) {
+    return get_nextline(buf, len);
 }

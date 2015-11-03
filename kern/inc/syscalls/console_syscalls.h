@@ -12,4 +12,8 @@ void print_handler();
 
 int print_handler_c();
 
+void readline_handler();
+
+int readline_handler_c();
+
 #endif  /* __CONSOLE_SYSCALLS_H */
