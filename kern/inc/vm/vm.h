@@ -22,13 +22,17 @@
 /*Constants and macros*/
 
 #define PAGE_TABLE_ENTRY_SIZE 4
-#define PAGE_DIRECTORY_MASK 0xFFC00000
+#define PAGE_DIRECTORY_MASK 0xffc00000
 #define PAGE_TABLE_MASK 0x003ff000
 #define PAGE_ROUND_DOWN 0xfffff000
 #define NUM_PAGE_TABLE_ENTRIES (PAGE_SIZE / PAGE_TABLE_ENTRY_SIZE)
 #define DEFAULT_STACK_SIZE 1 * 1024 * 1024
 #define STACK_START 0xc0000000
 #define STACK_END (STACK_START - DEFAULT_STACK_SIZE)
+#define MEMORY_REGION_MAPPED 0
+#define MEMORY_REGION_UNMAPPED 1
+#define MAX_MEMORY_ADDR 0xffffffff
+#define MAX_AVAILABLE_USER_MEM (MAX_MEMORY_ADDR - USER_MEM_START)
 
 #define PAGE_DIR_ENTRY_DEFAULT 0x00000002
 #define PAGE_TABLE_ENTRY_DEFAULT 0x00000002
@@ -64,6 +68,8 @@ int handle_cow(void *addr);
 
 void enable_paging();
 
-void disable_paging();
+int is_memory_range_mapped(void *base, int len);
+
+int map_new_pages(void *base, int length);
 
 #endif /* __VM_H */

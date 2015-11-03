@@ -15,6 +15,7 @@
 #include <syscalls/console_syscalls.h>
 #include <syscalls/lifecycle_syscalls.h>
 #include <syscalls/misc_syscalls.h>
+#include <syscalls/memory_syscalls.h>
 
 #define NUM_INTERRUPTS 10 /* The number of interrupts we have defined handlers for */
 #define IDT_ENTRY_SIZE 8  /* Size of each IDT */
@@ -27,6 +28,7 @@ static void install_set_status_handler();
 static void install_halt_handler();
 static void install_wait_handler();
 static void install_vanish_handler();
+static void install_new_pages_handler();
 
 /** @brief The syscall handlers initialization function
  *
@@ -41,6 +43,7 @@ int install_syscall_handlers() {
 	install_halt_handler();
     install_wait_handler();
     install_vanish_handler();
+    install_new_pages_handler();
     return 0;
 }
 
@@ -105,4 +108,12 @@ void install_wait_handler() {
  */
 void install_vanish_handler() {
 	add_idt_entry(vanish_handler, VANISH_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for new_pages syscall
+ *
+ *  @return void
+ */
+void install_new_pages_handler() {
+	add_idt_entry(new_pages_handler, NEW_PAGES_INT, TRAP_GATE, USER_DPL);
 }

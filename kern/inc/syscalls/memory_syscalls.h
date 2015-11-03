@@ -10,6 +10,6 @@
 
 int new_pages_handler();
 
-int new_pages_handler_c(void *arg_packet)
+int new_pages_handler_c(void *arg_packet);
 
 #endif  /* __MEMORY_SYSCALLS_H */

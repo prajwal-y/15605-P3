@@ -618,7 +618,6 @@ int map_bss_segment(simple_elf_t *se_hdr, void *pd_addr) {
 
 /** @brief map the stack segment into virtual memory
  *
- *  @param se_hdr the parsed elf header
  *  @param pd_addr the address of the page directory frame
  *  @return int error code, 0 on success negative integer on failure
  */
@@ -626,6 +625,18 @@ int map_stack_segment(void *pd_addr) {
     int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
     return map_segment((char *)STACK_START - DEFAULT_STACK_SIZE, 
 						DEFAULT_STACK_SIZE, pd_addr, flags); 
+}
+
+/** @brief map new_pages into virtual memory
+ *
+ *  @param base the base of the new_pages region
+ *  @param len the length of the new pages region
+ *  @return int error code, 0 on success negative integer on failure
+ */
+int map_new_pages(void *base, int length) {
+    void *pd_addr = (void *)get_cr3();
+    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
+    return map_segment((char *)base, length, pd_addr, flags); 
 }
 
 /** @brief map a segment into memory
@@ -673,4 +684,49 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
         start_addr = (char *)start_addr + PAGE_SIZE;
     }
     return 0;
+}
+
+/** @brief check if a memory region is mapped in the current 
+ *         process's usable address space
+ *
+ *  This function makes use of the paging info of the current process
+ *  to determine if any part of the memory range passed in has already
+ *  been mapped.
+ *
+ *  @param base the base of the memory range to be checked
+ *  @param len the length of the memory range to be checked
+ *
+ *  @return MEMORY_REGION_MAPPED if any portion of the range passed in is 
+ *          already mapped or is in kernel address space. 
+ *          MEMORY_REGION_UNMAPPED if the entire range is not mapped in the
+ *          process address space and is not in the kernel address space. 
+ *          ERR_INVAL if illegal arguments are passed in.
+ */
+int is_memory_range_mapped(void *base, int len) {
+    if (base == NULL || base > (void *)MAX_MEMORY_ADDR ||
+        len <= 0 || len > (MAX_AVAILABLE_USER_MEM)) {
+        return ERR_INVAL;
+    } 
+    if (base < (void *)USER_MEM_START) {
+        return MEMORY_REGION_MAPPED;
+    }
+    void *end_addr = (char *)base + len;
+    int *pd_addr = (int *)get_cr3();
+    int *pt_addr;
+    int pd_index, pt_index;
+
+    base = (void *)((int)base & PAGE_ROUND_DOWN);
+    while (base <= end_addr) {
+        pd_index = GET_PD_INDEX(base);
+        pt_index = GET_PT_INDEX(base);
+        if (pd_addr[pd_index] != PAGE_DIR_ENTRY_DEFAULT) {
+            pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+            if (pt_addr[pt_index] != PAGE_TABLE_ENTRY_DEFAULT) {
+                return MEMORY_REGION_MAPPED;
+            }
+        }
+        base = (char *)base + PAGE_SIZE;
+    }
+
+    return MEMORY_REGION_UNMAPPED;
 }

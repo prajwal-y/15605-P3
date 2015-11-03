@@ -18,6 +18,7 @@
 #define PAGE_ALIGNMENT_CHECK 0x00000fff
 
 int *free_frames_arr;
+int num_allocated = 0;
 
 static void *free_list_head; /* Head of free list,UINT_MAX => no free frames */
 static mutex_t list_mut;     /* Mutex to synchronize access to free frame list */
@@ -82,10 +83,14 @@ void *allocate_frame() {
     void *frame_addr = free_list_head;
     
 	free_list_head = (void *)free_frames_arr[FRAME_INDEX(frame_addr)];
+    lprintf("got from %d, new list head is %p", FRAME_INDEX(frame_addr), free_list_head);
 
 	mutex_unlock(&list_mut);
 
+    lprintf("num allocated is %d and %p", num_allocated, frame_addr);
+
     kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
+    num_allocated++;
 
     return frame_addr;
 }
@@ -100,6 +105,7 @@ void *allocate_frame() {
  *  TODO : FIX THIS
  */
 void deallocate_frame(void *frame_addr) {
+    lprintf("Deallocated frame");
     kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
     kernel_assert(frame_addr != NULL);
     //TODO: assert memory check

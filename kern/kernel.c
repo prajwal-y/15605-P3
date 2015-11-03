@@ -75,7 +75,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
     //load_kernel_task("prog2"); /* TODO: Replace with init later */
     //load_kernel_task("prog3"); /* TODO: Replace with init later */
 	//load_kernel_task("prog4");
-	load_kernel_task("fork_wait_bomb");
+	load_kernel_task("mem_permissions");
 
     /* Load the idle task in user mode. This task ALWAYS has TID 1 */
     load_bootstrap_task("idle");
