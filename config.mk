@@ -32,7 +32,7 @@
 # If you use tabstops set to something other than the international
 # standard of eight characters, this is your opportunity to inform
 # our print scripts.
-TABSTOP = 2
+TABSTOP = 4
 
 ###########################################################################
 # The method for acquiring project updates.

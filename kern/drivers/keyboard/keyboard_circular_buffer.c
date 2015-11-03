@@ -4,6 +4,8 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
+
+#include <console.h>
 #include <common/errors.h>
 #include <drivers/keyboard/keyboard_circular_buffer.h>
 #include <stddef.h>
@@ -20,7 +22,6 @@ int start_ptr = 0;
 int end_ptr = 0;
 int newline_ptr = -1;
 
-
 /** @brief add keystroke to buffer
  *
  *  @param c next character
@@ -36,9 +37,13 @@ void add_keystroke(char c) {
         newline_ptr = end_ptr;
     }
     if (c == '\b') {
-        end_ptr = PREV(end_ptr);
+		if(end_ptr != start_ptr) {
+        	end_ptr = PREV(end_ptr);
+			putbyte(c);
+		}
         return;
     }
+	putbyte(c);
     end_ptr = NEXT(end_ptr);
 }   
 

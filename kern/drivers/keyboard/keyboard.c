@@ -56,7 +56,6 @@ void enqueue_scancode() {
     kh_type key = process_scancode(in);
     if ((KH_HASDATA(key) != 0) && (KH_ISMAKE(key) == 0)) {
         char c = KH_GETCHAR(key);
-        putbyte(c);
         add_keystroke(KH_GETCHAR(key));
         if (c == '\n') {
             cond_signal(&readline_cond_var);
