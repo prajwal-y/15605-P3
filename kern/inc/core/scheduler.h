@@ -18,6 +18,8 @@ task_struct_t *get_curr_task();
 
 void runq_add_thread(thread_struct_t *thr);
 
+void runq_add_thread_interruptible(thread_struct_t *thr);
+
 void set_running_thread(thread_struct_t *thr);
 
 #endif  /* __SCHEDULER_H */

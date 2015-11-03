@@ -101,7 +101,7 @@ void load_kernel_task(const char *prog_name) {
 
     load_task(prog_name, 0, NULL, t);
 	
-    runq_add_thread(t->thr);
+    runq_add_thread_interruptible(t->thr);
 }
 
 /** @brief start a bootstrap task

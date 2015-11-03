@@ -83,14 +83,10 @@ void *allocate_frame() {
     void *frame_addr = free_list_head;
     
 	free_list_head = (void *)free_frames_arr[FRAME_INDEX(frame_addr)];
-    lprintf("got from %d, new list head is %p", FRAME_INDEX(frame_addr), free_list_head);
 
 	mutex_unlock(&list_mut);
 
-    lprintf("num allocated is %d and %p", num_allocated, frame_addr);
-
     kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
-    num_allocated++;
 
     return frame_addr;
 }

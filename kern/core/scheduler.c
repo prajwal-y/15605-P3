@@ -61,6 +61,10 @@ void runq_add_thread(thread_struct_t *thr) {
     enable_interrupts();
 }
 
+void runq_add_thread_interruptible(thread_struct_t *thr) {
+    add_to_tail(&thr->runq_link, &runnable_threads);
+}
+
 /** @brief get the currently running thread
  *
  *  @return thread_struct_t thread info of the currently running thread
