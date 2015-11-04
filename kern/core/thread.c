@@ -120,7 +120,7 @@ void set_user_thread_regs(ureg_t *reg) {
 void init_thread_map() {
     int i;
     for (i = 0; i < HASHMAP_SIZE; i++) {
-        thread_map[i] = (list_head *)smalloc(sizeof(list_head *));
+        thread_map[i] = (list_head *)smalloc(sizeof(list_head));
         kernel_assert(thread_map[i] != NULL);
         init_head(thread_map[i]);
     }

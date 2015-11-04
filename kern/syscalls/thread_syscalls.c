@@ -8,6 +8,9 @@
 #include <syscalls/thread_syscalls.h>
 #include <core/thread.h>
 #include <core/scheduler.h>
+#include <core/context.h>
+#include <common/errors.h>
+#include <simics.h>
 
 /** @brief implement the functionality to get the tid
  *         from the global curr_thread struct. This passes
@@ -19,5 +22,24 @@
 int gettid_handler_c() {
     thread_struct_t *curr_thread = get_curr_thread();
     return curr_thread->id;
+}
+
+/** @brief yield to a different thread
+ *
+ *  @return int 0 on success -ve integer if tid does not exist or
+ *              thread is suspended
+ */
+int yield_handler_c(int tid) {
+    if (tid != -1) {
+        thread_struct_t *thr = get_thread_from_id(tid);
+        if (thr == NULL) {
+            return ERR_INVAL;
+        }
+        if (thr->status == WAITING) {
+            return ERR_FAILURE;
+        }
+    }
+    context_switch();
+    return 0;
 }
 

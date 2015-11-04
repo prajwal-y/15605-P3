@@ -108,6 +108,11 @@ get_err_code:
 	movl 4(%esp), %eax	/* Get the error code from the stack pointer*/
 	ret
 
+.globl get_err_instr
+get_err_instr:
+	movl 8(%esp), %eax	/* Get the error code from the stack pointer*/
+	ret
+
 .globl invalidate_tlb_page
 invalidate_tlb_page:
 	invlpg 4(%esp)

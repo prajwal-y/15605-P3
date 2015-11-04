@@ -31,6 +31,7 @@ static void install_vanish_handler();
 static void install_new_pages_handler();
 static void install_remove_pages_handler();
 static void install_readline_handler();
+static void install_yield_handler();
 
 /** @brief The syscall handlers initialization function
  *
@@ -48,6 +49,7 @@ int install_syscall_handlers() {
     install_new_pages_handler();
     install_remove_pages_handler();
     install_readline_handler();
+    install_yield_handler();
     return 0;
 }
 
@@ -136,4 +138,12 @@ void install_readline_handler() {
  */
 void install_remove_pages_handler() {
 	add_idt_entry(remove_pages_handler, REMOVE_PAGES_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for yield syscall
+ *
+ *  @return void
+ */
+void install_yield_handler() {
+	add_idt_entry(yield_handler, YIELD_INT, TRAP_GATE, USER_DPL);
 }

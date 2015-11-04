@@ -629,7 +629,7 @@ int map_bss_segment(simple_elf_t *se_hdr, void *pd_addr) {
  */
 int map_stack_segment(void *pd_addr) {
     int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
-    return map_segment((char *)STACK_START - DEFAULT_STACK_SIZE, 
+    return map_segment((char *)STACK_START - DEFAULT_STACK_SIZE + 1, 
 						DEFAULT_STACK_SIZE, pd_addr, flags); 
 }
 
@@ -720,12 +720,12 @@ int unmap_new_pages(void *base) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) {
-    void *end_addr = (char *)start_addr + length - 1;
+    void *end_addr = (char *)start_addr + length;
     int pd_index, pt_index;
     int *pt_addr;
 
     start_addr = (void *)((int)start_addr & PAGE_ROUND_DOWN);
-    while (start_addr <= end_addr) {
+    while (start_addr < end_addr) {
         pd_index = GET_PD_INDEX(start_addr);
         pt_index = GET_PT_INDEX(start_addr);
         if (pd_addr[pd_index] == PAGE_DIR_ENTRY_DEFAULT) { /* Page directory entry absent */
@@ -778,7 +778,7 @@ int is_memory_range_mapped(void *base, int len) {
     if (base < (void *)USER_MEM_START) {
         return MEMORY_REGION_MAPPED;
     }
-    void *end_addr = (char *)base + len - 1;
+    void *end_addr = (char *)base + len;
     int *pd_addr = (int *)get_cr3();
     int *pt_addr;
     int pd_index, pt_index;

@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include "410_tests.h"
 #include <report.h>
+#include <simics.h>
 
 #define ADDR 0x40000000
 #ifndef PAGE_SIZE
@@ -29,6 +30,7 @@ int main() {
   lprintf("It assumes that new_pages works as spec\n");
 
   for(size = 1; size < 50; size++) {
+      lprintf("size is %d", size);
     /* allocate pages */
     if (new_pages((void *)ADDR, size * PAGE_SIZE) != 0) {
       lprintf("new_pages failed to allocated %d bytes at %x",
