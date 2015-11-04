@@ -105,6 +105,8 @@ void page_fault_handler_c() {
 
 	if(is_addr_cow(page_fault_addr)) {
 		handle_cow(page_fault_addr);
+	} else {
+		MAGIC_BREAK;
 	}
 
 	//TODO: HANDLE OTHER CASES OF PAGE FAULT. AND MOVE THIS TO OTHER FILE
