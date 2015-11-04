@@ -49,7 +49,7 @@ void context_switch() {
         curr_thread = NULL;
     }
 
-	//lprintf("Going to switch to thread id %d with stack_base %p", thr->id, (void *)thr->k_stack_base);
+	//lprintf("Going to switch to thread id %d from thread %d (stack_base %p)", thr->id, curr_thread->id, (void *)thr->k_stack_base);
 	
 	/* Call switch_to_thread with the new thread */
     switch_to_thread(curr_thread, thr);
@@ -57,6 +57,7 @@ void context_switch() {
 	//lprintf("Switched to thread id: %d from thread %d", thr->id, curr_thread->id);
 
 	enable_interrupts();
+	
 }
 
 /** @brief Function to switch to a new thread.
