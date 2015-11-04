@@ -22,6 +22,12 @@
 #include <allocator/frame_allocator.h>
 
 #define USER_PD_ENTRY_FLAGS PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE
+#define SET_NEWPAGE_START(x) (((unsigned int)(x) & 0xfffff1ff) | NEWPAGE_START)
+#define SET_NEWPAGE_END(x) (((unsigned int)(x) & 0xfffff1ff) | NEWPAGE_END)
+#define GET_NEWPAGE_FLAGS(x) (((unsigned int)(x) & 0x00000e00))
+#define IS_NEWPAGE_START(x) ((unsigned int)(x) & NEWPAGE_START)
+#define IS_NEWPAGE_PAGE(x) ((unsigned int)(x) & NEWPAGE_PAGE)
+#define IS_NEWPAGE_END(x) ((unsigned int)(x) & NEWPAGE_END)
 
 static int *frame_ref_count;
 static void *kernel_pd;
@@ -634,9 +640,71 @@ int map_stack_segment(void *pd_addr) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_new_pages(void *base, int length) {
-    void *pd_addr = (void *)get_cr3();
-    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
-    return map_segment((char *)base, length, pd_addr, flags); 
+    int retval, pd_index, pt_index;
+    int *pd_addr = (int *)get_cr3();
+    int *pt_addr;
+    int *end_addr = (int *)((char *)base + length - 1);
+    int *end_frame = (int *)((int)end_addr & PAGE_ROUND_DOWN);
+    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE
+                | NEWPAGE_PAGE;
+    retval = map_segment((char *)base, length, pd_addr, flags); 
+    if (retval < 0) {
+        return retval;
+    }
+
+    pd_index = GET_PD_INDEX(end_frame);
+    pt_index = GET_PT_INDEX(end_frame);
+    pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+    pt_addr[pt_index] = SET_NEWPAGE_END(pt_addr[pt_index]);
+
+    pd_index = GET_PD_INDEX(base);
+    pt_index = GET_PT_INDEX(base);
+    pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+    pt_addr[pt_index] = SET_NEWPAGE_START(pt_addr[pt_index]);
+
+    return 0;
+}
+
+/** @brief unmap new_pages from virtual memory
+ *
+ *  @param base the base of the new_pages region
+ *  @return int error code, 0 on success negative integer on failure
+ */
+int unmap_new_pages(void *base) {
+    int pd_index, pt_index;
+    int *pd_addr = (int *)get_cr3();
+    int *pt_addr;
+    //void *frame_addr;
+
+    pd_index = GET_PD_INDEX(base);
+    pt_index = GET_PT_INDEX(base);
+    pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+    if (GET_NEWPAGE_FLAGS(pt_addr[pt_index]) != NEWPAGE_START) {
+        return ERR_INVAL;
+    }
+    pt_addr[pt_index] = PAGE_TABLE_ENTRY_DEFAULT;
+
+    //TODO:
+    //frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt_addr[pt_index])
+    //deallocate frame_addr
+    
+    base = (char *)base + PAGE_SIZE;
+    pd_index = GET_PD_INDEX(base);
+    pt_index = GET_PT_INDEX(base);
+    pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+    while((GET_NEWPAGE_FLAGS(pt_addr[pt_index]) == NEWPAGE_PAGE) 
+          || (GET_NEWPAGE_FLAGS(pt_addr[pt_index]) == NEWPAGE_END)) {
+        //TODO: 
+        //frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt_addr[pt_index])
+        //deallocate frame_addr
+        pt_addr[pt_index] = PAGE_TABLE_ENTRY_DEFAULT;
+        base = (char *)base + PAGE_SIZE;
+        pd_index = GET_PD_INDEX(base);
+        pt_index = GET_PT_INDEX(base);
+        pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+    }
+
+    return 0;
 }
 
 /** @brief map a segment into memory
@@ -652,7 +720,7 @@ int map_new_pages(void *base, int length) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) {
-    void *end_addr = (char *)start_addr + length;
+    void *end_addr = (char *)start_addr + length - 1;
     int pd_index, pt_index;
     int *pt_addr;
 
@@ -710,7 +778,7 @@ int is_memory_range_mapped(void *base, int len) {
     if (base < (void *)USER_MEM_START) {
         return MEMORY_REGION_MAPPED;
     }
-    void *end_addr = (char *)base + len;
+    void *end_addr = (char *)base + len - 1;
     int *pd_addr = (int *)get_cr3();
     int *pt_addr;
     int pd_index, pt_index;

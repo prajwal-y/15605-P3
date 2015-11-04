@@ -18,6 +18,9 @@
 #define WRITE_THROUGH_CACHING 8
 #define DISABLE_CACHING 16
 #define GLOBAL_PAGE_ENTRY 256
+#define NEWPAGE_PAGE 1024
+#define NEWPAGE_START 2048
+#define NEWPAGE_END 3072
 
 /*Constants and macros*/
 
@@ -71,5 +74,7 @@ void enable_paging();
 int is_memory_range_mapped(void *base, int len);
 
 int map_new_pages(void *base, int length);
+
+int unmap_new_pages(void *base);
 
 #endif /* __VM_H */
