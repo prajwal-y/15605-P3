@@ -17,7 +17,7 @@
 #define FREE_FRAME_LIST_END UINT_MAX
 #define PAGE_ALIGNMENT_CHECK 0x00000fff
 
-int *free_frames_arr;
+unsigned int free_frames_arr[62000]; //TODO: FIX THIS GODDAMN THING
 int num_allocated = 0;
 
 static void *free_list_head; /* Head of free list,UINT_MAX => no free frames */
@@ -51,8 +51,8 @@ void init_frame_allocator() {
  */
 void init_free_list() {
 
-	/*Initialize the free list array*/
-	free_frames_arr = (int *)malloc(FREE_FRAMES_COUNT*sizeof(int));
+	/*Initialize the free list array TODO FIX THIS*/
+	//free_frames_arr = (int *)smalloc(FREE_FRAMES_COUNT*sizeof(int));
 
 	kernel_assert(free_frames_arr != NULL);
 
@@ -101,14 +101,14 @@ void *allocate_frame() {
  *  TODO : FIX THIS
  */
 void deallocate_frame(void *frame_addr) {
-    lprintf("Deallocated frame");
     kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
     kernel_assert(frame_addr != NULL);
     //TODO: assert memory check
 
     mutex_lock(&list_mut);
-    *(int *)frame_addr = (int)free_list_head;
-    free_list_head = frame_addr;
+	int index = FRAME_INDEX(frame_addr);
+	free_frames_arr[index] = (unsigned int)free_list_head;
+	free_list_head = frame_addr;
     mutex_unlock(&list_mut);
     return;
 }

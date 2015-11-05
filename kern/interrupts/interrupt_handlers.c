@@ -11,6 +11,7 @@
  */
 
 #include <asm.h>
+#include <asm/asm.h>
 #include <interrupts/interrupt_handlers.h>
 #include <interrupts/interrupt_handlers_asm.h>
 #include <interrupt_defines.h>
@@ -27,6 +28,7 @@
 #define IDT_ENTRY_SIZE 8  /* Size of each IDT */
 
 void tickback(unsigned int ticks) {
+	//lprintf("Tick: %d", ticks);
 	context_switch();
     // Add some logic to be run on each timer tick
     //return;
@@ -98,10 +100,12 @@ void divide_error_handler() {
  */
 void page_fault_handler_c() {
 
+	int error_code = get_err_code();
+
 	void *page_fault_addr = (void *)get_cr2();
 
     //lprintf("PD is %p", (void *)get_cr3());
-	lprintf("Address that caused page fault: %p", page_fault_addr);
+	lprintf("Address that caused page fault: %p Cause of error= %d", page_fault_addr, error_code);
 
 	if(is_addr_cow(page_fault_addr)) {
 		handle_cow(page_fault_addr);

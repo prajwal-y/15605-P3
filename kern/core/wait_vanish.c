@@ -6,6 +6,7 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
+#include <asm.h>
 #include <core/scheduler.h>
 #include <common/errors.h>
 #include <core/thread.h>
@@ -105,6 +106,13 @@ void do_vanish() {
         add_to_tail(&curr_task->dead_child_link, &parent_task->dead_child_head);
         list_head *parent_alive_head = get_first(&parent_task->child_task_head);
         mutex_unlock(&parent_task->child_list_mutex);
+		
+		void *curr_pdbr = curr_task->pdbr;
+		curr_task->pdbr = get_kernel_pd();
+        set_kernel_pd();
+        decrement_ref_count_and_free_pages(curr_pdbr);
+
+		disable_interrupts(); /* Ensuring that only I run after signaling the parent */
 
         if (parent_alive_head == NULL) {
             cond_broadcast(&parent_task->exit_cond_var);
@@ -112,8 +120,6 @@ void do_vanish() {
         else {
             cond_signal(&parent_task->exit_cond_var);
         }
-        set_kernel_pd();
-        decrement_ref_count_and_free_pages(curr_task->pdbr);
     }
     curr_thread->status = EXITED;
     context_switch();
