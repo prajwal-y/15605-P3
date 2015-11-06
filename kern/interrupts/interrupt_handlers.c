@@ -12,6 +12,7 @@
 
 #include <asm.h>
 #include <asm/asm.h>
+#include <core/scheduler.h>
 #include <interrupts/interrupt_handlers.h>
 #include <interrupts/interrupt_handlers_asm.h>
 #include <interrupt_defines.h>
@@ -103,9 +104,11 @@ void page_fault_handler_c() {
 	int error_code = get_err_code();
 
 	void *page_fault_addr = (void *)get_cr2();
+	
+	int tid = get_curr_thread()->id;
 
     //lprintf("PD is %p", (void *)get_cr3());
-	lprintf("Address that caused page fault: %p Cause of error= %d", page_fault_addr, error_code);
+	lprintf("Address that caused page fault: %p Cause of error= %d. Thread that is failed %d", page_fault_addr, error_code, tid);
 
 	if(is_addr_cow(page_fault_addr)) {
 		handle_cow(page_fault_addr);
@@ -150,6 +153,8 @@ void install_handler_5() {
 	add_idt_entry(five_fault_handler, 5, INTERRUPT_GATE, KERNEL_DPL);
 }
 void six_fault_handler() {
+	void *instr = (void *)get_err_instr();
+	lprintf("Address that caused 6 fult: %p", instr);
 	lprintf("6 fult");
 	MAGIC_BREAK;
 }

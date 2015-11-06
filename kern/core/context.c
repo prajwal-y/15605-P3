@@ -35,27 +35,29 @@ void context_switch() {
     thread_struct_t *thr = next_thread();
 	
 	if(thr == NULL) { /* There are no other threads to schedule */
+		enable_interrupts();
 		return;
 	}
     
 	thread_struct_t *curr_thread = get_curr_thread();
-	if(curr_thread->status == RUNNING) {
+	if(curr_thread != NULL && curr_thread->status == RUNNING) {
 		curr_thread->status = RUNNABLE;
 		runq_add_thread_interruptible(curr_thread);
 	}
-    if (curr_thread->status == EXITED) { //TODO: where exactly to free the stack?
-		sfree(curr_thread->k_stack, KERNEL_STACK_SIZE);
-        sfree(curr_thread, sizeof(thread_struct_t));
-        curr_thread = NULL;
-    }
 
-	//lprintf("Going to switch to thread id %d from thread %d (stack_base %p)", thr->id, curr_thread->id, (void *)thr->k_stack_base);
+	if(curr_thread != NULL) {
+		lprintf("Going to switch to thread id %d (%p) from thread %d (%p) (stack_base %p)", 
+				thr->id, &thr->id, curr_thread->id, &curr_thread->id, (void *)thr->k_stack_base);
+	}
 	
 	/* Call switch_to_thread with the new thread */
     switch_to_thread(curr_thread, thr);
 
-	//lprintf("Switched to thread id: %d from thread %d", thr->id, curr_thread->id);
-
+	if(curr_thread != NULL) {	
+		lprintf("Switched to thread id: %d (%p) from thread %d (%p)", 
+					thr->id, &thr->id, curr_thread->id, &curr_thread->id);
+	}
+    
 	enable_interrupts();
 	
 }

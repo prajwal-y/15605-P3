@@ -11,9 +11,9 @@
 #include <string.h>
 #include <elf_410.h>
 #include <common_kern.h>
-#include <page.h>
 #include <cr.h>
 #include <stddef.h>
+#include <page.h>
 #include <simics.h>
 #include <seg.h>
 #include <asm/asm.h>
@@ -30,8 +30,9 @@
 #define IS_NEWPAGE_PAGE(x) ((unsigned int)(x) & NEWPAGE_PAGE)
 #define IS_NEWPAGE_END(x) ((unsigned int)(x) & NEWPAGE_END)
 
-static int frame_ref_count[62000];
+static int frame_ref_count[62000]; //TODO: Fix this :(
 static void *kernel_pd;
+static void *dead_thr_kernel_stack;
 static mutex_t frame_ref_mutex;
 
 static void init_frame_ref_count();
@@ -55,8 +56,6 @@ static void increment_ref_count(int *pd);
 static void decrement_ref_count(int *pd);
 static void enable_page_pinning();
 
-//static void set_segment_selectors(int type);
-
 /** @brief initialize the virtual memory system
  *
  *  Set up the direct map for kernel memory and any other
@@ -79,6 +78,9 @@ void vm_init() {
 void setup_kernel_pd() {
     kernel_pd = create_page_directory();
     kernel_assert(kernel_pd != NULL);
+	dead_thr_kernel_stack = smemalign(PAGE_SIZE, PAGE_SIZE);
+	kernel_assert(dead_thr_kernel_stack != NULL);
+	dead_thr_kernel_stack = (char *)dead_thr_kernel_stack + PAGE_SIZE;
 }
 
 /** @brief Initializes the array which stored the 
@@ -108,6 +110,15 @@ void set_kernel_pd() {
  */
 void *get_kernel_pd() {
 	return kernel_pd;
+}
+
+/** @brief Gets the address of the dead thread kernel stack
+ *
+ *  @return void* Address of the special kernel stack for dead
+ *  threads
+ */
+void *get_dead_thr_kernel_stack() {
+	return dead_thr_kernel_stack;
 }
 
 /** @brief Sets the control register %cr3 with the given

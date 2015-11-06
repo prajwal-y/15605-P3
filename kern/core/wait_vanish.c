@@ -12,13 +12,15 @@
 #include <core/thread.h>
 #include <core/context.h>
 #include <common/malloc_wrappers.h>
+#include <asm/asm.h>
 #include <vm/vm.h>
 #include <simics.h>
 
 #define ALIVE_TASK 0
 #define DEAD_TASK 1
 
-static void thread_vanish(thread_struct_t *thr);
+static void remove_thread_from_task(thread_struct_t *thr);
+static void thread_free_resources(thread_struct_t *thr);
 static void reparent_to_init(list_head *task_list, int task_type, 
                       task_struct_t *init_task);
 
@@ -42,7 +44,7 @@ int do_wait(void *arg_packet) {
     mutex_lock(&curr_task->child_list_mutex);
     list_head *dead_head = get_first(&curr_task->dead_child_head);
     list_head *alive_head = get_first(&curr_task->child_task_head);
-
+			
     /* We will block wait if there are no dead tasks and there are still some 
      * tasks alive */
     while (dead_head == NULL && alive_head != NULL) {
@@ -73,11 +75,11 @@ int do_wait(void *arg_packet) {
 
 void do_vanish() {
     task_struct_t *curr_task = get_curr_task();
-    thread_struct_t *curr_thread = get_curr_thread();
+	thread_struct_t *curr_thread = get_curr_thread();
     task_struct_t *init_task = get_init_task();
 
     mutex_lock(&curr_task->thread_list_mutex);
-    thread_vanish(curr_thread);
+	remove_thread_from_task(curr_thread);
     list_head *thread_head = get_first(&curr_task->thread_head);
     mutex_unlock(&curr_task->thread_list_mutex);
     /* If this is the last thread in the task, take care 
@@ -113,7 +115,6 @@ void do_vanish() {
         decrement_ref_count_and_free_pages(curr_pdbr);
 
 		disable_interrupts(); /* Ensuring that only I run after signaling the parent */
-
         if (parent_alive_head == NULL) {
             cond_broadcast(&parent_task->exit_cond_var);
         }
@@ -121,24 +122,42 @@ void do_vanish() {
             cond_signal(&parent_task->exit_cond_var);
         }
     }
-    curr_thread->status = EXITED;
+	/* Time to free the thread. So we use the special kernel stack. */
+	/* We need to disable interrupts so that only one thread uses the special stack */
+	disable_interrupts();
+	void *dead_thr_kernel_stack = get_dead_thr_kernel_stack();
+	update_to_dead_thr_stack((uint32_t)dead_thr_kernel_stack);
+	thread_struct_t *dead_thread = get_curr_thread();
+    thread_free_resources(dead_thread);
+	set_running_thread(NULL);
     context_switch();
 }
 
-/** @brief vanish a thread
- * 
- *  remove a thread from the schedulable queue and free the thread's
- *  kernel stack.
+/** @brief Function to remove a thread from its parent
+ *  task
  *
- *  @param thr the thread who will go missing soon
+ *  @param thr Thread which must be removed from its 
+ *  		parent's list of threads
+ *
  *  @return void
- */ 
-void thread_vanish(thread_struct_t *thr) {
-    //sfree(thr->k_stack, KERNEL_STACK_SIZE);
+ */
+void remove_thread_from_task(thread_struct_t *thr) {
     remove_thread_from_map(thr->id);
     del_entry(&thr->task_thread_link);
 }
 
+/** @brief Free the resources associated with a thread
+ *
+ *  Free the thread kernel stack and the thread struct
+ *  itself.
+ *
+ *  @param thr the thread who will go missing soon
+ *  @return void
+ */ 
+void thread_free_resources(thread_struct_t *thr) {
+   	sfree(thr->k_stack, KERNEL_STACK_SIZE);
+	sfree(thr, sizeof(thread_struct_t));
+}
 
 /** @brief reparent a list of tasks to init
  *

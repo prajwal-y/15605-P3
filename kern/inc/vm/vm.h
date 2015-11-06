@@ -65,6 +65,8 @@ void set_kernel_pd();
 
 void *get_kernel_pd();
 
+void *get_dead_thr_kernel_stack();
+
 void set_cur_pd(void *pd_addr);
 
 int is_addr_cow(void *addr);

@@ -37,6 +37,7 @@ int do_fork() {
 		return ERR_FAILURE;
 	}
 	child_task->pdbr = new_pd_addr;
+	lprintf("Parent task %d (PDBR = %p). Child task %d (PDBR = %p)", curr_task->id, curr_task->pdbr, child_task->id, child_task->pdbr);
 
 	/* Clone the kernel stack */
 	memcpy(child_task->thr->k_stack, curr_task->thr->k_stack, PAGE_SIZE);

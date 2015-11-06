@@ -94,6 +94,8 @@ void update_stack(uint32_t esp, uint32_t ebp,
  */
 void update_stack_single(uint32_t esp, uint32_t ebp);
 
+void update_to_dead_thr_stack(uint32_t esp);
+
 /** @brief Function to get the error code during a page fault
  *  
  *  This function uses the current stack pointer to get the 
@@ -102,6 +104,8 @@ void update_stack_single(uint32_t esp, uint32_t ebp);
  *  @return Returns the error code
  */
 uint32_t get_err_code();
+
+void *get_err_instr();
 
 /** @brief Function to invalidate a particular page from TLB
  *
