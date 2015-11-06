@@ -37,15 +37,15 @@ int do_fork() {
 		return ERR_FAILURE;
 	}
 	child_task->pdbr = new_pd_addr;
-	lprintf("Parent task %d (PDBR = %p). Child task %d (PDBR = %p)", curr_task->id, curr_task->pdbr, child_task->id, child_task->pdbr);
+	//lprintf("Parent task %d (PDBR = %p). Child task %d (PDBR = %p)", 
+	//		curr_task->id, curr_task->pdbr, child_task->id, child_task->pdbr);
 
 	/* Clone the kernel stack */
-	memcpy(child_task->thr->k_stack, curr_task->thr->k_stack, PAGE_SIZE);
+	memcpy(child_task->thr->k_stack, curr_task->thr->k_stack, KERNEL_STACK_SIZE);
 	*((int *)(child_task->thr->k_stack_base) - 14) = (int)iret_fun; //TODO: REMOVE THAT CONSTANT
 	child_task->thr->cur_esp = child_task->thr->k_stack_base 
 									- DEFAULT_STACK_OFFSET;
 
-	lprintf("Adding thread %d to run queue in do_fork()", child_task->thr->id);
 	/* Add the first thread of the new task to runnable queue */
 	runq_add_thread(child_task->thr);
 

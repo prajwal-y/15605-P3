@@ -74,7 +74,7 @@ thread_struct_t *create_thread(task_struct_t *task) {
     add_thread_to_map(thr);
 
 	/* Allocate space for thread's kernel stack */
-	void *stack = smemalign(PAGE_SIZE, KERNEL_STACK_SIZE);
+	void *stack = smalloc(KERNEL_STACK_SIZE);
     if(stack == NULL) {
         sfree(thr, sizeof(thread_struct_t));
         sfree(reg, sizeof(ureg_t));
@@ -84,7 +84,7 @@ thread_struct_t *create_thread(task_struct_t *task) {
     thr->regs = reg;
     thr->parent_task = task;
     thr->k_stack = stack;
-	thr->k_stack_base = (uint32_t)((char *)stack + PAGE_SIZE);
+	thr->k_stack_base = (uint32_t)((char *)stack + KERNEL_STACK_SIZE);
 	thr->cur_esp = thr->k_stack_base;
 	thr->cur_ebp = thr->k_stack_base;
 	thr->status = RUNNABLE; /* Default value */

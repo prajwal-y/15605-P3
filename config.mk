@@ -58,7 +58,9 @@ UPDATE_METHOD = afs
 # directory.
 #
 410TESTS = prog1 fork_exit_bomb fork_wait_bomb fork_bomb fork_wait actual_wait \
-		   new_pages mem_permissions readline_basic remove_pages_test1
+		   new_pages mem_permissions readline_basic remove_pages_test1 \
+		   getpid_test1 loader_test1 loader_test2 exec_basic exec_basic_helper \
+		   exec_nonexist fork_test1 print_basic stack_test1 wait_getpid
 
 ###########################################################################
 # Test programs you have written which you wish to run

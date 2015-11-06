@@ -107,12 +107,10 @@ void page_fault_handler_c() {
 	
 	int tid = get_curr_thread()->id;
 
-    //lprintf("PD is %p", (void *)get_cr3());
-	lprintf("Address that caused page fault: %p Cause of error= %d. Thread that is failed %d", page_fault_addr, error_code, tid);
-
 	if(is_addr_cow(page_fault_addr)) {
 		handle_cow(page_fault_addr);
 	} else {
+		lprintf("Address that caused page fault: %p Cause of error= %d. Thread that is failed %d", page_fault_addr, error_code, tid);
 		MAGIC_BREAK;
 	}
 

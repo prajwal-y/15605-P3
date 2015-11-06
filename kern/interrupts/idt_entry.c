@@ -58,7 +58,7 @@ void add_idt_entry(void *handler, int interrupt_num, int type, unsigned int dpl)
     memcpy((char *)idt_base_addr + (8 * interrupt_num), entry, 
             sizeof(idt_entry));
 
-    free(entry);
+    sfree(entry, sizeof(idt_entry));
 }
 
 /** @brief function to return a pointer to an idt_entry struct 
@@ -68,7 +68,7 @@ void add_idt_entry(void *handler, int interrupt_num, int type, unsigned int dpl)
  *          with default entries filled
  */
 idt_entry *get_default_trap_idt(unsigned int dpl) {
-    idt_entry *entry = malloc(sizeof(idt_entry));
+    idt_entry *entry = smalloc(sizeof(idt_entry));
     //TODO: Malloc check
 
     entry->seg_selector = SEGSEL_KERNEL_CS;
@@ -87,7 +87,7 @@ idt_entry *get_default_trap_idt(unsigned int dpl) {
  *          gate with default entries filled
  */
 idt_entry *get_default_interrupt_idt(unsigned int dpl) {
-    idt_entry *entry = malloc(sizeof(idt_entry));
+    idt_entry *entry = smalloc(sizeof(idt_entry));
 
     entry->seg_selector = SEGSEL_KERNEL_CS;
     entry->zeroes = 0;

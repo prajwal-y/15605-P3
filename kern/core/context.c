@@ -45,18 +45,18 @@ void context_switch() {
 		runq_add_thread_interruptible(curr_thread);
 	}
 
-	if(curr_thread != NULL) {
+	/*if(curr_thread != NULL) {
 		lprintf("Going to switch to thread id %d (%p) from thread %d (%p) (stack_base %p)", 
 				thr->id, &thr->id, curr_thread->id, &curr_thread->id, (void *)thr->k_stack_base);
-	}
+	}*/
 	
 	/* Call switch_to_thread with the new thread */
     switch_to_thread(curr_thread, thr);
 
-	if(curr_thread != NULL) {	
+	/*if(curr_thread != NULL) {	
 		lprintf("Switched to thread id: %d (%p) from thread %d (%p)", 
 					thr->id, &thr->id, curr_thread->id, &curr_thread->id);
-	}
+	}*/
     
 	enable_interrupts();
 	
