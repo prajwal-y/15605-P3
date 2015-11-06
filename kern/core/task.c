@@ -100,6 +100,7 @@ void load_kernel_task(const char *prog_name) {
     kernel_assert(t != NULL); //TODO: !!!!SHOULD NOT BE KERNEL ASSERT!!!!
 
     load_task(prog_name, 0, NULL, t);
+    init_task = t; //TODO: Fix this. Only init task should call this function
 	
     runq_add_thread_interruptible(t->thr);
 }
@@ -139,11 +140,6 @@ void load_bootstrap_task(const char *prog_name) {
 
     kernel_assert(t != NULL);
     t->pdbr = pd_addr;
-
-    //TODO: Remove this condition
-    //if (!strncmp(prog_name,"init", 4)) {
-        init_task = t;
-    //}
 
     /* Read the idle task header to set up VM */
 	simple_elf_t *se_hdr = (simple_elf_t *)smalloc(sizeof(simple_elf_t));

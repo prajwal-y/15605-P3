@@ -11,6 +11,7 @@
 #include <console.h>
 #include <x86/video_defines.h>
 #include <drivers/console/console_util.h>
+#include <simics.h>
 
 /** @brief Sets the position of the cursor to the
  *         position (row, col).
@@ -62,8 +63,14 @@ int putbyte(char ch) {
                    break;
         case '\r': set_logical_cursor(cursor_row, 0);
                    break;
-        case '\b': ch = ' ';
-                   set_logical_cursor(cursor_row, cursor_col - 1);
+        case '\b': if (cursor_col == 0) {
+                       set_logical_cursor(cursor_row - 1, CONSOLE_WIDTH - 1);
+                   }
+                   else {
+                       set_logical_cursor(cursor_row, cursor_col - 1);
+                   }
+                   print_char(' ', cursor_row, cursor_col, console_color);
+                   return ch;
                    break;
         default:   if (cursor_col == CONSOLE_WIDTH) {
                        set_logical_cursor(cursor_row + 1, 0);
@@ -75,8 +82,7 @@ int putbyte(char ch) {
         set_logical_cursor(cursor_row - 1, cursor_col);
     }
     print_char(ch, cursor_row, cursor_col, console_color);
-    if ((ch != '\n' && ch != '\r' && ch != '\b') 
-        || (ch == '\b' && cursor_col != 0)) {
+    if (ch != '\n' && ch != '\r' && ch != '\b') { 
         set_logical_cursor(cursor_row, cursor_col + 1);
     }
     return ch;

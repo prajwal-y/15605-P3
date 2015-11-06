@@ -9,6 +9,7 @@
 #include <vm/vm.h>
 #include <syscall.h>
 #include <common/errors.h>
+#include <simics.h>
 
 /** @brief Handler to call the new_pages handler function
  *
@@ -25,4 +26,16 @@ int new_pages_handler_c(void *arg_packet) {
     }
     
    return map_new_pages(base, len);
+}
+
+/** @brief Handler to call the remove_pages handler function
+ *
+ *  @return int 0 on success, -ve integer on failure
+ */
+int remove_pages_handler_c(void *base) {
+    if (((int)base % PAGE_SIZE) != 0) {
+        return ERR_INVAL;
+    }
+    
+   return unmap_new_pages(base);
 }

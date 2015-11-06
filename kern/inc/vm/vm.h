@@ -18,6 +18,9 @@
 #define WRITE_THROUGH_CACHING 8
 #define DISABLE_CACHING 16
 #define GLOBAL_PAGE_ENTRY 256
+#define NEWPAGE_PAGE 1024
+#define NEWPAGE_START 2048
+#define NEWPAGE_END 3072
 
 /*Constants and macros*/
 
@@ -60,6 +63,10 @@ int setup_page_table(simple_elf_t *se_hdr, void *pd_addr);
 
 void set_kernel_pd();
 
+void *get_kernel_pd();
+
+void *get_dead_thr_kernel_stack();
+
 void set_cur_pd(void *pd_addr);
 
 int is_addr_cow(void *addr);
@@ -71,5 +78,7 @@ void enable_paging();
 int is_memory_range_mapped(void *base, int len);
 
 int map_new_pages(void *base, int length);
+
+int unmap_new_pages(void *base);
 
 #endif /* __VM_H */

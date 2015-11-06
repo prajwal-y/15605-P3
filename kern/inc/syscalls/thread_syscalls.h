@@ -12,4 +12,8 @@ int gettid_handler();
 
 int gettid_handler_c();
 
+int yield_handler();
+
+int yield_handler_c(int tid);
+
 #endif  /* __THREAD_SYSCALLS_H */

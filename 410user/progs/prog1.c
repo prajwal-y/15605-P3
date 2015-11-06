@@ -9,6 +9,7 @@
 #include <simics.h>
 #include <syscall.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void print_tid(int i) {
 	int tid = gettid();
@@ -27,20 +28,22 @@ int main()
 	if(pid == 0) {
 		int b = 0;
 		printf("pid in child is %d tid: %d\n", pid, gettid());
-		while(1) {
+		while(b < 500000) {
 			b++;
-			if(b%100000 == 0) {
+			if(b%50000 == 0) {
 				print_tid(1);
 			}
 		}
+		exit(42);
 	}
 	else {
 		printf("pid in parent is %d tid: %d\n", pid, gettid());
-    	while (1) {
+    	while (a < 200000) {
 			a++;
-			if(a%100000 == 0) {
+			if(a%50000 == 0) {
 				print_tid(0);
 			}
     	}
 	}
+	exit(111);
 }

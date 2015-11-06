@@ -13,7 +13,7 @@
 #include <core/task.h>
 #include <syscall.h>
 
-#define KERNEL_STACK_SIZE PAGE_SIZE
+#define KERNEL_STACK_SIZE ((PAGE_SIZE) * 2)
 
 enum thread_status {
 	RUNNING,

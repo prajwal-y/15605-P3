@@ -71,11 +71,11 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
 
     /* Load the init task into memory. This does NOT make the init task 
      * runnable. This is taken care of by the scheduler/context switcher */
-	load_kernel_task("prog1");
-    load_kernel_task("prog2"); /* TODO: Replace with init later */
-    load_kernel_task("prog3"); /* TODO: Replace with init later */
-	load_kernel_task("prog4");
-	//load_kernel_task("mem_permissions");
+	//load_kernel_task("prog1");
+    //load_kernel_task("prog2"); /* TODO: Replace with init later */
+    //load_kernel_task("prog3"); /* TODO: Replace with init later */
+	//load_kernel_task("prog4");
+	load_kernel_task("init");
 
     /* Load the idle task in user mode. This task ALWAYS has TID 1 */
     load_bootstrap_task("idle");

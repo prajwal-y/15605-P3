@@ -4,15 +4,16 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
+
 #include <vm/vm.h>
 #include <common/malloc_wrappers.h>
 #include <util.h>
 #include <string.h>
 #include <elf_410.h>
 #include <common_kern.h>
-#include <page.h>
 #include <cr.h>
 #include <stddef.h>
+#include <page.h>
 #include <simics.h>
 #include <seg.h>
 #include <asm/asm.h>
@@ -22,9 +23,16 @@
 #include <allocator/frame_allocator.h>
 
 #define USER_PD_ENTRY_FLAGS PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE
+#define SET_NEWPAGE_START(x) (((unsigned int)(x) & 0xfffff3ff) | NEWPAGE_START)
+#define SET_NEWPAGE_END(x) (((unsigned int)(x) & 0xfffff3ff) | NEWPAGE_END)
+#define GET_NEWPAGE_FLAGS(x) (((unsigned int)(x) & 0x00000c00))
+#define IS_NEWPAGE_START(x) ((unsigned int)(x) & NEWPAGE_START)
+#define IS_NEWPAGE_PAGE(x) ((unsigned int)(x) & NEWPAGE_PAGE)
+#define IS_NEWPAGE_END(x) ((unsigned int)(x) & NEWPAGE_END)
 
-static int *frame_ref_count;
+static int frame_ref_count[62000]; //TODO: Fix this :(
 static void *kernel_pd;
+static void *dead_thr_kernel_stack;
 static mutex_t frame_ref_mutex;
 
 static void init_frame_ref_count();
@@ -48,8 +56,6 @@ static void increment_ref_count(int *pd);
 static void decrement_ref_count(int *pd);
 static void enable_page_pinning();
 
-//static void set_segment_selectors(int type);
-
 /** @brief initialize the virtual memory system
  *
  *  Set up the direct map for kernel memory and any other
@@ -72,6 +78,9 @@ void vm_init() {
 void setup_kernel_pd() {
     kernel_pd = create_page_directory();
     kernel_assert(kernel_pd != NULL);
+	dead_thr_kernel_stack = smemalign(PAGE_SIZE, PAGE_SIZE);
+	kernel_assert(dead_thr_kernel_stack != NULL);
+	dead_thr_kernel_stack = (char *)dead_thr_kernel_stack + PAGE_SIZE;
 }
 
 /** @brief Initializes the array which stored the 
@@ -80,7 +89,7 @@ void setup_kernel_pd() {
  */
 void init_frame_ref_count() {
 	int size = FREE_FRAMES_COUNT*sizeof(int);
-	frame_ref_count = (int *)malloc(size);
+	//frame_ref_count = (int *)malloc(size);
 	kernel_assert(frame_ref_count != NULL);
 	memset(frame_ref_count, 0, size);
 	mutex_init(&frame_ref_mutex);
@@ -93,6 +102,23 @@ void init_frame_ref_count() {
  */
 void set_kernel_pd() {
     set_cur_pd(kernel_pd);
+}
+
+/** @brief Gets the address of the kernel page directory
+ *
+ *  @return void* Address of the kernel PD
+ */
+void *get_kernel_pd() {
+	return kernel_pd;
+}
+
+/** @brief Gets the address of the dead thread kernel stack
+ *
+ *  @return void* Address of the special kernel stack for dead
+ *  threads
+ */
+void *get_dead_thr_kernel_stack() {
+	return dead_thr_kernel_stack;
 }
 
 /** @brief Sets the control register %cr3 with the given
@@ -230,8 +256,12 @@ void free_page_table(int *pt) {
     }
 	int i;
 	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
-		if(frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[i]))] == 0) {
-			//TODO: DEALLOCATE PHYSICAL FRAME
+		if(pt[i] == PAGE_TABLE_ENTRY_DEFAULT) {
+			continue;
+		}
+		void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[i]);
+		if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {
+			deallocate_frame(frame_addr);
 		}
 	}
 	sfree(pt, PAGE_SIZE);
@@ -257,6 +287,7 @@ void *clone_paging_info(int *pd) {
         if(pd[i] != PAGE_DIR_ENTRY_DEFAULT) {
 			void *new_pt = clone_page_table((void *)GET_ADDR_FROM_ENTRY(pd[i]));
 			if(new_pt == NULL) {
+				kernel_assert(new_pt != NULL); //TODO: Shouldn't be kernel_assert()
 				free_paging_info(new_pd);
 				return NULL;
 			}
@@ -381,6 +412,9 @@ void make_pt_cow(int *pt) {
  *  @return 1 if COW, 0 if not
  */
 int is_addr_cow(void *addr) {
+	if((unsigned int)addr < USER_MEM_START) {
+		return 0;
+	}
 	int *pd = (void *)get_cr3();
 	int pd_index = GET_PD_INDEX(addr);
 	int pt_index = GET_PT_INDEX(addr);
@@ -440,6 +474,10 @@ int handle_cow(void *addr) {
 	}
 	mutex_unlock(&frame_ref_mutex);
 	pt[pt_index] |= READ_WRITE_ENABLE;
+
+	/* TODO: REMOVE THIS. INVLPG is not working for some reason */
+	set_cur_pd(pd);
+
 	return 0;
 }
 
@@ -476,7 +514,7 @@ int setup_page_table(simple_elf_t *se_hdr, void *pd_addr) {
     if((retval = map_stack_segment(pd_addr)) < 0) {
         return retval;
     }
-	increment_ref_count(pd_addr);
+	//increment_ref_count(pd_addr);
     return 0;
 }
 
@@ -623,7 +661,7 @@ int map_bss_segment(simple_elf_t *se_hdr, void *pd_addr) {
  */
 int map_stack_segment(void *pd_addr) {
     int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
-    return map_segment((char *)STACK_START - DEFAULT_STACK_SIZE, 
+    return map_segment((char *)STACK_START - DEFAULT_STACK_SIZE + 1, 
 						DEFAULT_STACK_SIZE, pd_addr, flags); 
 }
 
@@ -634,9 +672,77 @@ int map_stack_segment(void *pd_addr) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_new_pages(void *base, int length) {
-    void *pd_addr = (void *)get_cr3();
-    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE;
-    return map_segment((char *)base, length, pd_addr, flags); 
+    int retval, pd_index, pt_index;
+    int *pd_addr = (int *)get_cr3();
+    int *pt_addr;
+    int *end_addr = (int *)((char *)base + length - 1);
+    int *end_frame = (int *)((int)end_addr & PAGE_ROUND_DOWN);
+    int flags = PAGE_ENTRY_PRESENT | READ_WRITE_ENABLE | USER_MODE
+                | NEWPAGE_PAGE;
+    retval = map_segment((char *)base, length, pd_addr, flags); 
+    if (retval < 0) {
+        return retval;
+    }
+
+    pd_index = GET_PD_INDEX(end_frame);
+    pt_index = GET_PT_INDEX(end_frame);
+    pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+    pt_addr[pt_index] = SET_NEWPAGE_END(pt_addr[pt_index]);
+
+    pd_index = GET_PD_INDEX(base);
+    pt_index = GET_PT_INDEX(base);
+    pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+    pt_addr[pt_index] = SET_NEWPAGE_START(pt_addr[pt_index]);
+
+	/* TODO: REMOVE THIS. INVLPG is not working for some reason */
+	set_cur_pd(pd_addr);
+
+    return 0;
+}
+
+/** @brief unmap new_pages from virtual memory
+ *
+ *  @param base the base of the new_pages region
+ *  @return int error code, 0 on success negative integer on failure
+ */
+int unmap_new_pages(void *base) {
+    int pd_index, pt_index;
+    int *pd_addr = (int *)get_cr3();
+    int *pt_addr;
+    void *frame_addr;
+
+    pd_index = GET_PD_INDEX(base);
+    pt_index = GET_PT_INDEX(base);
+    pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+    if (GET_NEWPAGE_FLAGS(pt_addr[pt_index]) != NEWPAGE_START) {
+        return ERR_INVAL;
+    }
+
+    frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt_addr[pt_index]);
+    deallocate_frame(frame_addr); 
+	pt_addr[pt_index] = PAGE_TABLE_ENTRY_DEFAULT;
+	invalidate_tlb_page(base);
+    
+    base = (char *)base + PAGE_SIZE;
+    pd_index = GET_PD_INDEX(base);
+    pt_index = GET_PT_INDEX(base);
+    pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+    while((GET_NEWPAGE_FLAGS(pt_addr[pt_index]) == NEWPAGE_PAGE) 
+          || (GET_NEWPAGE_FLAGS(pt_addr[pt_index]) == NEWPAGE_END)) { 
+        frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt_addr[pt_index]);
+        deallocate_frame(frame_addr);
+        pt_addr[pt_index] = PAGE_TABLE_ENTRY_DEFAULT;
+		invalidate_tlb_page(base);
+        base = (char *)base + PAGE_SIZE;
+        pd_index = GET_PD_INDEX(base);
+        pt_index = GET_PT_INDEX(base);
+        pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+    }
+
+	/* TODO: REMOVE THIS. INVLPG is not working for some reason */
+	set_cur_pd(pd_addr);
+
+    return 0;
 }
 
 /** @brief map a segment into memory
@@ -657,7 +763,7 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
     int *pt_addr;
 
     start_addr = (void *)((int)start_addr & PAGE_ROUND_DOWN);
-    while (start_addr <= end_addr) {
+    while (start_addr < end_addr) {
         pd_index = GET_PD_INDEX(start_addr);
         pt_index = GET_PT_INDEX(start_addr);
         if (pd_addr[pd_index] == PAGE_DIR_ENTRY_DEFAULT) { /* Page directory entry absent */
@@ -674,7 +780,9 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
             /* Need to allocate frame from user free frame pool */
             void *new_frame = allocate_frame();
             if (new_frame != NULL) {
+                atomic_increment(&frame_ref_count[FRAME_INDEX(new_frame)]);
                 pt_addr[pt_index] = (unsigned int)new_frame | flags;
+				invalidate_tlb_page(start_addr);
                 zero_fill(start_addr, PAGE_SIZE);
             }
             else {

@@ -94,6 +94,7 @@ void set_running_thread(thread_struct_t *thr) {
 
 void print_runnable_list() {
 	list_head *temp = get_first(&runnable_threads);
+	lprintf("-------Beginning of runnable threads--------");
 	while(temp != NULL && temp != &runnable_threads) {
 		thread_struct_t *thr = get_entry(temp, thread_struct_t, runq_link);
 		lprintf("-------Thread %d-------", thr->id);

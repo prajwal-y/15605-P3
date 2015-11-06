@@ -103,9 +103,24 @@ update_stack_single:
 	movl %ecx, %esp		/* Set the new esp */
 	ret
 
+.globl update_to_dead_thr_stack
+update_to_dead_thr_stack:
+	movl 4(%esp), %ecx	/* The new esp */
+	subl $4, %ecx		/* The new value of esp */
+	movl (%esp), %edx	/* Move the return address to a register */
+	movl %edx, (%ecx)	/* Update the return address in the new stack */
+	movl %ecx, %esp		/* Set the new esp */
+	movl %ecx, %ebp		/* Set the new ebp */
+	ret
+
 .globl get_err_code
 get_err_code:
 	movl 4(%esp), %eax	/* Get the error code from the stack pointer*/
+	ret
+
+.globl get_err_instr
+get_err_instr:
+	movl 8(%esp), %eax	/* Get the error code from the stack pointer*/
 	ret
 
 .globl invalidate_tlb_page
