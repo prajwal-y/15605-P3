@@ -57,7 +57,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory.
 #
-410TESTS = prog1 fork_exit_bomb fork_wait_bomb fork_bomb fork_wait actual_wait \
+410TESTS = prog1 prog2 fork_exit_bomb fork_wait_bomb fork_bomb fork_wait actual_wait \
 		   new_pages mem_permissions readline_basic remove_pages_test1 \
 		   getpid_test1 loader_test1 loader_test2 exec_basic exec_basic_helper \
 		   exec_nonexist fork_test1 print_basic stack_test1 wait_getpid
@@ -126,8 +126,8 @@ AUTOSTACK_OBJS = autostack.o
 KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 			  drivers/console/console_util.o drivers/timer/timer.o drivers/timer/timer_handler.o \
 			  interrupts/interrupt_handlers.o interrupts/interrupt_handlers_asm.o interrupts/idt_entry.o \
-			  drivers/keyboard/keyboard.o \
-			  drivers/keyboard/keyboard_handler.o allocator/frame_allocator.o sync/mutex.o sync/cond_var.o \
+			  drivers/keyboard/keyboard.o drivers/keyboard/keyboard_handler.o allocator/frame_allocator.o \
+			  sync/mutex.o sync/cond_var.o sync/sem.o \
 			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o core/fork.o asm/asm.o syscalls/syscall_handlers.o \
 			  syscalls/thread_syscalls.o syscalls/thread_syscalls_asm.o syscalls/console_syscalls.o \
 			  syscalls/console_syscalls_asm.o syscalls/lifecycle_syscalls.o syscalls/lifecycle_syscalls_asm.o \

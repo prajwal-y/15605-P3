@@ -9,6 +9,8 @@
 
 #include<stddef.h>
 
+void init_thr_safe_malloc_lib();
+
 void *malloc(size_t size);
 void *memalign(size_t alignment, size_t size);
 void *realloc(void *buf, size_t new_size);
