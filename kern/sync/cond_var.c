@@ -17,7 +17,6 @@
 #include <simics.h>
 #include <core/context.h>
 #include <core/scheduler.h>
-
 #include <interrupts/interrupt_handlers.h> //TODO: Remove
 
 /** @brief initialize a cond var
@@ -93,7 +92,7 @@ void cond_wait(cond_t *cv, mutex_t *mp, list_head *link) {
 	/* Release the mutex and call context switch */
 	context_switch();
 
-	acknowledge_interrupt();
+    acknowledge_interrupt();
 
 	/* Acquire the mutex again before returning */
 	mutex_lock(mp);

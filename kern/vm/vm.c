@@ -261,7 +261,7 @@ void free_page_table(int *pt) {
 		}
 		void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[i]);
 		if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {
-			deallocate_frame(frame_addr);
+			//deallocate_frame(frame_addr);
 		}
 	}
 	sfree(pt, PAGE_SIZE);
