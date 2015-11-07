@@ -9,8 +9,6 @@
 #include <stddef.h>
 #include <malloc_internal.h>
 #include <sync/sem.h>
-#include <core/scheduler.h>
-#include <core/thread.h>
 
 static sem_t sem;
 
@@ -29,8 +27,7 @@ void init_thr_safe_malloc_lib() {
  *  @return void * Address of the memory allocated
  */
 void *malloc(size_t size) {
-	thread_struct_t *curr_thread = get_curr_thread();
-    sem_wait(&sem, &curr_thread->cond_wait_link);
+    sem_wait(&sem);
     void *addr = _malloc(size);
     sem_signal(&sem);
     return addr;
@@ -44,8 +41,7 @@ void *malloc(size_t size) {
  *  @return void * Address of the buffer allocated
  */
 void *memalign(size_t alignment, size_t size) {
-	thread_struct_t *curr_thread = get_curr_thread();
-    sem_wait(&sem, &curr_thread->cond_wait_link);
+    sem_wait(&sem);
     void *addr = _memalign(alignment, size);
     sem_signal(&sem);
     return addr;
@@ -59,8 +55,7 @@ void *memalign(size_t alignment, size_t size) {
  *  @return void * Address of the memory allocated
  */
 void *calloc(size_t nelt, size_t eltsize) {
-	thread_struct_t *curr_thread = get_curr_thread();
-    sem_wait(&sem, &curr_thread->cond_wait_link);
+    sem_wait(&sem);
     void *addr = _calloc(nelt, eltsize);
     sem_signal(&sem);
     return addr;
@@ -74,8 +69,7 @@ void *calloc(size_t nelt, size_t eltsize) {
  *  @return void * Address of the memory allocated
  */
 void *realloc(void *buf, size_t new_size) {
-	thread_struct_t *curr_thread = get_curr_thread();
-    sem_wait(&sem, &curr_thread->cond_wait_link);
+    sem_wait(&sem);
     void *addr = _realloc(buf, new_size);
     sem_signal(&sem);
     return addr;
@@ -88,8 +82,7 @@ void *realloc(void *buf, size_t new_size) {
  *  @return void
  */
 void free(void *buf) {
-	thread_struct_t *curr_thread = get_curr_thread();
-    sem_wait(&sem, &curr_thread->cond_wait_link);
+    sem_wait(&sem);
     _free(buf);
     sem_signal(&sem);
 }
@@ -101,8 +94,7 @@ void free(void *buf) {
  *  @return void * Address of the memory allocated
  */
 void *smalloc(size_t size) {
-	thread_struct_t *curr_thread = get_curr_thread();
-    sem_wait(&sem, &curr_thread->cond_wait_link);
+    sem_wait(&sem);
     void *addr = _smalloc(size);
     sem_signal(&sem);
     return addr;
@@ -116,8 +108,7 @@ void *smalloc(size_t size) {
  *  @return void * Address of the buffer allocated
  */
 void *smemalign(size_t alignment, size_t size) {
-	thread_struct_t *curr_thread = get_curr_thread();
-    sem_wait(&sem, &curr_thread->cond_wait_link);
+    sem_wait(&sem);
     void *addr = _smemalign(alignment, size);
     sem_signal(&sem);
     return addr;
@@ -131,8 +122,7 @@ void *smemalign(size_t alignment, size_t size) {
  *  @return void
  */
 void sfree(void *buf, size_t size) {
-	thread_struct_t *curr_thread = get_curr_thread();
-    sem_wait(&sem, &curr_thread->cond_wait_link);
+    sem_wait(&sem);
     _sfree(buf, size);
     sem_signal(&sem);
 }

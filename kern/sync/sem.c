@@ -10,6 +10,8 @@
 #include <list/list.h>
 #include <common/assert.h>
 #include <simics.h>
+#include <core/scheduler.h>
+#include <core/thread.h>
 
 /** @brief This function will initialize a semaphore to
  * 	a given value count. 
@@ -35,15 +37,16 @@ int sem_init(sem_t *sem, int count) {
  * valid to be decremented.
  *
  * @param sem Semaphore whose count should be decremented.
- * @param link link a pointer to the "list_head" of the waiting list
  * @return Void
  */
-void sem_wait(sem_t *sem, list_head *link) {
+void sem_wait(sem_t *sem) {
 	thread_assert(sem != NULL);
 	thread_assert(sem->valid);
     mutex_lock(&sem->mutex);
+	thread_struct_t *curr_thread = get_curr_thread();
 	while(sem->count == 0) {
-		cond_wait(&sem->cond_var, &sem->mutex, link);
+		cond_wait(&sem->cond_var, &sem->mutex, 
+					&curr_thread->cond_wait_link);
 	}
 	sem->count--;
     mutex_unlock(&sem->mutex);
