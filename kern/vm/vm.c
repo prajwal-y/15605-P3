@@ -261,7 +261,7 @@ void free_page_table(int *pt) {
 		}
 		void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[i]);
 		if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {
-			//deallocate_frame(frame_addr);
+			deallocate_frame(frame_addr);
 		}
 	}
 	sfree(pt, PAGE_SIZE);
@@ -334,7 +334,10 @@ void increment_ref_count(int *pd) {
 			int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[i]);
 			for(j=0; j<NUM_PAGE_TABLE_ENTRIES; j++) {
 				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
-                    atomic_increment(&frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]);
+					void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[j]);
+					lock_frame(frame_addr);
+                    frame_ref_count[FRAME_INDEX(frame_addr)]++;
+					unlock_frame(frame_addr);
 				}
 			}
 		}
@@ -356,7 +359,10 @@ void decrement_ref_count(int *pd) {
 			int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[i]);
 			for(j=0; j<NUM_PAGE_TABLE_ENTRIES; j++) {
 				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
-                    atomic_decrement(&frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]);
+					void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[j]);
+					lock_frame(frame_addr);
+                    frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]--;
+					unlock_frame(frame_addr);
 				}
 			}
 		}
@@ -440,7 +446,8 @@ int handle_cow(void *addr) {
     int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[pd_index]);
 	void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[pt_index]);
     void *page_addr = (void *)((int)addr & PAGE_ROUND_DOWN);
-	mutex_lock(&frame_ref_mutex); /* Need to lock the data structure */
+	//mutex_lock(&frame_ref_mutex); /* Need to lock the data structure */
+	lock_frame(frame_addr);
 	if(frame_ref_count[FRAME_INDEX(frame_addr)] == 1) {
 		pt[pt_index] &= COW_MODE_DISABLE_MASK;
 	} else {
@@ -467,12 +474,14 @@ int handle_cow(void *addr) {
         sfree(frame_contents, PAGE_SIZE);
 
 		/* Adjust reference counts */
-		//frame_ref_count[FRAME_INDEX(frame_addr)]--;
-		//frame_ref_count[FRAME_INDEX(new_frame)]++;
-		atomic_decrement(&frame_ref_count[FRAME_INDEX(frame_addr)]);
-		atomic_increment(&frame_ref_count[FRAME_INDEX(new_frame)]);
+		frame_ref_count[FRAME_INDEX(frame_addr)]--;
+
+		lock_frame(new_frame);
+		frame_ref_count[FRAME_INDEX(new_frame)]++;
+		unlock_frame(new_frame);
 	}
-	mutex_unlock(&frame_ref_mutex);
+	//mutex_unlock(&frame_ref_mutex);
+	unlock_frame(frame_addr);
 	pt[pt_index] |= READ_WRITE_ENABLE;
 
 	/* TODO: REMOVE THIS. INVLPG is not working for some reason */
@@ -780,7 +789,9 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
             /* Need to allocate frame from user free frame pool */
             void *new_frame = allocate_frame();
             if (new_frame != NULL) {
-                atomic_increment(&frame_ref_count[FRAME_INDEX(new_frame)]);
+				lock_frame(new_frame);
+                frame_ref_count[FRAME_INDEX(new_frame)]++;
+				unlock_frame(new_frame);
                 pt_addr[pt_index] = (unsigned int)new_frame | flags;
 				invalidate_tlb_page(start_addr);
                 zero_fill(start_addr, PAGE_SIZE);

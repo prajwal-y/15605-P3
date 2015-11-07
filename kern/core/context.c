@@ -53,7 +53,7 @@ void context_switch() {
 	/* Call switch_to_thread with the new thread */
     switch_to_thread(curr_thread, thr);
 
-	/*if(curr_thread != NULL) {	
+	/*if(curr_thread != NULL && thr != NULL) {	
 		lprintf("Switched to thread id: %d (%p) from thread %d (%p)", 
 					thr->id, &thr->id, curr_thread->id, &curr_thread->id);
 	}*/

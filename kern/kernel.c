@@ -23,6 +23,7 @@
 #include <x86/seg.h>                /* install_user_segs() */
 #include <interrupts/interrupt_handlers.h>  
 #include <drivers/console/console_util.h>
+#include <common/malloc_wrappers.h>
 #include <console.h>
 #include <allocator/frame_allocator.h>
 #include <x86/cr.h>
@@ -45,6 +46,9 @@ static void set_default_color();
  */
 int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
 {
+
+	/* Initialize the thread safe malloc library */
+	init_thr_safe_malloc_lib();
 
     /* Set defaulr console color */
     set_default_color();

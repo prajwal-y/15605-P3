@@ -36,12 +36,12 @@ void init_scheduler() {
  *                          for the next thread
  */
 thread_struct_t *next_thread() {
+
     /* Get the thread at the head of the runqueue */
     thread_struct_t *head = runq_get_head();
     if (head == NULL) {
         return NULL;
     }
-
     return head;
 }
 

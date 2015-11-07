@@ -18,4 +18,8 @@ void deallocate_frame(void *frame_addr);
 
 void check_physical_memory();
 
+void lock_frame(void *frame_addr);
+
+void unlock_frame(void *frame_addr);
+
 #endif /* __FRAME_ALLOCATOR_H */
