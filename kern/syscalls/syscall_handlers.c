@@ -16,6 +16,7 @@
 #include <syscalls/lifecycle_syscalls.h>
 #include <syscalls/misc_syscalls.h>
 #include <syscalls/memory_syscalls.h>
+#include <syscalls/system_check_syscalls.h>
 
 #define NUM_INTERRUPTS 10 /* The number of interrupts we have defined handlers for */
 #define IDT_ENTRY_SIZE 8  /* Size of each IDT */
@@ -32,6 +33,9 @@ static void install_new_pages_handler();
 static void install_remove_pages_handler();
 static void install_readline_handler();
 static void install_yield_handler();
+
+//TODO: Remove sanity check syscall
+static void install_memcheck_handler();
 
 /** @brief The syscall handlers initialization function
  *
@@ -50,6 +54,7 @@ int install_syscall_handlers() {
     install_remove_pages_handler();
     install_readline_handler();
     install_yield_handler();
+    install_memcheck_handler();
     return 0;
 }
 
@@ -146,4 +151,8 @@ void install_remove_pages_handler() {
  */
 void install_yield_handler() {
 	add_idt_entry(yield_handler, YIELD_INT, TRAP_GATE, USER_DPL);
+}
+
+void install_memcheck_handler() {
+    add_idt_entry(memory_check_handler, MEMORY_CHECK_INT, INTERRUPT_GATE, USER_DPL);
 }

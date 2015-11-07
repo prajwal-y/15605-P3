@@ -48,7 +48,7 @@
  * to extend the spec by making use of these syscall numbers
  */
 #define SYSCALL_RESERVED_START    0x80
-#define SYSCALL_RESERVED_0        0x80
+#define MEMORY_CHECK_INT              0x80
 #define SYSCALL_RESERVED_1        0x81
 #define SYSCALL_RESERVED_2        0x82
 #define SYSCALL_RESERVED_3        0x83

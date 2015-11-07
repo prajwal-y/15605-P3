@@ -112,3 +112,15 @@ void deallocate_frame(void *frame_addr) {
     mutex_unlock(&list_mut);
     return;
 }
+
+void check_physical_memory() {
+    int free_count = 0;
+    void *first = free_list_head;
+
+    while ((int)first != FREE_FRAME_LIST_END) {
+	    first = (void *)free_frames_arr[FRAME_INDEX(first)];
+        free_count++;
+    }
+    lprintf("Total free physical frames: %d, next free frame %p",free_count, free_list_head);
+}
+
