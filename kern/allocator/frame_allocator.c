@@ -22,7 +22,7 @@
 #define GET_FRAME_LOCK(x) ((x) & 1)
 
 //static int *free_frames_arr;
-static unsigned int free_frames_arr[125000]; //TODO: FIX THIS GODDAMN THING
+static unsigned int free_frames_arr[140000]; //TODO: FIX THIS GODDAMN THING
 //static int num_allocated = 0;
 
 static void *free_list_head; /* Head of free list,UINT_MAX => no free frames */

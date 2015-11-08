@@ -139,6 +139,7 @@ void scroll_screen(int num_rows) {
     memcpy((void *)CONSOLE_MEM_BASE, buf, 
            (CONSOLE_HEIGHT * CONSOLE_WIDTH * 2) - offset);
     empty_fill((void *)(CONSOLE_MEM_END - offset), offset);
+	sfree(buf, CONSOLE_HEIGHT * CONSOLE_WIDTH * 2);
     return;
 }
 

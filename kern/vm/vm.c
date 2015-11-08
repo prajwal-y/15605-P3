@@ -30,7 +30,7 @@
 #define IS_NEWPAGE_PAGE(x) ((unsigned int)(x) & NEWPAGE_PAGE)
 #define IS_NEWPAGE_END(x) ((unsigned int)(x) & NEWPAGE_END)
 
-static int frame_ref_count[125000]; //TODO: Fix this :(
+static int frame_ref_count[140000]; //TODO: Fix this :(
 //static int *frame_ref_count;
 static void *kernel_pd;
 static void *dead_thr_kernel_stack;
