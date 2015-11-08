@@ -61,7 +61,7 @@ UPDATE_METHOD = afs
 		   new_pages mem_check readline_basic remove_pages_test1 \
 		   getpid_test1 loader_test1 loader_test2 exec_basic exec_basic_helper \
 		   exec_nonexist fork_test1 print_basic stack_test1 wait_getpid sleep_test1 \
-		   make_crash make_crash_helper mem_permissions
+		   make_crash make_crash_helper mem_permissions cho wild_test1
 
 ###########################################################################
 # Test programs you have written which you wish to run

@@ -22,6 +22,8 @@
 #include <simics.h>
 #include <interrupts/idt_entry.h>
 #include <core/context.h>
+#include <core/wait_vanish.h>
+#include <stdio.h>
 #include <idt.h>
 #include <cr.h>
 
@@ -111,7 +113,9 @@ void page_fault_handler_c() {
 		handle_cow(page_fault_addr);
 	} else {
 		lprintf("Address that caused page fault: %p Cause of error= %d. Thread that is failed %d", page_fault_addr, error_code, tid);
-		MAGIC_BREAK;
+		printf("Segmentation fault");
+		do_vanish();
+		//MAGIC_BREAK;
 	}
 
 	//TODO: HANDLE OTHER CASES OF PAGE FAULT. AND MOVE THIS TO OTHER FILE
