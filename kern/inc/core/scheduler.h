@@ -22,5 +22,7 @@ void runq_add_thread_interruptible(thread_struct_t *thr);
 
 void set_running_thread(thread_struct_t *thr);
 
+void schedule_sleep(int ticks);
+
 #endif  /* __SCHEDULER_H */
 

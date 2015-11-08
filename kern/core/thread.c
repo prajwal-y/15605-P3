@@ -22,7 +22,7 @@
 static int next_tid;
 static mutex_t mutex;
 static mutex_t map_mutex;
-static list_head *thread_map[HASHMAP_SIZE];
+static list_head thread_map[HASHMAP_SIZE];
 
 static void set_user_thread_regs(ureg_t *reg);
 static void init_thread_map();
@@ -120,9 +120,7 @@ void set_user_thread_regs(ureg_t *reg) {
 void init_thread_map() {
     int i;
     for (i = 0; i < HASHMAP_SIZE; i++) {
-        thread_map[i] = (list_head *)smalloc(sizeof(list_head));
-        kernel_assert(thread_map[i] != NULL);
-        init_head(thread_map[i]);
+        init_head(&thread_map[i]);
     }
     mutex_init(&map_mutex);
 }
@@ -138,7 +136,7 @@ void init_thread_map() {
 void add_thread_to_map(thread_struct_t *thr) {
     int index = thr->id % HASHMAP_SIZE;
     mutex_lock(&map_mutex);
-    add_to_tail(&thr->thread_map_link, thread_map[index]);
+    add_to_tail(&thr->thread_map_link, &thread_map[index]);
     mutex_unlock(&map_mutex);
 }
 
@@ -150,7 +148,7 @@ void add_thread_to_map(thread_struct_t *thr) {
  */
 thread_struct_t *get_thread_from_id(int thr_id) {
     int index = thr_id % HASHMAP_SIZE;
-    list_head *bucket_head = thread_map[index];
+    list_head *bucket_head = &thread_map[index];
     mutex_lock(&map_mutex);
     list_head *thr_node = get_first(bucket_head);
 	while(thr_node != NULL && thr_node != bucket_head) {
@@ -173,7 +171,7 @@ thread_struct_t *get_thread_from_id(int thr_id) {
  */
 void remove_thread_from_map(int thr_id) {
     int index = thr_id % HASHMAP_SIZE;
-    list_head *bucket_head = thread_map[index];
+    list_head *bucket_head = &thread_map[index];
     mutex_lock(&map_mutex);
     list_head *thr_node = get_first(bucket_head);
 	while(thr_node != NULL && thr_node != bucket_head) {

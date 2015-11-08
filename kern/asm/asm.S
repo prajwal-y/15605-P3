@@ -77,7 +77,6 @@ call_iret:
 
 .globl iret_fun
 iret_fun:
-	call acknowledge_interrupt
 	sti
 	popa
 	movl $0, %eax

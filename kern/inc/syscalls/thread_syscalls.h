@@ -16,4 +16,8 @@ int yield_handler();
 
 int yield_handler_c(int tid);
 
+int sleep_handler();
+
+int sleep_handler_c(int ticks);
+
 #endif  /* __THREAD_SYSCALLS_H */

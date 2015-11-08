@@ -50,6 +50,9 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
 	/* Initialize the thread safe malloc library */
 	init_thr_safe_malloc_lib();
 
+    /* Initialize the VM system */
+    vm_init();
+
     /* Set defaulr console color */
     set_default_color();
 
@@ -63,9 +66,6 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
 
     /* Initialize user space physical frame allocator */
     init_frame_allocator();
-
-    /* Initialize the VM system */
-    vm_init();
 
     /* Initialize scheduler system */
     init_scheduler();

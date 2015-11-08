@@ -50,3 +50,23 @@ yield_handler:
 	popl %ecx
     iret
 
+.globl sleep_handler
+sleep_handler:
+	pushl %eax
+    pushl %ecx
+    pushl %edx
+    pushl %ebx
+    pushl %esp
+    pushl %ebp
+    pushl %edi
+    pushl %esi
+    call sleep_handler_c
+    popl %esi
+	popl %edi
+    popl %ebp
+    popl %esp
+    popl %ebx
+    popl %edx
+    popl %ecx
+    popl %ecx
+	iret

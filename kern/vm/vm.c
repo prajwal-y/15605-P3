@@ -30,7 +30,8 @@
 #define IS_NEWPAGE_PAGE(x) ((unsigned int)(x) & NEWPAGE_PAGE)
 #define IS_NEWPAGE_END(x) ((unsigned int)(x) & NEWPAGE_END)
 
-static int frame_ref_count[62000]; //TODO: Fix this :(
+static int frame_ref_count[125000]; //TODO: Fix this :(
+//static int *frame_ref_count;
 static void *kernel_pd;
 static void *dead_thr_kernel_stack;
 static mutex_t frame_ref_mutex;
@@ -65,9 +66,11 @@ static void enable_page_pinning();
  */
 void vm_init() {
     setup_direct_map();
+    setup_kernel_pd();
+    set_kernel_pd();
+    enable_paging();
 	init_frame_ref_count();
     enable_page_pinning();
-    setup_kernel_pd();
 }
 
 /** @brief Function to set the the special kernel page
@@ -89,8 +92,8 @@ void setup_kernel_pd() {
  */
 void init_frame_ref_count() {
 	int size = FREE_FRAMES_COUNT*sizeof(int);
-	//frame_ref_count = (int *)malloc(size);
-	kernel_assert(frame_ref_count != NULL);
+    //frame_ref_count = (int *)smalloc(size);
+	//kernel_assert(frame_ref_count != NULL);
 	memset(frame_ref_count, 0, size);
 	mutex_init(&frame_ref_mutex);
 }
@@ -287,7 +290,6 @@ void *clone_paging_info(int *pd) {
         if(pd[i] != PAGE_DIR_ENTRY_DEFAULT) {
 			void *new_pt = clone_page_table((void *)GET_ADDR_FROM_ENTRY(pd[i]));
 			if(new_pt == NULL) {
-				kernel_assert(new_pt != NULL); //TODO: Shouldn't be kernel_assert()
 				free_paging_info(new_pd);
 				return NULL;
 			}

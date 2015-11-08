@@ -11,6 +11,8 @@
 #include <core/scheduler.h>
 #include <sync/mutex.h>
 #include <simics.h>
+#include <core/sleep.h>
+#include <drivers/timer/timer.h>
 
 static thread_struct_t *curr_thread; /* The thread currently being run */
 
@@ -25,6 +27,7 @@ static thread_struct_t *runq_get_head();
  */
 void init_scheduler() {
 	init_head(&runnable_threads);
+    init_sleeping_threads();
 }
 
 /** @brief return the next thread to be run
@@ -36,6 +39,11 @@ void init_scheduler() {
  *                          for the next thread
  */
 thread_struct_t *next_thread() {
+    /* See if any sleeping thread can be woken up */
+    thread_struct_t *sleeping_thread = get_sleeping_thread();
+    if (sleeping_thread != NULL) {
+        return sleeping_thread;
+    }
 
     /* Get the thread at the head of the runqueue */
     thread_struct_t *head = runq_get_head();

@@ -7,6 +7,7 @@
  */
 #include <syscalls/thread_syscalls.h>
 #include <core/thread.h>
+#include <core/sleep.h>
 #include <core/scheduler.h>
 #include <core/context.h>
 #include <common/errors.h>
@@ -43,3 +44,10 @@ int yield_handler_c(int tid) {
     return 0;
 }
 
+/** @brief sleep for a specified amount of time
+ *
+ *  @return int 0 on success -ve integer if ticks is negative
+ */
+int sleep_handler_c(int ticks) {
+    return do_sleep(ticks);
+}

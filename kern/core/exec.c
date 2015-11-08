@@ -20,7 +20,6 @@
 
 static int get_num_args(char **argvec);
 static char **copy_args(int num_args,char **argvec);
-static void free_argvec(int num_args, char **argvec);
 
 /** @brief The entry point for exec
  *
@@ -64,7 +63,7 @@ int do_exec(void *arg_packet) {
     /* Free kernel argvec and execname */
     decrement_ref_count_and_free_pages(old_pd);
     sfree(execname_kern, execname_len + 1);
-    free_argvec(num_args, argvec_kern);
+    sfree(argvec_kern, (num_args + 1) * sizeof(char *));
 
     return 0;
 }
@@ -114,22 +113,4 @@ int get_num_args(char **argvec) {
         count++;
     }
     return count;
-}
-
-/** @brief Function to free the kernel memory allocated for
- * storing the arguments from exec
- *
- *  @param num_args Number of arguments
- *  @param argvec The character array of arguments
- *
- *  @return void
- */
-void free_argvec(int num_args, char **argvec) {
-    int i;
-    for (i = 0; i < num_args; i++) {
-        int arg_len = strlen(argvec[i]);
-        sfree(argvec[i], arg_len + 1);
-    }
-    sfree(argvec[i], sizeof(char));
-    sfree(argvec, (num_args + 1) * sizeof(char *));
 }

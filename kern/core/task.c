@@ -133,7 +133,6 @@ void load_bootstrap_task(const char *prog_name) {
 
     /* Paging enabled! */
 	set_cur_pd(pd_addr);
-	enable_paging();
 
     /* Allocate memory for a task struct from kernel memory */
 	task_struct_t *t = create_task(NULL); //TODO: NUll or init?
@@ -186,7 +185,6 @@ void load_task(const char *prog_name, int num_args, char **argvec,
 
     /* Paging enabled! */
 	set_cur_pd(pd_addr);
-	enable_paging(); //TODO: REMOVE THIS IN EACH load_task
 
     t->pdbr = pd_addr;
 
@@ -257,6 +255,7 @@ void *copy_user_args(int num_args, char **argvec) {
     for (i = 0; i < num_args; i++) {
         user_stack_top -= strlen(argvec[i]) + 1;
         strcpy((void *)user_stack_top, argvec[i]);
+        sfree(argvec[i], strlen(argvec[i]) + 1);
         argvec[i] = user_stack_top;
     }
     user_stack_top -= 1;
@@ -269,7 +268,7 @@ void *copy_user_args(int num_args, char **argvec) {
     *(int *)user_stack_top = STACK_END;
     user_stack_top -= sizeof(int *);
     *(int *)user_stack_top = STACK_START;
-    user_stack_top -= sizeof(int *);
+    user_stack_top -= sizeof(char **);
     *(int *)user_stack_top = (int)argvec_usr;
     user_stack_top -= sizeof(int *);
     *user_stack_top = (int)num_args;

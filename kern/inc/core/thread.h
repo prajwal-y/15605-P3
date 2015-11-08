@@ -38,9 +38,11 @@ typedef struct thread_struct {
 	uint32_t cur_ebp;			/* Current value of the kernel stack %ebp */
 	enum thread_status status;	/* Life state of the thread */
     list_head runq_link;        /* Link structure for the run queue */
+    list_head sleepq_link;       /* Link structure for the sleep queue */
     list_head thread_map_link;  /* Link structure for the hash map */
 	list_head cond_wait_link;	/* Link structure for cond_wait */
     list_head task_thread_link; /* Link structure for list of threads in parent */
+    long wake_time;             /* Time when this thread is to be woken up */
 } thread_struct_t;
 
 void kernel_threads_init();

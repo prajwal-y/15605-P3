@@ -65,9 +65,9 @@ void install_timer_handler() {
  *  @return void
  */
 void callback_handler() {
+    acknowledge_interrupt();
     tick_counter++;
     callback(tick_counter);
-    acknowledge_interrupt();
     return;
 }
 

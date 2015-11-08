@@ -9,6 +9,7 @@
 #include <asm.h>
 #include <video_defines.h>
 #include <drivers/console/console_util.h>
+#include <common/malloc_wrappers.h>
 
 #define CONSOLE_MEM_END CONSOLE_MEM_BASE + (CONSOLE_HEIGHT * CONSOLE_WIDTH * 2)
 
@@ -131,7 +132,7 @@ void scroll_screen(int num_rows) {
         return;
     }
 
-    unsigned char buf[CONSOLE_HEIGHT * CONSOLE_WIDTH * 2];
+    char *buf = (char *)smalloc(CONSOLE_HEIGHT * CONSOLE_WIDTH * 2);
     int offset = num_rows * CONSOLE_WIDTH * 2;
     memcpy(buf, (void *)(CONSOLE_MEM_BASE + offset), 
            (CONSOLE_HEIGHT * CONSOLE_WIDTH * 2) - offset);

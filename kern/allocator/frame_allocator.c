@@ -19,9 +19,11 @@
 
 #define FREE_FRAME_LIST_END ((UINT_MAX) & (~(FRAME_LOCK)))
 #define PAGE_ALIGNMENT_CHECK 0x00000fff
+#define GET_FRAME_LOCK(x) ((x) & 1)
 
-unsigned int free_frames_arr[62000]; //TODO: FIX THIS GODDAMN THING
-int num_allocated = 0;
+//static int *free_frames_arr;
+static unsigned int free_frames_arr[125000]; //TODO: FIX THIS GODDAMN THING
+//static int num_allocated = 0;
 
 static void *free_list_head; /* Head of free list,UINT_MAX => no free frames */
 static mutex_t list_mut;     /* Mutex to synchronize access to free frame list */
@@ -107,7 +109,8 @@ void deallocate_frame(void *frame_addr) {
 
     mutex_lock(&list_mut);
 	int index = FRAME_INDEX(frame_addr);
-	free_frames_arr[index] = (unsigned int)free_list_head | FRAME_LOCK;
+    int curr_frame_lock = GET_FRAME_LOCK(free_frames_arr[index]);
+	free_frames_arr[index] = (unsigned int)free_list_head | curr_frame_lock;
 	free_list_head = frame_addr;
     mutex_unlock(&list_mut);
     return;

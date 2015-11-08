@@ -33,6 +33,7 @@ static void install_new_pages_handler();
 static void install_remove_pages_handler();
 static void install_readline_handler();
 static void install_yield_handler();
+static void install_sleep_handler();
 
 //TODO: Remove sanity check syscall
 static void install_memcheck_handler();
@@ -55,6 +56,7 @@ int install_syscall_handlers() {
     install_readline_handler();
     install_yield_handler();
     install_memcheck_handler();
+    install_sleep_handler();
     return 0;
 }
 
@@ -155,4 +157,12 @@ void install_yield_handler() {
 
 void install_memcheck_handler() {
     add_idt_entry(memory_check_handler, MEMORY_CHECK_INT, INTERRUPT_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for sleep syscall
+ *
+ *  @return int 0 on success, -ve integer on failure
+ */
+void install_sleep_handler() {
+	add_idt_entry(sleep_handler, SLEEP_INT, TRAP_GATE, USER_DPL);
 }

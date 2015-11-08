@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include "410_tests.h"
 #include <report.h>
-#include <stdio.h>
 
 DEF_TEST_NAME("fork_bomb:");
 
@@ -22,9 +21,7 @@ int main() {
     TEST_PROG_ENGAGE(200);
 
     while (1) {
-        if(fork() < 0) {
-			printf("fork_failed");
-		}
+        fork();
         TEST_PROG_PROGRESS;
     }
 }

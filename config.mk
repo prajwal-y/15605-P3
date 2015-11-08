@@ -60,7 +60,8 @@ UPDATE_METHOD = afs
 410TESTS = prog1 prog2 fork_exit_bomb fork_wait_bomb fork_bomb fork_wait actual_wait \
 		   new_pages mem_check readline_basic remove_pages_test1 \
 		   getpid_test1 loader_test1 loader_test2 exec_basic exec_basic_helper \
-		   exec_nonexist fork_test1 print_basic stack_test1 wait_getpid
+		   exec_nonexist fork_test1 print_basic stack_test1 wait_getpid sleep_test1 \
+		   make_crash make_crash_helper mem_permissions
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -134,7 +135,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 			  common/assert.o common/malloc_wrappers.o core/context.o core/scheduler.o core/exec.o syscalls/misc_syscalls.o \
 			  syscalls/misc_syscalls_asm.o core/wait_vanish.o syscalls/memory_syscalls.o syscalls/memory_syscalls_asm.o \
 			  drivers/keyboard/keyboard_circular_buffer.o syscalls/system_check_syscalls.o \
-			  syscalls/system_check_syscalls_asm.o
+			  syscalls/system_check_syscalls_asm.o core/sleep.o
 
 
 ###########################################################################

@@ -87,12 +87,9 @@ void cond_wait(cond_t *cv, mutex_t *mp, list_head *link) {
 	thread_struct_t *curr_thread = get_curr_thread();
 	curr_thread->status = WAITING;
 	mutex_unlock(mp);
-	enable_interrupts();
 
 	/* Release the mutex and call context switch */
 	context_switch();
-
-    acknowledge_interrupt();
 
 	/* Acquire the mutex again before returning */
 	mutex_lock(mp);
