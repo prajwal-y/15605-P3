@@ -72,9 +72,11 @@ void cond_destroy(cond_t *cv) {
  *  @param cv a pointer to the condition variable
  *  @param mp a pointer to the mutex associated with the thread
  *  @param link a pointer to the "list_head" of the waiting list on this cv
+ *  @param status the status that the thread should be set to
  *  @return void
  */
-void cond_wait(cond_t *cv, mutex_t *mp, list_head *link) { 
+void cond_wait(cond_t *cv, mutex_t *mp, list_head *link, 
+               int status) { 
 	thread_assert(cv != NULL);
 	thread_assert(cv->status != COND_VAR_INVALID);
 
@@ -85,7 +87,7 @@ void cond_wait(cond_t *cv, mutex_t *mp, list_head *link) {
 
 	disable_interrupts();
 	thread_struct_t *curr_thread = get_curr_thread();
-	curr_thread->status = WAITING;
+	curr_thread->status = status;
 	mutex_unlock(mp);
 
 	/* Release the mutex and call context switch */

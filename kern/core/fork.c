@@ -26,10 +26,10 @@ int do_fork() {
 
 	/* Create a child task */
 	task_struct_t *child_task = create_task(curr_task);
-    add_to_tail(&child_task->child_task_link, &curr_task->child_task_head);
 	if(child_task == NULL) {
 		return ERR_NOMEM;
 	}
+    add_to_tail(&child_task->child_task_link, &curr_task->child_task_head);
 	
 	/* Clone the address space */
 	void *new_pd_addr = clone_paging_info(curr_task->pdbr);

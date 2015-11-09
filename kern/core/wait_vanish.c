@@ -50,7 +50,7 @@ int do_wait(void *arg_packet) {
      * tasks alive */
     while (dead_head == NULL && alive_head != NULL) {
         cond_wait(&curr_task->exit_cond_var, &curr_task->child_list_mutex,
-                  &curr_thread->cond_wait_link);
+                  &curr_thread->cond_wait_link, WAITING);
         dead_head = get_first(&curr_task->dead_child_head);
         alive_head = get_first(&curr_task->child_task_head);
     }

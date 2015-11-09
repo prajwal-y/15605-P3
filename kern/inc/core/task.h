@@ -49,7 +49,7 @@ void load_bootstrap_task(const char *prog_name);
 
 void load_kernel_task(const char *prog_name);
 
-void load_task(const char *prog_name, int num_arg, char **argvec, 
+int load_task(const char *prog_name, int num_arg, char **argvec, 
                task_struct_t *t);
 
 task_struct_t *get_init_task();

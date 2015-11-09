@@ -47,7 +47,7 @@ int readline_handler_c(void *arg_packet) {
     }
     while (retval == ERR_NOTAVAIL) {
         cond_wait(&readline_cond_var, &readline_mutex, 
-                  &curr_thread->cond_wait_link);
+                  &curr_thread->cond_wait_link, WAITING);
         retval = nextline(buf, len);
     }
     mutex_unlock(&readline_mutex);

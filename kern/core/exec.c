@@ -58,7 +58,11 @@ int do_exec(void *arg_packet) {
     char **argvec_kern = copy_args(num_args, argvec);
     task_struct_t *t = get_curr_task();
 
-    load_task(execname_kern, num_args, argvec_kern, t);
+    retval = load_task(execname_kern, num_args, argvec_kern, t);
+    if (retval < 0) {
+        set_cur_pd(old_pd);
+        return retval;
+    }
 
     /* Free kernel argvec and execname */
     decrement_ref_count_and_free_pages(old_pd);

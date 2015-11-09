@@ -46,7 +46,7 @@ void sem_wait(sem_t *sem) {
 	thread_struct_t *curr_thread = get_curr_thread();
 	while(sem->count == 0) {
 		cond_wait(&sem->cond_var, &sem->mutex, 
-					&curr_thread->cond_wait_link);
+					&curr_thread->cond_wait_link, WAITING);
 	}
 	sem->count--;
     mutex_unlock(&sem->mutex);

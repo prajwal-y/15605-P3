@@ -20,6 +20,7 @@
 #include <ureg.h>
 #include <syscall.h>
 #include <string.h>
+#include <common/errors.h>
 #include <common/assert.h>
 
 #define EFLAGS_RESERVED 0x00000002
@@ -99,7 +100,8 @@ void load_kernel_task(const char *prog_name) {
 	task_struct_t *t = create_task(NULL); //TODO: should it be NULL or init ?
     kernel_assert(t != NULL); //TODO: !!!!SHOULD NOT BE KERNEL ASSERT!!!!
 
-    load_task(prog_name, 0, NULL, t);
+    int retval = load_task(prog_name, 0, NULL, t);
+    kernel_assert(retval == 0);
     init_task = t; //TODO: Fix this. Only init task should call this function
 	
     runq_add_thread_interruptible(t->thr);
@@ -172,16 +174,17 @@ void load_bootstrap_task(const char *prog_name) {
  *  @param t Reference to the task to which the program must be 
  *  		 loaded
  *
- *  @return void
+ *  @return 0 on success -ve integer on failure
  */
-void load_task(const char *prog_name, int num_args, char **argvec,
+int load_task(const char *prog_name, int num_args, char **argvec,
                task_struct_t *t) {
 
 	int retval;
     /* ask vm to give us a zero filled frame for the page directory */
     void *pd_addr = create_page_directory();
-
-    kernel_assert(pd_addr != NULL);
+    if (pd_addr == NULL) {
+        return ERR_NOMEM;
+    }
 
     /* Paging enabled! */
 	set_cur_pd(pd_addr);
@@ -190,18 +193,23 @@ void load_task(const char *prog_name, int num_args, char **argvec,
 
     /* Read the idle task header to set up VM */
 	simple_elf_t *se_hdr = (simple_elf_t *)smalloc(sizeof(simple_elf_t));
-
-    kernel_assert(se_hdr != NULL);
+    if (se_hdr == NULL) {
+        return ERR_NOMEM;
+    }
 
     elf_load_helper(se_hdr, prog_name);
     
     /* Invoke VM to setup the page directory/page table for a given binary */
     retval = setup_page_table(se_hdr, pd_addr);
-    kernel_assert(retval == 0);
+    if (retval < 0) {
+        return retval;
+    }
 
     /* Copy program into memory */
     retval = load_program(se_hdr);
-    kernel_assert(retval == 0);
+    if (retval < 0) {
+        return retval;
+    }
 
     /* Copy arguments onto user stack */
     void *user_stack_top = copy_user_args(num_args, argvec);
@@ -209,6 +217,8 @@ void load_task(const char *prog_name, int num_args, char **argvec,
 	set_task_stack((void *)t->thr->k_stack_base, 
 					se_hdr->e_entry, user_stack_top);
 	t->thr->cur_esp = (t->thr->k_stack_base - DEFAULT_STACK_OFFSET);
+
+    return 0;
 }
 
 /* ------------ Static local functions --------------*/

@@ -12,15 +12,16 @@
 #include <list/list.h>
 #include <core/task.h>
 #include <syscall.h>
+#include <sync/mutex.h>
+#include <sync/cond_var.h>
 
 #define KERNEL_STACK_SIZE ((PAGE_SIZE) * 2)
-
-enum thread_status {
-	RUNNING,
-	RUNNABLE,
-	WAITING,
-	EXITED
-};
+/* Thread states */
+#define RUNNING 0
+#define RUNNABLE 1
+#define WAITING 2
+#define EXITED 3
+#define DESCHEDULED 4
 
 /** @brief a schedulable "unit"
  *
@@ -36,13 +37,18 @@ typedef struct thread_struct {
 	uint32_t k_stack_base;		/* Top of the kernel stack for the thread (top) */
 	uint32_t cur_esp;		 	/* Current value of the kernel stack %esp */
 	uint32_t cur_ebp;			/* Current value of the kernel stack %ebp */
-	enum thread_status status;	/* Life state of the thread */
+	int status;         	    /* Life state of the thread */
     list_head runq_link;        /* Link structure for the run queue */
-    list_head sleepq_link;       /* Link structure for the sleep queue */
+    list_head sleepq_link;      /* Link structure for the sleep queue */
     list_head thread_map_link;  /* Link structure for the hash map */
 	list_head cond_wait_link;	/* Link structure for cond_wait */
     list_head task_thread_link; /* Link structure for list of threads in parent */
     long wake_time;             /* Time when this thread is to be woken up */
+
+    /* Mutex to protect use of the "reject" variable while descheduling */
+    mutex_t deschedule_mutex;  
+    /* Condition variable on which a thread waits if descheduled */ 
+    cond_t deschedule_cond_var;
 } thread_struct_t;
 
 void kernel_threads_init();

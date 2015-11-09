@@ -21,7 +21,6 @@
 #define NUM_INTERRUPTS 10 /* The number of interrupts we have defined handlers for */
 #define IDT_ENTRY_SIZE 8  /* Size of each IDT */
 
-static void install_gettid_handler();
 static void install_print_handler();
 static void install_fork_handler();
 static void install_exec_handler();
@@ -32,7 +31,11 @@ static void install_vanish_handler();
 static void install_new_pages_handler();
 static void install_remove_pages_handler();
 static void install_readline_handler();
+static void install_gettid_handler();
 static void install_yield_handler();
+static void install_deschedule_handler();
+static void install_make_runnable_handler();
+static void install_get_ticks_handler();
 static void install_sleep_handler();
 
 //TODO: Remove sanity check syscall
@@ -43,7 +46,6 @@ static void install_memcheck_handler();
  *   @return int 0 on success and negative number on failure
  **/
 int install_syscall_handlers() {
-    install_gettid_handler();
     install_print_handler();
 	install_fork_handler();
 	install_exec_handler();
@@ -56,6 +58,10 @@ int install_syscall_handlers() {
     install_readline_handler();
     install_yield_handler();
     install_memcheck_handler();
+    install_gettid_handler();
+    install_deschedule_handler();
+    install_make_runnable_handler();
+    install_get_ticks_handler();
     install_sleep_handler();
     return 0;
 }
@@ -165,4 +171,28 @@ void install_memcheck_handler() {
  */
 void install_sleep_handler() {
 	add_idt_entry(sleep_handler, SLEEP_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for deschedule syscall
+ *
+ *  @return int 0 on success, -ve integer on failure
+ */
+void install_deschedule_handler() {
+	add_idt_entry(deschedule_handler, DESCHEDULE_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for make_runnable syscall
+ *
+ *  @return int 0 on success, -ve integer on failure
+ */
+void install_make_runnable_handler() {
+	add_idt_entry(make_runnable_handler, MAKE_RUNNABLE_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for get_ticks syscall
+ *
+ *  @return unsigned int number of ticks since system boot
+ */
+void install_get_ticks_handler() {
+	add_idt_entry(get_ticks_handler, GET_TICKS_INT, TRAP_GATE, USER_DPL);
 }

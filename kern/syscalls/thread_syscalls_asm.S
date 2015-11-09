@@ -70,3 +70,66 @@ sleep_handler:
     popl %ecx
     popl %ecx
 	iret
+
+.globl deschedule_handler
+deschedule_handler:
+	pushl %eax
+    pushl %ecx
+    pushl %edx
+    pushl %ebx
+    pushl %esp
+    pushl %ebp
+    pushl %edi
+    pushl %esi
+    call deschedule_handler_c
+    popl %esi
+	popl %edi
+    popl %ebp
+    popl %esp
+    popl %ebx
+    popl %edx
+    popl %ecx
+    popl %ecx
+	iret
+
+.globl make_runnable_handler
+make_runnable_handler:
+	pushl %eax
+    pushl %ecx
+    pushl %edx
+    pushl %ebx
+    pushl %esp
+    pushl %ebp
+    pushl %edi
+    pushl %esi
+    call make_runnable_handler_c
+    popl %esi
+	popl %edi
+    popl %ebp
+    popl %esp
+    popl %ebx
+    popl %edx
+    popl %ecx
+    popl %ecx
+	iret
+
+.globl get_ticks_handler
+get_ticks_handler:
+	pushl %eax
+    pushl %ecx
+    pushl %edx
+    pushl %ebx
+    pushl %esp
+    pushl %ebp
+    pushl %edi
+    pushl %esi
+    call get_ticks_handler_c
+    popl %esi
+	popl %edi
+    popl %ebp
+    popl %esp
+    popl %ebx
+    popl %edx
+    popl %ecx
+    popl %ecx
+	iret

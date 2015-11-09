@@ -20,4 +20,16 @@ int sleep_handler();
 
 int sleep_handler_c(int ticks);
 
+int deschedule_handler();
+
+int deschedule_handler_c(int *reject);
+
+int make_runnable_handler();
+
+int make_runnable_handler_c(int tid);
+
+unsigned int get_ticks_handler();
+
+unsigned int get_ticks_handler_c();
+
 #endif  /* __THREAD_SYSCALLS_H */

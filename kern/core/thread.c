@@ -73,6 +73,10 @@ thread_struct_t *create_thread(task_struct_t *task) {
     /* Add thread tCB to hash map */
     add_thread_to_map(thr);
 
+    /* Initialize various thread structures */
+    mutex_init(&thr->deschedule_mutex);  
+    cond_init(&thr->deschedule_cond_var);
+
 	/* Allocate space for thread's kernel stack */
 	void *stack = smalloc(KERNEL_STACK_SIZE);
     if(stack == NULL) {
