@@ -17,13 +17,12 @@
 
 #define FRAME_LOCK 1
 
-#define FREE_FRAME_LIST_END ((UINT_MAX) & (~(FRAME_LOCK)))
+#define FREE_FRAME_LIST_END UINT_MAX //((UINT_MAX) & (~(FRAME_LOCK)))
 #define PAGE_ALIGNMENT_CHECK 0x00000fff
 #define GET_FRAME_LOCK(x) ((x) & 1)
 
-//static int *free_frames_arr;
-static unsigned int free_frames_arr[140000]; //TODO: FIX THIS GODDAMN THING
-//static int num_allocated = 0;
+static int *free_frames_arr;
+static int *free_frames_lock;
 
 static void *free_list_head; /* Head of free list,UINT_MAX => no free frames */
 static mutex_t list_mut;     /* Mutex to synchronize access to free frame list */
@@ -57,14 +56,18 @@ void init_frame_allocator() {
 void init_free_list() {
 
 	/*Initialize the free list array TODO FIX THIS*/
-	//free_frames_arr = (int *)smalloc(FREE_FRAMES_COUNT*sizeof(int));
-
+	free_frames_arr = (int *)smalloc(FREE_FRAMES_COUNT*sizeof(int));
 	kernel_assert(free_frames_arr != NULL);
+	free_frames_lock = (int *)smalloc(FREE_FRAMES_COUNT*sizeof(int));
+	kernel_assert(free_frames_lock != NULL);
+
 	int i;
 	for(i = 0; i < FREE_FRAMES_COUNT - 1; i++) {
-		free_frames_arr[i] = (USER_MEM_START + ((i+1) * PAGE_SIZE)) | FRAME_LOCK;
+		free_frames_arr[i] = (USER_MEM_START + ((i+1) * PAGE_SIZE));
+		free_frames_lock[i] = FRAME_LOCK;
 	}
 	free_frames_arr[FREE_FRAMES_COUNT - 1] = FREE_FRAME_LIST_END;
+	free_frames_lock[FREE_FRAMES_COUNT - 1] = FRAME_LOCK;
 
 	free_list_head = (void *)USER_MEM_START;
 }
@@ -82,10 +85,9 @@ void *allocate_frame() {
 	if ((int)free_list_head == FREE_FRAME_LIST_END) {
         mutex_unlock(&list_mut);
         return NULL;
-    }   
+    }
     void *frame_addr = free_list_head; 
 	free_list_head = (void *)free_frames_arr[FRAME_INDEX(frame_addr)];
-	free_list_head = (void *)((int)free_list_head & (~(FRAME_LOCK)));
 	mutex_unlock(&list_mut);
 
     kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
@@ -105,15 +107,12 @@ void *allocate_frame() {
 void deallocate_frame(void *frame_addr) {
     kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
     kernel_assert(frame_addr != NULL);
-    //TODO: assert memory check
 
     mutex_lock(&list_mut);
 	int index = FRAME_INDEX(frame_addr);
-    int curr_frame_lock = GET_FRAME_LOCK(free_frames_arr[index]);
-	free_frames_arr[index] = (unsigned int)free_list_head | curr_frame_lock;
+	free_frames_arr[index] = (unsigned int)free_list_head;
 	free_list_head = frame_addr;
     mutex_unlock(&list_mut);
-    return;
 }
 
 /** @brief Function to lock a particular physical frame
@@ -128,7 +127,7 @@ void deallocate_frame(void *frame_addr) {
  */
 void lock_frame(void *frame_addr) {
 	kernel_assert(frame_addr != NULL);
-	while(!test_and_unset(&free_frames_arr[FRAME_INDEX(frame_addr)]));
+	while(!test_and_unset(&free_frames_lock[FRAME_INDEX(frame_addr)]));
 }
 
 /** @brief Function to unlock a particular physical frame
@@ -143,17 +142,20 @@ void lock_frame(void *frame_addr) {
  */
 void unlock_frame(void *frame_addr) {
 	kernel_assert(frame_addr != NULL);
-	test_and_set(&free_frames_arr[FRAME_INDEX(frame_addr)]);
+	test_and_set(&free_frames_lock[FRAME_INDEX(frame_addr)]);
 }
 
-void check_physical_memory() {
+int check_physical_memory() {
     int free_count = 0;
     void *first = free_list_head;
 
     while ((int)first != FREE_FRAME_LIST_END) {
-	    first = (void *)(free_frames_arr[FRAME_INDEX(first)] & (~(FRAME_LOCK)));
+		kernel_assert((unsigned int)first >= USER_MEM_START);
+		kernel_assert((unsigned int)first <= FREE_FRAME_LIST_END);
+	    first = (void *)(free_frames_arr[FRAME_INDEX(first)]);
         free_count++;
     }
     lprintf("Total free physical frames: %d, next free frame %p",free_count, free_list_head);
+    return free_count;	
 }
 

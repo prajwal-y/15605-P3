@@ -7,8 +7,8 @@
 #ifndef __FRAME_ALLOCATOR_H
 #define __FRAME_ALLOCATOR_H
 
-#define FREE_FRAMES_COUNT (machine_phys_frames())-(USER_MEM_START / PAGE_SIZE)
-#define FRAME_INDEX(addr) (((unsigned int)addr)-(USER_MEM_START))/(PAGE_SIZE)
+#define FREE_FRAMES_COUNT ((machine_phys_frames())-(USER_MEM_START / PAGE_SIZE))
+#define FRAME_INDEX(addr) ((((unsigned int)addr)-(USER_MEM_START))/(PAGE_SIZE))
 
 void init_frame_allocator();
 
@@ -16,7 +16,7 @@ void *allocate_frame();
 
 void deallocate_frame(void *frame_addr);
 
-void check_physical_memory();
+int check_physical_memory();
 
 void lock_frame(void *frame_addr);
 

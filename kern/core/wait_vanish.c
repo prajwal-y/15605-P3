@@ -113,7 +113,7 @@ void do_vanish() {
 		void *curr_pdbr = curr_task->pdbr;
 		curr_task->pdbr = get_kernel_pd();
         set_kernel_pd();
-        decrement_ref_count_and_free_pages(curr_pdbr);
+       	decrement_ref_count_and_free_pages(curr_pdbr);
 
 		disable_interrupts(); /* Ensuring that only I run after signaling the parent */
         if (parent_alive_head == NULL) {

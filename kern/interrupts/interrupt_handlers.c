@@ -114,6 +114,7 @@ void page_fault_handler_c() {
 	} else {
 		lprintf("Address that caused page fault: %p Cause of error= %d. Thread that is failed %d", page_fault_addr, error_code, tid);
 		printf("Segmentation fault");
+		get_curr_task()->exit_status = -2;
 		do_vanish();
 		//MAGIC_BREAK;
 	}

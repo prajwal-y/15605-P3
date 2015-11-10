@@ -58,7 +58,7 @@ UPDATE_METHOD = afs
 # directory.
 #
 410TESTS = fork_exit_bomb fork_wait_bomb fork_bomb fork_wait actual_wait \
-		   new_pages mem_check readline_basic remove_pages_test1 \
+		   new_pages mem_check readline_basic remove_pages_test1 remove_pages_test2 \
 		   getpid_test1 loader_test1 loader_test2 exec_basic exec_basic_helper \
 		   exec_nonexist fork_test1 print_basic stack_test1 wait_getpid sleep_test1 \
 		   make_crash make_crash_helper mem_permissions cho wild_test1 yield_desc_mkrun \

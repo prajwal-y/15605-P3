@@ -30,8 +30,7 @@
 #define IS_NEWPAGE_PAGE(x) ((unsigned int)(x) & NEWPAGE_PAGE)
 #define IS_NEWPAGE_END(x) ((unsigned int)(x) & NEWPAGE_END)
 
-static int frame_ref_count[140000]; //TODO: Fix this :(
-//static int *frame_ref_count;
+static int *frame_ref_count;
 static void *kernel_pd;
 static void *dead_thr_kernel_stack;
 static mutex_t frame_ref_mutex;
@@ -92,8 +91,8 @@ void setup_kernel_pd() {
  */
 void init_frame_ref_count() {
 	int size = FREE_FRAMES_COUNT*sizeof(int);
-    //frame_ref_count = (int *)smalloc(size);
-	//kernel_assert(frame_ref_count != NULL);
+    frame_ref_count = (int *)smalloc(size);
+	kernel_assert(frame_ref_count != NULL);
 	memset(frame_ref_count, 0, size);
 	mutex_init(&frame_ref_mutex);
 }
@@ -263,9 +262,12 @@ void free_page_table(int *pt) {
 			continue;
 		}
 		void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[i]);
+		lock_frame(frame_addr);
+		kernel_assert(frame_ref_count[FRAME_INDEX(frame_addr)] >= 0);
 		if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {
 			deallocate_frame(frame_addr);
 		}
+		unlock_frame(frame_addr);
 	}
 	sfree(pt, PAGE_SIZE);
 }
@@ -363,7 +365,7 @@ void decrement_ref_count(int *pd) {
 				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
 					void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[j]);
 					lock_frame(frame_addr);
-                    frame_ref_count[FRAME_INDEX(GET_ADDR_FROM_ENTRY(pt[j]))]--;
+                    frame_ref_count[FRAME_INDEX(frame_addr)]--;
 					unlock_frame(frame_addr);
 				}
 			}
@@ -456,12 +458,15 @@ int handle_cow(void *addr) {
         /* Copy the data from the old frame to a kernel frame */
 		void *frame_contents = smemalign(PAGE_SIZE, PAGE_SIZE);
 		if(frame_contents == NULL) {
+			unlock_frame(frame_addr);
 			return ERR_FAILURE;
 		}
 		memcpy(frame_contents, page_addr, PAGE_SIZE);
 
 		void *new_frame = allocate_frame();
 		if(new_frame == NULL) {
+        	sfree(frame_contents, PAGE_SIZE);
+			unlock_frame(frame_addr);
 			return ERR_FAILURE;
 		}
 
@@ -730,7 +735,12 @@ int unmap_new_pages(void *base) {
     }
 
     frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt_addr[pt_index]);
-    deallocate_frame(frame_addr); 
+	lock_frame(frame_addr);
+	frame_ref_count[FRAME_INDEX(frame_addr)]--;
+	//if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {TODO: FIX THIS
+    	deallocate_frame(frame_addr); 
+	//}
+	unlock_frame(frame_addr);
 	pt_addr[pt_index] = PAGE_TABLE_ENTRY_DEFAULT;
 	invalidate_tlb_page(base);
     
@@ -741,7 +751,12 @@ int unmap_new_pages(void *base) {
     while((GET_NEWPAGE_FLAGS(pt_addr[pt_index]) == NEWPAGE_PAGE) 
           || (GET_NEWPAGE_FLAGS(pt_addr[pt_index]) == NEWPAGE_END)) { 
         frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt_addr[pt_index]);
-        deallocate_frame(frame_addr);
+		lock_frame(frame_addr);
+		frame_ref_count[FRAME_INDEX(frame_addr)]--;
+		//if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {TODO: FIX THIS
+			deallocate_frame(frame_addr); 
+		//}
+		unlock_frame(frame_addr);
         pt_addr[pt_index] = PAGE_TABLE_ENTRY_DEFAULT;
 		invalidate_tlb_page(base);
         base = (char *)base + PAGE_SIZE;
