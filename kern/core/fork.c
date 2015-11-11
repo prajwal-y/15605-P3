@@ -66,7 +66,10 @@ int do_thread_fork() {
 	task_struct_t *curr_task = get_curr_task();
 
 	thread_struct_t *curr_thread = get_curr_thread();
-	thread_struct_t *child_thread = create_thread(curr_task);	
+	thread_struct_t *child_thread = create_thread(curr_task);
+	if(child_thread == NULL) {
+		return ERR_FAILURE;
+	}
 
 	/* Clone the kernel stack */
 	memcpy(child_thread->k_stack, curr_thread->k_stack, KERNEL_STACK_SIZE);
