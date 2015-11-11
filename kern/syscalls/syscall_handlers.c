@@ -23,6 +23,7 @@
 
 static void install_print_handler();
 static void install_fork_handler();
+static void install_thread_fork_handler();
 static void install_exec_handler();
 static void install_set_status_handler();
 static void install_halt_handler();
@@ -49,6 +50,7 @@ static void install_memcheck_handler();
 int install_syscall_handlers() {
     install_print_handler();
 	install_fork_handler();
+	install_thread_fork_handler();
 	install_exec_handler();
 	install_set_status_handler();
 	install_halt_handler();
@@ -90,6 +92,14 @@ void install_print_handler() {
  */
 void install_fork_handler() {
 	add_idt_entry(fork_handler, FORK_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for thread fork
+ *
+ *  @return void
+ */
+void install_thread_fork_handler() {
+	add_idt_entry(thread_fork_handler, THREAD_FORK_INT, TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for exec

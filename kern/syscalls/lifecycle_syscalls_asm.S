@@ -29,6 +29,27 @@ fork_handler:
 	popl %ecx
 	iret
 
+.globl thread_fork_handler
+thread_fork_handler:
+	pushl %eax
+	pushl %ecx
+	pushl %edx
+	pushl %ebx
+	pushl %esp
+	pushl %ebp
+	pushl %esi
+	pushl %edi
+    call thread_fork_handler_c
+    popl %edi
+	popl %esi
+	popl %ebp
+	popl %esp
+	popl %ebx
+	popl %edx
+	popl %ecx
+	popl %ecx
+	iret
+
 .globl exec_handler
 exec_handler:
 	pushl %eax

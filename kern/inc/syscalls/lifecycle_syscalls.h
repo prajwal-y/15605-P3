@@ -12,6 +12,10 @@ int fork_handler();
 
 int fork_handler_c();
 
+int thread_fork_handler();
+
+int thread_fork_handler_c();
+
 int exec_handler();
 
 int exec_handler_c();

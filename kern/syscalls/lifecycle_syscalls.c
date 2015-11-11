@@ -21,6 +21,14 @@ int fork_handler_c() {
 	return do_fork();
 }
 
+/** @brief Handler to call the fork function
+ *
+ *  @return int new PID on success, -ve integer on failure
+ */
+int thread_fork_handler_c() {
+	return do_thread_fork();
+}
+
 /** @brief Handler to call the exec function
  *
  *  @return does not return on success, -ve integer on failur

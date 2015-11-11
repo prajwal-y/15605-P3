@@ -72,7 +72,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory.
 #
-STUDENTTESTS =
+STUDENTTESTS = thr_exit_join join_specific_test agility_drill
 
 ###########################################################################
 # Data files provided by course staff to build into the RAM disk
@@ -101,7 +101,7 @@ THREAD_OBJS = malloc.o panic.o mutex.o asm.o cond_var.o thread.o rwlock.o sem.o 
 # P3" we give you can't build libthrgrp.a.  Once you install your thread
 # library and fix THREAD_OBJS above, uncomment this line to enable building
 # libthrgrp.a:
-#410USER_LIBS_EARLY += libthrgrp.a
+410USER_LIBS_EARLY += libthrgrp.a
 
 ###########################################################################
 # Object files for your syscall wrappers
