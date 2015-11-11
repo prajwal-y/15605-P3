@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <syscall.h>
+#include <simics.h>
 #include "410_tests.h"
 
 DEF_TEST_NAME("swexn_basic_test:");
@@ -30,14 +31,17 @@ void handler(void *arg, ureg_t *uregs)
 		REPORT_END_FAIL;
 		exit(-1);
 	}
+    lprintf("uregs is %p", uregs);
 
 	ret = new_pages(GOOD_MEMORY, STAQ_SIZE);
+    lprintf("Ret is %d", ret);
 	if (ret < 0) {
 		REPORT_MISC("new_pages failed");
 		REPORT_END_FAIL;
 		exit(-1);
 	}
 	*(int *)GOOD_MEMORY = 42;
+    lprintf("Going to swexn again");
 	ret = swexn(EXN_STAQ_TOP, handler, NULL, uregs);
 	if (ret < 0) {
 		REPORT_MISC("second swexn rejected");

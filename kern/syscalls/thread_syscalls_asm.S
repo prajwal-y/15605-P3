@@ -133,3 +133,12 @@ get_ticks_handler:
     popl %ecx
     popl %ecx
 	iret
+
+.globl swexn_handler
+swexn_handler:
+    pusha
+    push %esi
+    call swexn_handler_c
+    pop %esi
+    popa
+	iret

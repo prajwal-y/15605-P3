@@ -8,6 +8,7 @@
  *  and sets the frequency of interrupts.
  *
  *  @author Rohit Upadhyaya (rjupadhy)
+ *  @author Prajwal Yadapadithaya (pyadapad)
  */
 
 #include <asm.h>
@@ -26,6 +27,11 @@
 #include <stdio.h>
 #include <idt.h>
 #include <cr.h>
+#include <syscall.h>
+#include <syscalls/syscall_util.h>
+#include <common/malloc_wrappers.h>
+#include <string.h>
+#include <common/assert.h>
 
 #define NUM_INTERRUPTS 10 /* The number of interrupts we have defined handlers for */
 #define IDT_ENTRY_SIZE 8  /* Size of each IDT */
@@ -39,6 +45,9 @@ void tickback(unsigned int ticks) {
 
 //static void install_divide_error_handler();
 static void install_page_fault_handler();
+static void *setup_swexn_stack(void *esp3, ureg_t *ureg, void *arg);
+static void update_fault_stack(void *esp3, swexn_handler_t eip, 
+                               thread_struct_t *curr_thread);
 
 void install_handler_4();
 void install_handler_5();
@@ -107,11 +116,23 @@ void page_fault_handler_c() {
 
 	void *page_fault_addr = (void *)get_cr2();
 	
-	int tid = get_curr_thread()->id;
+    thread_struct_t *curr_thread = get_curr_thread();
+	int tid = curr_thread->id;
+    task_struct_t *curr_task = get_curr_task();
 
 	if(is_addr_cow(page_fault_addr)) {
 		handle_cow(page_fault_addr);
-	} else {
+	} 
+    else if (curr_task->eip != NULL){
+        ureg_t *ureg = (ureg_t *)smalloc(sizeof(ureg_t));
+        thread_assert(ureg != NULL);
+        populate_ureg(ureg, ERR_CODE_AVAIL, curr_thread);
+        void *stack_bottom = setup_swexn_stack(curr_task->swexn_esp, ureg, curr_task->swexn_args);
+        update_fault_stack(stack_bottom, curr_task->eip, curr_thread);
+        curr_task->eip = NULL;
+        return;
+    }
+    else {
 		lprintf("Address that caused page fault: %p Cause of error= %d. Thread that is failed %d", page_fault_addr, error_code, tid);
 		printf("Segmentation fault");
 		get_curr_task()->exit_status = -2;
@@ -121,6 +142,38 @@ void page_fault_handler_c() {
 
 	//TODO: HANDLE OTHER CASES OF PAGE FAULT. AND MOVE THIS TO OTHER FILE
 }
+
+/** @brief setup the stack for the swexn handler
+ *
+ *  @param esp3 the stack where the swexn handler will run
+ *  @param ureg the registers for the swexn handler
+ *  @param arg the arguments to the swexn handler
+ *  @return void* the bottom of the stack 
+ */
+void *setup_swexn_stack(void *esp3, ureg_t *ureg, void *arg) {
+    lprintf("In swexn stack ureg is %p, stack_bottom is %p", ureg, esp3);
+    void *stack_bottom = (char *)esp3 - sizeof(ureg_t);
+    memcpy(stack_bottom, ureg, sizeof(ureg_t));
+
+    *((int *)(stack_bottom) - 1) = (int)stack_bottom;   //Check for validity
+    *((int *)(stack_bottom) - 2) = (int)arg;
+    *((int *)(stack_bottom) - 3) = (int)ureg->eip;
+    return (int *)stack_bottom - 3;
+}
+
+/** @brief update the kernel stack to change return esp and eip
+ *
+ *  @param esp the new esp valur to be set in the kernel stack
+ *  @param eip the first instruction of the fault handler
+ *  @return void
+ */
+void update_fault_stack(void *esp, swexn_handler_t eip, 
+                        thread_struct_t *curr_thread) {
+    *((int *)(curr_thread->k_stack_base) - 2) = (int)esp;
+    *((int *)(curr_thread->k_stack_base) - 5) = (int)eip;
+}
+
+    
 
 /** @brief this function installs a handler for divide by zero fault conditions
  *

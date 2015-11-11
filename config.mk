@@ -61,8 +61,10 @@ UPDATE_METHOD = afs
 		   new_pages mem_check readline_basic remove_pages_test1 remove_pages_test2 \
 		   getpid_test1 loader_test1 loader_test2 exec_basic exec_basic_helper \
 		   exec_nonexist fork_test1 print_basic stack_test1 wait_getpid sleep_test1 \
-		   make_crash make_crash_helper mem_permissions cho wild_test1 yield_desc_mkrun \
-		   cho2 cho_variant
+		   make_crash make_crash_helper cho wild_test1 yield_desc_mkrun \
+		   cho2 cho_variant swexn_basic_test swexn_cookie_monster swexn_regs \
+		   swexn_dispatch swexn_uninstall_test swexn_stands_for_swextensible \
+		   mem_permissions
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -136,7 +138,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 			  common/assert.o common/malloc_wrappers.o core/context.o core/scheduler.o core/exec.o syscalls/misc_syscalls.o \
 			  syscalls/misc_syscalls_asm.o core/wait_vanish.o syscalls/memory_syscalls.o syscalls/memory_syscalls_asm.o \
 			  drivers/keyboard/keyboard_circular_buffer.o syscalls/system_check_syscalls.o \
-			  syscalls/system_check_syscalls_asm.o core/sleep.o
+			  syscalls/system_check_syscalls_asm.o core/sleep.o	syscalls/syscall_util.o
 
 
 ###########################################################################

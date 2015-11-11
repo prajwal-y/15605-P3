@@ -24,7 +24,7 @@
 #include <common/assert.h>
 
 #define EFLAGS_RESERVED 0x00000002
-#define EFLAGS_IOPL 0x00003000 
+#define EFLAGS_IOPL 0x00000000 
 #define EFLAGS_IF 0x00000200 
 #define EFLAGS_ALIGNMENT_CHECK 0xFFFbFFFF
 
@@ -85,6 +85,10 @@ void init_task_structures(task_struct_t *t) {
     mutex_init(&t->thread_list_mutex);
     mutex_init(&t->vanish_mutex);
     cond_init(&t->exit_cond_var);           
+
+    /* initialize swexn handler */
+    t->eip = NULL;
+    t->swexn_args = NULL;
 }
 
 /** @brief Creates a task for a given program and calls

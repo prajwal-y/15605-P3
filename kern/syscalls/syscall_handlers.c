@@ -37,6 +37,7 @@ static void install_deschedule_handler();
 static void install_make_runnable_handler();
 static void install_get_ticks_handler();
 static void install_sleep_handler();
+static void install_swexn_handler();
 
 //TODO: Remove sanity check syscall
 static void install_memcheck_handler();
@@ -63,6 +64,7 @@ int install_syscall_handlers() {
     install_make_runnable_handler();
     install_get_ticks_handler();
     install_sleep_handler();
+    install_swexn_handler();
     return 0;
 }
 
@@ -167,7 +169,7 @@ void install_memcheck_handler() {
 
 /** @brief Function to install a handler for sleep syscall
  *
- *  @return int 0 on success, -ve integer on failure
+ *  @return void
  */
 void install_sleep_handler() {
 	add_idt_entry(sleep_handler, SLEEP_INT, TRAP_GATE, USER_DPL);
@@ -175,7 +177,7 @@ void install_sleep_handler() {
 
 /** @brief Function to install a handler for deschedule syscall
  *
- *  @return int 0 on success, -ve integer on failure
+ *  @return void
  */
 void install_deschedule_handler() {
 	add_idt_entry(deschedule_handler, DESCHEDULE_INT, TRAP_GATE, USER_DPL);
@@ -183,7 +185,7 @@ void install_deschedule_handler() {
 
 /** @brief Function to install a handler for make_runnable syscall
  *
- *  @return int 0 on success, -ve integer on failure
+ *  @return void
  */
 void install_make_runnable_handler() {
 	add_idt_entry(make_runnable_handler, MAKE_RUNNABLE_INT, TRAP_GATE, USER_DPL);
@@ -191,8 +193,16 @@ void install_make_runnable_handler() {
 
 /** @brief Function to install a handler for get_ticks syscall
  *
- *  @return unsigned int number of ticks since system boot
+ *  @return void
  */
 void install_get_ticks_handler() {
 	add_idt_entry(get_ticks_handler, GET_TICKS_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for swexn handler syscall
+ *
+ *  @return void
+ */
+void install_swexn_handler() {
+	add_idt_entry(swexn_handler, SWEXN_INT, TRAP_GATE, USER_DPL);
 }

@@ -11,6 +11,7 @@
 #include <core/task.h>
 #include <sync/cond_var.h>
 #include <sync/mutex.h>
+#include <syscall.h>
 
 #define DEFAULT_STACK_OFFSET 56 
 
@@ -30,6 +31,9 @@ typedef struct task_struct {
     
     list_head dead_child_head;      /* Linked list head for dead children of THIS task */
     list_head dead_child_link;      /* Link for list of dead children in parent */
+    swexn_handler_t eip;            /* The swexn handler function */
+    void *swexn_args;               /* Arguments to the swexn function */
+    void *swexn_esp;                /* ESP to run the swexn handler on */
 
     /* Cond var for threads of THIS task to wait on child vanish()es */
     cond_t exit_cond_var;           
