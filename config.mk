@@ -64,7 +64,8 @@ UPDATE_METHOD = afs
 		   make_crash make_crash_helper cho wild_test1 yield_desc_mkrun \
 		   cho2 cho_variant swexn_basic_test swexn_cookie_monster swexn_regs \
 		   swexn_dispatch swexn_uninstall_test swexn_stands_for_swextensible \
-		   mem_permissions
+		   mem_permissions deschedule_hang halt_test mem_eat_test minclone_mem \
+		   register_test  
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -72,7 +73,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory.
 #
-STUDENTTESTS = thr_exit_join join_specific_test agility_drill
+STUDENTTESTS = thr_exit_join join_specific_test agility_drill bistromath
 
 ###########################################################################
 # Data files provided by course staff to build into the RAM disk

@@ -6,10 +6,18 @@
  */
 #ifndef __SYSCALL_UTIL_H
 #define __SYSCALL_UTIL_H
+
 #include <ureg.h>
 #include <core/thread.h>
+
 #define ERR_CODE_AVAIL 1
 #define ERR_CODE_ABSENT 0
+
+//TODO: Duplicate from task.c. Remove it from one place
+#define EFLAGS_RESERVED 0x00000002
+#define EFLAGS_IOPL 0x00003000 
+#define EFLAGS_IF 0x00000200 
+#define EFLAGS_ALIGNMENT_CHECK 0xFFFbFFFF
 
 int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base);
 

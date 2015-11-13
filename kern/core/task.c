@@ -4,7 +4,6 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
-#include <core/task.h>
 #include <common/malloc_wrappers.h>
 #include <seg.h>
 #include <cr.h>
@@ -166,8 +165,9 @@ void load_bootstrap_task(const char *prog_name) {
     set_esp0(t->thr->k_stack_base);
 
 	uint32_t EFLAGS = setup_user_eflags();
-
-	call_iret(EFLAGS, se_hdr->e_entry);
+	unsigned long entry = se_hdr->e_entry;
+	sfree(se_hdr, sizeof(simple_elf_t));
+	call_iret(EFLAGS, entry);
 }
 
 /** @brief Function to load a program into a given task.
@@ -221,6 +221,8 @@ int load_task(const char *prog_name, int num_args, char **argvec,
 	set_task_stack((void *)t->thr->k_stack_base, 
 					se_hdr->e_entry, user_stack_top);
 	t->thr->cur_esp = (t->thr->k_stack_base - DEFAULT_STACK_OFFSET);
+
+	sfree(se_hdr, sizeof(simple_elf_t));
 
     return 0;
 }

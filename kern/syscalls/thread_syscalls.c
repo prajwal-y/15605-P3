@@ -140,7 +140,7 @@ void swexn_handler_c(void *arg_packet) {
         int retval = setup_kernel_stack(newureg, 
                                        (void *)curr_thread->k_stack_base);
         //TODO: If retval < 0 the stack better be the original one (not partially from the ureg)
-        if (retval < 0) {   
+        if (retval < 0) {
             set_kernel_stack_eax(ERR_FAILURE);
             return;
         }

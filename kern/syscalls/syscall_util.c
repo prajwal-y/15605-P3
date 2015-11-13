@@ -52,8 +52,9 @@ int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base) {
 
 int validate_uregs(ureg_t *uregs) {
     //TODO: WHAT EFLAGS CAN THE USER CHANGE?
-    int EFLAGS = get_eflags();
-    if (uregs->eflags != EFLAGS) {
+    
+	/* IOPL shouldn't be user privilege */
+    if ((uregs->eflags & EFLAGS_IOPL) == EFLAGS_IOPL) {
         return ERR_INVAL;
     }
     return 0;

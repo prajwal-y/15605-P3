@@ -68,7 +68,7 @@ int do_exec(void *arg_packet) {
     }
 
     /* Free kernel argvec and execname */
-    decrement_ref_count_and_free_pages(old_pd);
+    free_paging_info(old_pd);
     sfree(execname_kern, execname_len + 1);
     sfree(argvec_kern, (num_args + 1) * sizeof(char *));
 

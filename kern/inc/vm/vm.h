@@ -55,8 +55,6 @@ void free_page_directory(void *pd_addr);
 
 void *clone_paging_info(int *pd);
 
-void decrement_ref_count_and_free_pages(void *pd);
-
 void free_paging_info(int *pd);
  
 int setup_page_table(simple_elf_t *se_hdr, void *pd_addr);

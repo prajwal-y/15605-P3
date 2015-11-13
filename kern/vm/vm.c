@@ -53,7 +53,6 @@ static void free_page_table(int *pt);
 static void make_pages_cow(int *pd);
 static void make_pt_cow(int *pt);
 static void increment_ref_count(int *pd);
-static void decrement_ref_count(int *pd);
 static void enable_page_pinning();
 
 /** @brief initialize the virtual memory system
@@ -160,17 +159,6 @@ void enable_page_pinning() {
     set_cr4(cr4);
 }
 
-/** @brief Function to decrement the reference count and free 
- * the paging info
- *
- * @param pd The address of the page directory
- * @return void
- */
-void decrement_ref_count_and_free_pages(void *pd) {
-    decrement_ref_count(pd);
-    free_paging_info(pd);
-}
-
 /** @brief create a new page directory 
  *
  *  This function will allocate a new kernel physical frame for 
@@ -263,6 +251,7 @@ void free_page_table(int *pt) {
 		}
 		void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[i]);
 		lock_frame(frame_addr);
+		frame_ref_count[FRAME_INDEX(frame_addr)]--;
 		kernel_assert(frame_ref_count[FRAME_INDEX(frame_addr)] >= 0);
 		if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {
 			deallocate_frame(frame_addr);
@@ -341,31 +330,6 @@ void increment_ref_count(int *pd) {
 					void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[j]);
 					lock_frame(frame_addr);
                     frame_ref_count[FRAME_INDEX(frame_addr)]++;
-					unlock_frame(frame_addr);
-				}
-			}
-		}
-	}
-}
-
-/** @brief Decrements the reference count for all the physical frames
- *  allocated for a given page directory
- *
- *  @return void
- */
-void decrement_ref_count(int *pd) {
-	if(pd == NULL) {
-		return;
-	}
-	int i, j;
-	for(i=KERNEL_MAP_NUM_ENTRIES; i<NUM_PAGE_TABLE_ENTRIES; i++) {
-		if(pd[i] != PAGE_DIR_ENTRY_DEFAULT) {
-			int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[i]);
-			for(j=0; j<NUM_PAGE_TABLE_ENTRIES; j++) {
-				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
-					void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[j]);
-					lock_frame(frame_addr);
-                    frame_ref_count[FRAME_INDEX(frame_addr)]--;
 					unlock_frame(frame_addr);
 				}
 			}
@@ -737,9 +701,9 @@ int unmap_new_pages(void *base) {
     frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt_addr[pt_index]);
 	lock_frame(frame_addr);
 	frame_ref_count[FRAME_INDEX(frame_addr)]--;
-	//if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {TODO: FIX THIS
+	if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {
     	deallocate_frame(frame_addr); 
-	//}
+	}
 	unlock_frame(frame_addr);
 	pt_addr[pt_index] = PAGE_TABLE_ENTRY_DEFAULT;
 	invalidate_tlb_page(base);
@@ -753,9 +717,9 @@ int unmap_new_pages(void *base) {
         frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt_addr[pt_index]);
 		lock_frame(frame_addr);
 		frame_ref_count[FRAME_INDEX(frame_addr)]--;
-		//if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {TODO: FIX THIS
+		if(frame_ref_count[FRAME_INDEX(frame_addr)] == 0) {
 			deallocate_frame(frame_addr); 
-		//}
+		}
 		unlock_frame(frame_addr);
         pt_addr[pt_index] = PAGE_TABLE_ENTRY_DEFAULT;
 		invalidate_tlb_page(base);
