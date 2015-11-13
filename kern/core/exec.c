@@ -51,6 +51,9 @@ int do_exec(void *arg_packet) {
 
     /* Copy execname to kernel memory */
     char *execname_kern = (char *)smalloc((execname_len + 1) * sizeof(char));
+	if(execname_kern == NULL) {
+		return ERR_FAILURE;
+	}
     strncpy(execname_kern, execname, execname_len + 1);
 
     /* Copy the argument vector into kernel space as we will be freeing
@@ -65,7 +68,7 @@ int do_exec(void *arg_packet) {
     }
 
     /* Free kernel argvec and execname */
-    decrement_ref_count_and_free_pages(old_pd);
+    free_paging_info(old_pd);
     sfree(execname_kern, execname_len + 1);
     sfree(argvec_kern, (num_args + 1) * sizeof(char *));
 

@@ -11,4 +11,6 @@
 
 int do_fork();
 
+int do_thread_fork();
+
 #endif  /* __FORK_H */

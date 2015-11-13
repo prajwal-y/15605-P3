@@ -13,6 +13,9 @@
 #include <common/errors.h>
 #include <simics.h>
 #include <drivers/timer/timer.h>
+#include <syscall.h>
+#include <syscalls/syscall_util.h>
+#include <ureg.h>
 
 /** @brief implement the functionality to get the tid
  *         from the global curr_thread struct. This passes
@@ -103,4 +106,45 @@ int make_runnable_handler_c(int tid) {
  */
 unsigned int get_ticks_handler_c() {
     return total_ticks();
+}
+
+/** @brief install a swexn handler
+ *
+ *  @param esp3 the exception stack
+ *  @param eip points to the first instruction of exception handler
+ *  @param arg arguemnt to the swexn handler
+ *  @param newureg the new register values to take when returning
+ *
+ *  @return int 0 on success, -ve integer on failure
+ */
+void swexn_handler_c(void *arg_packet) {
+    //TODO: PLEASE FOR DONT ALLOW USER TO CRASH KERNEL
+    void *esp3 = (void *)(*((int *)arg_packet));
+    swexn_handler_t eip = (void *)(*((int *)arg_packet + 1));
+    void *arg = (void *)(*((int *)arg_packet + 2));
+    ureg_t *newureg = (ureg_t *)(*((int *)arg_packet + 3));
+
+    task_struct_t *curr_task = get_curr_task();
+    thread_struct_t *curr_thread = get_curr_thread();
+    if (esp3 == NULL || eip == NULL) {
+        curr_task->eip = NULL;
+        set_kernel_stack_eax(0);
+        return;
+    }
+
+    curr_task->eip = eip;
+    curr_task->swexn_args = arg;
+    curr_task->swexn_esp = esp3;
+
+    if (newureg != NULL) {
+        int retval = setup_kernel_stack(newureg, 
+                                       (void *)curr_thread->k_stack_base);
+        //TODO: If retval < 0 the stack better be the original one (not partially from the ureg)
+        if (retval < 0) {
+            set_kernel_stack_eax(ERR_FAILURE);
+            return;
+        }
+        return;
+    }
+    set_kernel_stack_eax(0);
 }

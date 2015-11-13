@@ -21,7 +21,7 @@
  *  @return int the ID of the new task. If fork
  *  fails, then a negative number is returned.
  */
-int do_fork() {
+int do_fork() {//TODO: Prevent multiple threads of a task from calling fork()
 	task_struct_t *curr_task = get_curr_task();
 
 	/* Create a child task */
@@ -53,4 +53,32 @@ int do_fork() {
 	set_cur_pd(curr_task->pdbr);
 
 	return child_task->id;	
+}
+
+/** @brief Entry point for thread fork
+ *
+ *  This function creates a new thread for the current task and
+ *  adds the thread to the runnable queue.
+ *
+ *  @return the thread ID of the new thread
+ */
+int do_thread_fork() {
+	task_struct_t *curr_task = get_curr_task();
+
+	thread_struct_t *curr_thread = get_curr_thread();
+	thread_struct_t *child_thread = create_thread(curr_task);
+	if(child_thread == NULL) {
+		return ERR_FAILURE;
+	}
+
+	/* Clone the kernel stack */
+	memcpy(child_thread->k_stack, curr_thread->k_stack, KERNEL_STACK_SIZE);
+	*((int *)(child_thread->k_stack_base) - 14) = (int)iret_fun; //TODO: REMOVE THAT CONSTANT
+	child_thread->cur_esp = child_thread->k_stack_base 
+								- DEFAULT_STACK_OFFSET;
+
+	/* Add the first thread of the new task to runnable queue */
+	runq_add_thread(child_thread);
+
+	return child_thread->id;
 }
