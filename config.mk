@@ -73,7 +73,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory.
 #
-STUDENTTESTS = thr_exit_join join_specific_test agility_drill bistromath
+STUDENTTESTS = thr_exit_join join_specific_test agility_drill
 
 ###########################################################################
 # Data files provided by course staff to build into the RAM disk
@@ -130,7 +130,8 @@ AUTOSTACK_OBJS = autostack.o
 #
 KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 			  drivers/console/console_util.o drivers/timer/timer.o drivers/timer/timer_handler.o \
-			  interrupts/interrupt_handlers.o interrupts/interrupt_handlers_asm.o interrupts/idt_entry.o \
+			  interrupts/interrupt_handlers.o interrupts/idt_entry.o interrupts/fault_handlers.o \
+			  interrupts/fault_handlers_asm.o \
 			  drivers/keyboard/keyboard.o drivers/keyboard/keyboard_handler.o allocator/frame_allocator.o \
 			  sync/mutex.o sync/cond_var.o  sync/sem.o \
 			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o core/fork.o asm/asm.o syscalls/syscall_handlers.o \

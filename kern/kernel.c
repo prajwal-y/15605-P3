@@ -24,6 +24,7 @@
 #include <interrupts/interrupt_handlers.h>  
 #include <drivers/console/console_util.h>
 #include <common/malloc_wrappers.h>
+#include <common/assert.h>
 #include <console.h>
 #include <allocator/frame_allocator.h>
 #include <x86/cr.h>
@@ -57,7 +58,7 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
     set_default_color();
 
     /* Install all the fault handlers we expect to use */
-    install_handlers();
+    kernel_assert(install_handlers() == 0);
 
     install_syscall_handlers();
 
