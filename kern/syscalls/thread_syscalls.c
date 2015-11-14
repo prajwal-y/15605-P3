@@ -16,6 +16,7 @@
 #include <syscall.h>
 #include <syscalls/syscall_util.h>
 #include <ureg.h>
+#include <vm/vm.h>
 
 /** @brief implement the functionality to get the tid
  *         from the global curr_thread struct. This passes
@@ -63,7 +64,9 @@ int sleep_handler_c(int ticks) {
  *              if reject is invalid pointer.
  */
 int deschedule_handler_c(int *reject) {
-    //TODO:Validate reject
+    if (is_pointer_valid(reject, sizeof(int *)) < 0) {
+        return ERR_INVAL;
+    }
     thread_struct_t *thr = get_curr_thread();
     mutex_lock(&thr->deschedule_mutex);
     if (*reject != 0) {
@@ -118,11 +121,28 @@ unsigned int get_ticks_handler_c() {
  *  @return int 0 on success, -ve integer on failure
  */
 void swexn_handler_c(void *arg_packet) {
-    //TODO: PLEASE FOR DONT ALLOW USER TO CRASH KERNEL
     void *esp3 = (void *)(*((int *)arg_packet));
+    if (is_pointer_valid(esp3, 4) < 0
+        || is_memory_writable(esp3, 4) < 0) {
+        set_kernel_stack_eax(ERR_INVAL);
+        return;
+    }
+
     swexn_handler_t eip = (void *)(*((int *)arg_packet + 1));
+    if (is_pointer_valid(eip, 4) < 0) {
+        set_kernel_stack_eax(ERR_INVAL);
+        return;
+    }
     void *arg = (void *)(*((int *)arg_packet + 2));
+    if (is_pointer_valid(arg, 4) < 0) {
+        set_kernel_stack_eax(ERR_INVAL);
+        return;
+    }
     ureg_t *newureg = (ureg_t *)(*((int *)arg_packet + 3));
+    if (is_pointer_valid(newureg, 4) < 0) {
+        set_kernel_stack_eax(ERR_INVAL);
+        return;
+    }
 
     task_struct_t *curr_task = get_curr_task();
     thread_struct_t *curr_thread = get_curr_thread();

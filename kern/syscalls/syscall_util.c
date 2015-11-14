@@ -39,7 +39,6 @@ int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base) {
     /* Simulate a pusha for the 8 registers that are pushed */
     //memset(((int *)(kernel_stack_base) - 13), 0, 32);
     *((int *)(kernel_stack_base) - 6) = ureg->eax;
-    lprintf("eax value is %x", ureg->eax);
     *((int *)(kernel_stack_base) - 7) = ureg->ecx;
     *((int *)(kernel_stack_base) - 8) = ureg->edx;
     *((int *)(kernel_stack_base) - 9) = ureg->ebx;

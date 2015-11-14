@@ -830,3 +830,30 @@ int is_memory_range_mapped(void *base, int len) {
 
     return MEMORY_REGION_UNMAPPED;
 }
+
+/** @brief check if memory location is user writable
+ *
+ *  Check if memory location pointed to by ptr can be written to by user
+ *
+ *  @param ptr memory address
+ *  @param bytes number of bytes that have to be written
+ *  @return 0 on success, -ve integer if cannot be written to
+ */
+int is_memory_writable(void *ptr, int bytes) {
+    int *pd_addr = (int *)get_cr3();
+    int *pt_addr;
+    int pd_index, pt_index;
+        
+    pd_index = GET_PD_INDEX(ptr);
+    pt_index = GET_PT_INDEX(ptr);
+    if (pd_addr[pd_index] != PAGE_DIR_ENTRY_DEFAULT) {
+        pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
+        if (pt_addr[pt_index] != PAGE_TABLE_ENTRY_DEFAULT) {
+            if (pt_addr[pt_index] & READ_WRITE_ENABLE) {
+                return 0;
+            }
+        }
+    }
+    return ERR_INVAL;
+}
+

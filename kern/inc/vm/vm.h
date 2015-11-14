@@ -79,4 +79,8 @@ int map_new_pages(void *base, int length);
 
 int unmap_new_pages(void *base);
 
+int is_memory_writable(void *ptr, int bytes);
+
+int is_memory_writable(void *ptr, int bytes);
+
 #endif /* __VM_H */

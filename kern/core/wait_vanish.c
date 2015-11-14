@@ -16,6 +16,7 @@
 #include <vm/vm.h>
 #include <simics.h>
 #include <ureg.h>
+#include <syscalls/syscall_util.h>
 
 #define ALIVE_TASK 0
 #define DEAD_TASK 1
@@ -31,13 +32,17 @@ static void reparent_to_init(list_head *task_list, int task_type,
  *  the required arguments for wait.
  *
  *  @return The task ID (id of the first thread in the task) if wait returns.
- *          -1 if wait cannot wait on any task exiting in the future.
+ *          -1 if wait cannot wait on any task exiting in the future or if 
+ *          status_ptr is invalid
  */
 int do_wait(void *arg_packet) {
 
-    //TODO: Sanitize every byte of input. Possibly to move it to a common file
-    //since it will be used by many system calls.
     int *status_ptr = (int *)arg_packet;
+    if (is_pointer_valid(status_ptr, sizeof(int *)) < 0
+        || is_memory_writable(status_ptr, sizeof(int *))) {
+        return ERR_INVAL;
+    }
+
     
     task_struct_t *curr_task = get_curr_task();
     thread_struct_t *curr_thread = get_curr_thread();

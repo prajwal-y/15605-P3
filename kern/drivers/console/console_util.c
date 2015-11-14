@@ -17,6 +17,7 @@ int cursor_row;
 int cursor_col;
 char console_color;
 char empty_char[2];
+static char buf[CONSOLE_WIDTH * CONSOLE_HEIGHT * 2];
 
 /** @brief a function to set the logical cursor
  *
@@ -132,14 +133,12 @@ void scroll_screen(int num_rows) {
         return;
     }
 
-    char *buf = (char *)smalloc(CONSOLE_HEIGHT * CONSOLE_WIDTH * 2);
     int offset = num_rows * CONSOLE_WIDTH * 2;
     memcpy(buf, (void *)(CONSOLE_MEM_BASE + offset), 
            (CONSOLE_HEIGHT * CONSOLE_WIDTH * 2) - offset);
     memcpy((void *)CONSOLE_MEM_BASE, buf, 
            (CONSOLE_HEIGHT * CONSOLE_WIDTH * 2) - offset);
     empty_fill((void *)(CONSOLE_MEM_END - offset), offset);
-	sfree(buf, CONSOLE_HEIGHT * CONSOLE_WIDTH * 2);
     return;
 }
 
