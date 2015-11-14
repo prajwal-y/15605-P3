@@ -60,7 +60,8 @@ int kernel_main(mbinfo_t *mbinfo, int argc, char **argv, char **envp)
     /* Install all the fault handlers we expect to use */
     kernel_assert(install_handlers() == 0);
 
-    install_syscall_handlers();
+	/* Install the system call handlers */
+    kernel_assert(install_syscall_handlers() == 0);
 
     /* Clear the console of crud */
     clear_console();

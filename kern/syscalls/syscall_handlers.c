@@ -18,201 +18,245 @@
 #include <syscalls/memory_syscalls.h>
 #include <syscalls/system_check_syscalls.h>
 
-#define NUM_INTERRUPTS 10 /* The number of interrupts we have defined handlers for */
-#define IDT_ENTRY_SIZE 8  /* Size of each IDT */
-
-static void install_print_handler();
-static void install_fork_handler();
-static void install_thread_fork_handler();
-static void install_exec_handler();
-static void install_set_status_handler();
-static void install_halt_handler();
-static void install_wait_handler();
-static void install_vanish_handler();
-static void install_new_pages_handler();
-static void install_remove_pages_handler();
-static void install_readline_handler();
-static void install_gettid_handler();
-static void install_yield_handler();
-static void install_deschedule_handler();
-static void install_make_runnable_handler();
-static void install_get_ticks_handler();
-static void install_sleep_handler();
-static void install_swexn_handler();
+static int install_print_handler();
+static int install_fork_handler();
+static int install_thread_fork_handler();
+static int install_exec_handler();
+static int install_set_status_handler();
+static int install_halt_handler();
+static int install_wait_handler();
+static int install_vanish_handler();
+static int install_new_pages_handler();
+static int install_remove_pages_handler();
+static int install_readline_handler();
+static int install_gettid_handler();
+static int install_yield_handler();
+static int install_deschedule_handler();
+static int install_make_runnable_handler();
+static int install_get_ticks_handler();
+static int install_sleep_handler();
+static int install_swexn_handler();
 
 //TODO: Remove sanity check syscall
-static void install_memcheck_handler();
+static int install_memcheck_handler();
 
 /** @brief The syscall handlers initialization function
  *
  *   @return int 0 on success and negative number on failure
  **/
 int install_syscall_handlers() {
-    install_print_handler();
-	install_fork_handler();
-	install_thread_fork_handler();
-	install_exec_handler();
-	install_set_status_handler();
-	install_halt_handler();
-    install_wait_handler();
-    install_vanish_handler();
-    install_new_pages_handler();
-    install_remove_pages_handler();
-    install_readline_handler();
-    install_yield_handler();
-    install_memcheck_handler();
-    install_gettid_handler();
-    install_deschedule_handler();
-    install_make_runnable_handler();
-    install_get_ticks_handler();
-    install_sleep_handler();
-    install_swexn_handler();
-    return 0;
+	int retval = 0;
+    if((retval = install_print_handler()) < 0) {
+		return retval;
+	}
+	if((retval = install_fork_handler()) < 0) {
+		return retval;
+	}
+	if((retval = install_thread_fork_handler()) < 0) {
+		return retval;
+	}
+	if((retval = install_exec_handler()) < 0) {
+		return retval;
+	}
+	if((retval = install_set_status_handler()) < 0) {
+		return retval;
+	}
+	if((retval = install_halt_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_wait_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_vanish_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_new_pages_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_remove_pages_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_readline_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_yield_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_memcheck_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_gettid_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_deschedule_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_make_runnable_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_get_ticks_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_sleep_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_swexn_handler()) < 0) {
+		return retval;
+	}
+    return retval;
 }
 
 /** @brief this function installs a handler for gettid
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_gettid_handler() {
-    add_idt_entry(gettid_handler, GETTID_INT, TRAP_GATE, USER_DPL);
+int install_gettid_handler() {
+    return add_idt_entry(gettid_handler, GETTID_INT, TRAP_GATE, USER_DPL);
 }
 
 /** @brief this function installs a handler for print
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_print_handler() {
-    add_idt_entry(print_handler, PRINT_INT, TRAP_GATE, USER_DPL);
+int install_print_handler() {
+    return add_idt_entry(print_handler, PRINT_INT, TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for fork
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_fork_handler() {
-	add_idt_entry(fork_handler, FORK_INT, TRAP_GATE, USER_DPL);
+int install_fork_handler() {
+	return add_idt_entry(fork_handler, FORK_INT, TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for thread fork
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_thread_fork_handler() {
-	add_idt_entry(thread_fork_handler, THREAD_FORK_INT, TRAP_GATE, USER_DPL);
+int install_thread_fork_handler() {
+	return add_idt_entry(thread_fork_handler, THREAD_FORK_INT, 
+							TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for exec
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_exec_handler() {
-	add_idt_entry(exec_handler, EXEC_INT, TRAP_GATE, USER_DPL);
+int install_exec_handler() {
+	return add_idt_entry(exec_handler, EXEC_INT, TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for set_status
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_set_status_handler() {
-	add_idt_entry(set_status_handler, SET_STATUS_INT, TRAP_GATE, USER_DPL);
+int install_set_status_handler() {
+	return add_idt_entry(set_status_handler, SET_STATUS_INT, 
+							TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for halt
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_halt_handler() {
-	add_idt_entry(halt_handler, HALT_INT, TRAP_GATE, USER_DPL);
+int install_halt_handler() {
+	return add_idt_entry(halt_handler, HALT_INT, TRAP_GATE, USER_DPL);
 }
 /** @brief Function to install a handler for wait syscall
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_wait_handler() {
-	add_idt_entry(wait_handler, WAIT_INT, TRAP_GATE, USER_DPL);
+int install_wait_handler() {
+	return add_idt_entry(wait_handler, WAIT_INT, TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for vanish syscall
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_vanish_handler() {
-	add_idt_entry(vanish_handler, VANISH_INT, TRAP_GATE, USER_DPL);
+int install_vanish_handler() {
+	return add_idt_entry(vanish_handler, VANISH_INT, TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for new_pages syscall
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_new_pages_handler() {
-	add_idt_entry(new_pages_handler, NEW_PAGES_INT, TRAP_GATE, USER_DPL);
+int install_new_pages_handler() {
+	return add_idt_entry(new_pages_handler, NEW_PAGES_INT, 
+							TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for readline syscall
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_readline_handler() {
-	add_idt_entry(readline_handler, READLINE_INT, TRAP_GATE, USER_DPL);
+int install_readline_handler() {
+	return add_idt_entry(readline_handler, READLINE_INT, TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for remove_pages syscall
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_remove_pages_handler() {
-	add_idt_entry(remove_pages_handler, REMOVE_PAGES_INT, TRAP_GATE, USER_DPL);
+int install_remove_pages_handler() {
+	return add_idt_entry(remove_pages_handler, REMOVE_PAGES_INT, 
+							TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for yield syscall
  *
  *  @return void
  */
-void install_yield_handler() {
-	add_idt_entry(yield_handler, YIELD_INT, TRAP_GATE, USER_DPL);
+int install_yield_handler() {
+	return add_idt_entry(yield_handler, YIELD_INT, TRAP_GATE, USER_DPL);
 }
 
-void install_memcheck_handler() {
-    add_idt_entry(memory_check_handler, MEMORY_CHECK_INT, INTERRUPT_GATE, USER_DPL);
+int install_memcheck_handler() {
+    return add_idt_entry(memory_check_handler, MEMORY_CHECK_INT, 
+							INTERRUPT_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for sleep syscall
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_sleep_handler() {
-	add_idt_entry(sleep_handler, SLEEP_INT, TRAP_GATE, USER_DPL);
+int install_sleep_handler() {
+	return add_idt_entry(sleep_handler, SLEEP_INT, TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for deschedule syscall
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_deschedule_handler() {
-	add_idt_entry(deschedule_handler, DESCHEDULE_INT, TRAP_GATE, USER_DPL);
+int install_deschedule_handler() {
+	return add_idt_entry(deschedule_handler, DESCHEDULE_INT, 
+							TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for make_runnable syscall
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_make_runnable_handler() {
-	add_idt_entry(make_runnable_handler, MAKE_RUNNABLE_INT, TRAP_GATE, USER_DPL);
+int install_make_runnable_handler() {
+	return add_idt_entry(make_runnable_handler, MAKE_RUNNABLE_INT, 
+							TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for get_ticks syscall
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_get_ticks_handler() {
-	add_idt_entry(get_ticks_handler, GET_TICKS_INT, TRAP_GATE, USER_DPL);
+int install_get_ticks_handler() {
+	return add_idt_entry(get_ticks_handler, GET_TICKS_INT, 
+							TRAP_GATE, USER_DPL);
 }
 
 /** @brief Function to install a handler for swexn handler syscall
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_swexn_handler() {
-	add_idt_entry(swexn_handler, SWEXN_INT, TRAP_GATE, USER_DPL);
+int install_swexn_handler() {
+	return add_idt_entry(swexn_handler, SWEXN_INT, TRAP_GATE, USER_DPL);
 }
