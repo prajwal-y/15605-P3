@@ -26,4 +26,8 @@ void populate_ureg(ureg_t *ureg, int err_code_available,
 
 void set_kernel_stack_eax(int eax);
 
+int is_pointer_valid(void *ptr, int bytes);
+
+int copy_user_data(char *buf, char *ptr, int max_size);
+
 #endif  /*__SYSCALL_UTIL_H */

@@ -14,5 +14,6 @@
 #define ERR_BUSY -3
 #define ERR_NOMEM -4
 #define ERR_NOTAVAIL -5
+#define ERR_BIG -6
 
 #endif /* __THREAD_ERRORS_H */

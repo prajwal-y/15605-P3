@@ -12,6 +12,8 @@
 #include <asm/asm.h>
 #include <x86/eflags.h>
 #include <common/errors.h>
+#include <vm/vm.h>
+#include <common_kern.h>
 #include <syscalls/syscall_util.h>
 
 static int validate_uregs(ureg_t *uregs);
@@ -107,4 +109,60 @@ void populate_ureg(ureg_t *ureg, int err_code_avail,
 void set_kernel_stack_eax(int eax) {
     thread_struct_t *curr_thread = get_curr_thread();
     *((int *)(curr_thread->k_stack_base) - 6) = eax;
+}
+
+/** @brief check if address is (valid) mapped in user space
+ *
+ *  return error if either the address is in kernel space or
+ *  is unmapped in user space
+ *
+ *  @param ptr address to check
+ *  @param bytes number of bytes that have to be checked
+ *  @return 0 if mapped and safe, -ve integer if not
+ */
+int is_pointer_valid(void *ptr, int bytes) {
+    if (ptr < (void *)USER_MEM_START) {
+        return ERR_INVAL;
+    }
+    if (is_memory_range_mapped(ptr, bytes) == MEMORY_REGION_UNMAPPED) {
+        return ERR_INVAL;
+    }
+    return 0;
+}
+
+/** @brief copy user memory to kernel memory checking for validity
+ *
+ *  Check validity of each byte and if valid copy into kernel buf. If
+ *  data exceeds max_size return ERR_BIG. It is expected that the caller
+ *  of this function will allocate atleast max_size memory for buf. This
+ *  is a reasonable assumption to make since this function will be used only
+ *  by kernel code.
+ *  
+ *  @param buf kernel memory to copy into
+ *  @param ptr user ptr to copy from
+ *  @param max_size the maximum amount of data in bytes to copy
+ *
+ *  @return bytes copied on success, -ve integer on failure 
+ */
+int copy_user_data(char *buf, char *ptr, int max_size) {
+    if (buf == NULL || ptr == NULL || max_size <= 0) {
+        return ERR_INVAL;
+    }
+
+    int count = 0;
+
+    while (count < max_size) {
+        if (is_pointer_valid(&ptr[count], 1) < 0) {
+            return ERR_INVAL;
+        }
+        buf[count] = ptr[count];
+        if (buf[count] == '\0') {
+            break;
+        }
+        count++;
+    }
+    if (count == max_size) {
+        return ERR_BIG;
+    }
+    return count + 1;
 }
