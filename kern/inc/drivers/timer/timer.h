@@ -9,7 +9,7 @@
 #ifndef __TIMER_H
 #define __TIMER_H
 
-void initialize_timer(void (*tickback)(unsigned int));
+int initialize_timer(void (*tickback)(unsigned int));
 
 void callback_handler();
 
