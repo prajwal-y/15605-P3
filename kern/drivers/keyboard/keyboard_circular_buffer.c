@@ -60,7 +60,6 @@ int get_nextline(char *buf, int len) {
     }
     int num_bytes = 0;
 
-    //TODO: validate buf
     if (newline_ptr == -1) {
        return ERR_NOTAVAIL;
     }
@@ -77,6 +76,20 @@ int get_nextline(char *buf, int len) {
     update_start_ptr();
     update_newline_ptr();
     return num_bytes;
+}
+
+/** @brief get the next character 
+ *
+ * @return int character from console, -ve integer if non available
+ */
+int get_nextchar() {
+    if (newline_ptr == -1) {
+       return ERR_NOTAVAIL;
+    }
+    
+    int c = key_buf[start_ptr];
+    start_ptr++;
+    return c;
 }
 
 /** @brief update start_ptr

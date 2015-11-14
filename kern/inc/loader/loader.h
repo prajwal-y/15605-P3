@@ -14,6 +14,8 @@
 
 int load_program(simple_elf_t *se_hdr);
 
+int getbytes(const char *filename, int offset, int size, char *buf);
+
 int check_program(const char *prog_name);
 
 #endif /* __LOADER_H */

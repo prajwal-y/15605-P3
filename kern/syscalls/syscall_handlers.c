@@ -36,6 +36,11 @@ static int install_make_runnable_handler();
 static int install_get_ticks_handler();
 static int install_sleep_handler();
 static int install_swexn_handler();
+static int install_readfile_handler();
+static int install_set_term_color_handler();
+static int install_set_cursor_pos_handler();
+static int install_get_cursor_pos_handler();
+static int install_getchar_handler();
 
 //TODO: Remove sanity check syscall
 static int install_memcheck_handler();
@@ -101,6 +106,21 @@ int install_syscall_handlers() {
 		return retval;
 	}
     if((retval = install_swexn_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_readfile_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_set_term_color_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_set_cursor_pos_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_get_cursor_pos_handler()) < 0) {
+		return retval;
+	}
+    if((retval = install_getchar_handler()) < 0) {
 		return retval;
 	}
     return retval;
@@ -259,4 +279,48 @@ int install_get_ticks_handler() {
  */
 int install_swexn_handler() {
 	return add_idt_entry(swexn_handler, SWEXN_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for readfile syscall
+ *
+ *  @return int return value of add_idt_entry
+ */
+int install_readfile_handler() {
+	return add_idt_entry(readfile_handler, READFILE_INT, TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for set_term_color syscall
+ *
+ *  @return int return value of add_idt_entry
+ */
+int install_set_term_color_handler() {
+	return add_idt_entry(set_term_color_handler, SET_TERM_COLOR_INT, 
+                         TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for set_cursor_pos syscall
+ *
+ *  @return int return value of add_idt_entry
+ */
+int install_set_cursor_pos_handler() {
+	return add_idt_entry(set_cursor_pos_handler, SET_CURSOR_POS_INT, 
+                         TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for get_cursor_pos syscall
+ *
+ *  @return int return value of add_idt_entry
+ */
+int install_get_cursor_pos_handler() {
+	return add_idt_entry(get_cursor_pos_handler, GET_CURSOR_POS_INT, 
+                         TRAP_GATE, USER_DPL);
+}
+
+/** @brief Function to install a handler for getchar syscall
+ *
+ *  @return int return value of add_idt_entry
+ */
+int install_getchar_handler() {
+	return add_idt_entry(getchar_handler, GETCHAR_INT, 
+                         TRAP_GATE, USER_DPL);
 }

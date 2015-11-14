@@ -12,5 +12,7 @@
 void add_keystroke(char c);
 
 int get_nextline(char *buf, int len);
+
+int get_nextchar();
  
 #endif  /* __KEYBOARD_CIRCULAR_BUFFER_H */

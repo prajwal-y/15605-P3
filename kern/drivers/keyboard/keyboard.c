@@ -23,19 +23,6 @@
 cond_t readline_cond_var;
 mutex_t readline_mutex;
 
-/** @brief a struct which represents a node in our
- *         keyboard buffer
- *
- *  Unlike usual linked lists where a one-size-fits-all node
- *  is used to store data, here we store metadata in the struct
- *  to help maintain a doubly linked list.
- */
-typedef struct {
-    unsigned char code;
-    list_head link;
-} scancode;
-static list_head head; /* Dummy node which does not have any data */
-
 /** @brief function to install the handler and initialize
  *         our scancode buffer 
  *
@@ -81,17 +68,7 @@ void enqueue_scancode() {
  *          buffer is currently empty
  **/
 int readchar() {
-    list_head *p;
-    while ((p = get_first(&head)) != NULL) { 
-        scancode *scan = get_entry(p, scancode, link);
-        del_entry(p);
-        kh_type key = process_scancode(scan->code);
-        free(scan);
-        if ((KH_HASDATA(key) != 0) && (KH_ISMAKE(key) == 0)) {
-            return KH_GETCHAR(key);
-        }
-    }
-    return -1;
+    return get_nextchar();
 }
 
 /** @brief get the nextline 

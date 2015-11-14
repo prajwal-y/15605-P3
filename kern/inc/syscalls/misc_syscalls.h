@@ -10,4 +10,8 @@
 
 void halt_handler();
 
+int readfile_handler();
+
+int readfile_handler_c(void *arg_packet);
+
 #endif  /* __MISC_SYSCALLS_H */
