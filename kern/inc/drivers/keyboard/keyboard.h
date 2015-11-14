@@ -14,7 +14,7 @@ extern cond_t readline_cond_var;
 
 extern mutex_t readline_mutex;
 
-void install_keyboard_handler();
+int install_keyboard_handler();
 
 int readchar();
 

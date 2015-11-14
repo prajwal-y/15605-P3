@@ -9,6 +9,7 @@
 #include <drivers/keyboard/keyboard_circular_buffer.h>
 #include <drivers/keyboard/keyboard_handler.h>
 #include <keyhelp.h>
+#include <common/errors.h>
 #include <interrupts/idt_entry.h>
 #include <interrupts/interrupt_handlers.h>
 #include <asm.h>
@@ -38,12 +39,18 @@ static list_head head; /* Dummy node which does not have any data */
 /** @brief function to install the handler and initialize
  *         our scancode buffer 
  *
- *  @return void
+ *  @return int 0 on success. -1 on failure
  */
-void install_keyboard_handler() {
-    add_idt_entry(keyboard_handler, KEY_IDT_ENTRY, TRAP_GATE, KERNEL_DPL);
-    cond_init(&readline_cond_var);
-    mutex_init(&readline_mutex);
+int install_keyboard_handler() {
+	int retval = 0;
+    if((retval = cond_init(&readline_cond_var)) < 0) {
+		return retval;
+	}
+    if((retval = mutex_init(&readline_mutex)) < 0) {
+		return retval;
+	}
+    retval = add_idt_entry(keyboard_handler, KEY_IDT_ENTRY, TRAP_GATE, KERNEL_DPL);
+	return retval;
 }
 
 /** @brief add the scancode to the end of our queue and return

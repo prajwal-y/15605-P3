@@ -58,6 +58,7 @@ void seh(void *arg, ureg_t *ureg) {
  *  @return void
  */
 void install_autostack(void *stack_high, void *stack_low) {
+	return;
     stack_bottom = stack_low;
     exception_stack = malloc(EXCEPTION_STACK_SIZE);
     if (exception_stack == NULL) {

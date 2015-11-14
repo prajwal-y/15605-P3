@@ -9,6 +9,7 @@
 #include <asm.h>
 #include <seg.h>
 #include <common/malloc_wrappers.h>
+#include <common/errors.h>
 #include <string/string.h>
 #include <interrupts/idt_entry.h>
 #include <interrupts/interrupt_handlers.h>
@@ -18,19 +19,19 @@
 #define MILLISECONDS 1000
 
 static void set_mode_freq();
-static void install_timer_handler();
+static int install_timer_handler();
 static void (*callback)(unsigned int);
 static unsigned int tick_counter = 0;
 
 /** @brief initialize the timer and install handler for it
  *
  *  @param tickback the callback function for the interrupt handler
- *  @return void
+ *  @return int 0 on success. -1 on failure
  */
-void initialize_timer(void (*tickback)(unsigned int)) {
+int initialize_timer(void (*tickback)(unsigned int)) {
     callback = tickback;
     set_mode_freq();
-    install_timer_handler();
+    return install_timer_handler();
 }
 
 /** @brief function to initialize the tier
@@ -51,10 +52,11 @@ void set_mode_freq() {
 
 /** @brief function to install timer handler in the IDT
  *
- *  @return void
+ *  @return int return value of add_idt_entry
  */
-void install_timer_handler() {
-    add_idt_entry(timer_handler, TIMER_IDT_ENTRY, INTERRUPT_GATE, KERNEL_DPL);
+int install_timer_handler() {
+    return add_idt_entry(timer_handler, TIMER_IDT_ENTRY, 
+							INTERRUPT_GATE, KERNEL_DPL);
 }
 
 /** @brief called by interrupt to do any processing needed

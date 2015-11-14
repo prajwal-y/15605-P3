@@ -9,10 +9,14 @@
 #include <asm.h>
 #include <seg.h>
 #include <common/malloc_wrappers.h>
+#include <common/errors.h>
 #include <string/string.h>
 
 #define TRAP_GATE_FLAGS 15
 #define INTERRUPT_GATE_FLAGS 14
+
+#define ZEROES 0
+#define PRESENT 1
 
 /** @brief a struct to store the fields of an IDT entry
  *         in a compact fashion. 
@@ -42,16 +46,20 @@ static idt_entry *get_default_interrupt_idt(unsigned int);
  *                       interrupt handler
  *  @param type the type of interrupt descriptor to be added 
  *              (TRAP_GATE/INTERRUPT_GATE)
- *  @return void
+ *  @return int 0 on success. -1 on failure
  */
-void add_idt_entry(void *handler, int interrupt_num, int type, unsigned int dpl) {
+int add_idt_entry(void *handler, int interrupt_num, int type, unsigned int dpl) {
     if (type != TRAP_GATE && type != INTERRUPT_GATE) {
-        return;
+        return ERR_FAILURE;
     }
     void *idt_base_addr = idt_base();
     
     idt_entry *entry = (type == TRAP_GATE) ? get_default_trap_idt(dpl)
                        : get_default_interrupt_idt(dpl);
+
+	if(entry == NULL) {
+		return ERR_FAILURE;
+	}
 
     entry->offset_1 = (int)handler & 0xffff;
     entry->offset_2 = ((int)handler >> 16) & 0xffff;
@@ -59,6 +67,7 @@ void add_idt_entry(void *handler, int interrupt_num, int type, unsigned int dpl)
             sizeof(idt_entry));
 
     sfree(entry, sizeof(idt_entry));
+	return 0;
 }
 
 /** @brief function to return a pointer to an idt_entry struct 
@@ -69,13 +78,15 @@ void add_idt_entry(void *handler, int interrupt_num, int type, unsigned int dpl)
  */
 idt_entry *get_default_trap_idt(unsigned int dpl) {
     idt_entry *entry = smalloc(sizeof(idt_entry));
-    //TODO: Malloc check
+    if(entry == NULL) {
+		return NULL;
+	}
 
     entry->seg_selector = SEGSEL_KERNEL_CS;
-    entry->zeroes = 0;
+    entry->zeroes = ZEROES;
     entry->flags = TRAP_GATE_FLAGS;
     entry->dpl = dpl;
-    entry->present = 1;
+    entry->present = PRESENT;
 
     return entry;
 }
@@ -88,12 +99,15 @@ idt_entry *get_default_trap_idt(unsigned int dpl) {
  */
 idt_entry *get_default_interrupt_idt(unsigned int dpl) {
     idt_entry *entry = smalloc(sizeof(idt_entry));
+	if(entry == NULL) {
+		return NULL;
+	}
 
     entry->seg_selector = SEGSEL_KERNEL_CS;
-    entry->zeroes = 0;
+    entry->zeroes = ZEROES;
     entry->flags = INTERRUPT_GATE_FLAGS;
     entry->dpl = dpl;
-    entry->present = 1;
+    entry->present = PRESENT;
 
     return entry;
 }
