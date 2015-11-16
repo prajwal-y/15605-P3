@@ -6,7 +6,18 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
-#include <simics.h>
+
+#ifndef SEGSEL_USER_CS
+#define SEGSEL_USER_CS 0x23
+#endif
+
+#ifndef SEGSEL_USER_DS
+#define SEGSEL_USER_DS 0x2b
+#endif
+
+#ifndef STACK_START
+#define STACK_START 0xc0000000
+#endif
 
 .globl get_cs
 get_cs:
@@ -62,17 +73,17 @@ set_gs:
 .globl call_iret
 call_iret:
 	movl %esp, %ecx
-	mov $0x2b, %ax
+	mov $SEGSEL_USER_DS, %ax
 	mov %ax, %ds
 	mov %ax, %es
 	mov %ax, %fs
 	mov %ax, %gs
 	
-	pushl $0x2b			/*SS*/ //TODO: REMOVE THE CONSTANTS
-	pushl $0xc0000000	/*ESP*/
-	pushl 4(%ecx)		/*EFLAGS*/
-	pushl $0x23			/*CS*/
-	pushl 8(%ecx)		/*EIP*/
+	pushl $SEGSEL_USER_DS		/*SS*/
+	pushl $STACK_START			/*ESP*/
+	pushl 4(%ecx)				/*EFLAGS*/
+	pushl $SEGSEL_USER_CS		/*CS*/
+	pushl 8(%ecx)				/*EIP*/
 	iret
 
 .globl iret_fun

@@ -122,24 +122,22 @@ unsigned int get_ticks_handler_c() {
  */
 void swexn_handler_c(void *arg_packet) {
     void *esp3 = (void *)(*((int *)arg_packet));
-    if (is_pointer_valid(esp3, 4) < 0
-        || is_memory_writable(esp3, 4) < 0) {
+    if (esp3 != NULL && (is_pointer_valid(esp3, 4) < 0
+        || is_memory_writable(esp3, 4) < 0)) {
         set_kernel_stack_eax(ERR_INVAL);
         return;
     }
 
     swexn_handler_t eip = (void *)(*((int *)arg_packet + 1));
-    if (is_pointer_valid(eip, 4) < 0) {
+    if (eip != NULL && (is_pointer_valid(eip, 4) < 0)) {
         set_kernel_stack_eax(ERR_INVAL);
         return;
     }
+
     void *arg = (void *)(*((int *)arg_packet + 2));
-    if (is_pointer_valid(arg, 4) < 0) {
-        set_kernel_stack_eax(ERR_INVAL);
-        return;
-    }
+
     ureg_t *newureg = (ureg_t *)(*((int *)arg_packet + 3));
-    if (is_pointer_valid(newureg, 4) < 0) {
+    if (newureg != NULL && (is_pointer_valid(newureg, 4) < 0)) {
         set_kernel_stack_eax(ERR_INVAL);
         return;
     }
@@ -159,7 +157,6 @@ void swexn_handler_c(void *arg_packet) {
     if (newureg != NULL) {
         int retval = setup_kernel_stack(newureg, 
                                        (void *)curr_thread->k_stack_base);
-        //TODO: If retval < 0 the stack better be the original one (not partially from the ureg)
         if (retval < 0) {
             set_kernel_stack_eax(ERR_FAILURE);
             return;

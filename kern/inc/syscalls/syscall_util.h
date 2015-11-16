@@ -13,7 +13,6 @@
 #define ERR_CODE_AVAIL 1
 #define ERR_CODE_ABSENT 0
 
-//TODO: Duplicate from task.c. Remove it from one place
 #define EFLAGS_RESERVED 0x00000002
 #define EFLAGS_IOPL 0x00003000 
 #define EFLAGS_IF 0x00000200 

@@ -45,19 +45,9 @@ void context_switch() {
 		runq_add_thread_interruptible(curr_thread);
 	}
 
-	/*if(curr_thread != NULL) {
-		lprintf("Going to switch to thread id %d (%p) from thread %d (%p) (stack_base %p)", 
-				thr->id, &thr->id, curr_thread->id, &curr_thread->id, (void *)thr->k_stack_base);
-	}*/
-	
 	/* Call switch_to_thread with the new thread */
     switch_to_thread(curr_thread, thr);
 
-	/*if(curr_thread != NULL && thr != NULL) {	
-		lprintf("Switched to thread id: %d (%p) from thread %d (%p)", 
-					thr->id, &thr->id, curr_thread->id, &curr_thread->id);
-	}*/
-    
 	enable_interrupts();
 	
 }
@@ -73,8 +63,6 @@ void context_switch() {
  *  @param thread The thread to which we need to switch to
  *
  *  @return Void
- *  TODO: Need to fix a possible race condition in this function 
- *  because context switch can be invoked from two places now.
  */
 void switch_to_thread(thread_struct_t *curr_thread, 
 						thread_struct_t *next_thread) {
@@ -83,12 +71,6 @@ void switch_to_thread(thread_struct_t *curr_thread,
 		return;
 	}
 	
-	/* Set ds for the new thread */
-	set_ds((next_thread->regs)->ds);
-	set_es((next_thread->regs)->es);
-	set_fs((next_thread->regs)->fs);
-	set_gs((next_thread->regs)->gs);
-
     /* Set page directory for the new thread */
     task_struct_t *parent_task = next_thread->parent_task;
     set_cur_pd(parent_task->pdbr);

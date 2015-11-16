@@ -16,7 +16,7 @@ memory_check:
     movl %esp,%ebp      /* New EBP */
 
     /* Body */
-    int $MEMORY_CHECK_INT
+    int $SYSCALL_RESERVED_1
 
     /* Finish */
     movl %ebp,%esp      /* Reset esp to start */

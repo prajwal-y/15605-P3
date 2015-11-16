@@ -1,4 +1,4 @@
-/** @file interrupt_handler_asm.S //TODO: RENAME THIS FILE
+/** @file fault_handler_asm.S
  *
  *  asm file for interrupt handlers
  *

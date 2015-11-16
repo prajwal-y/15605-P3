@@ -37,6 +37,10 @@ static void free_args(char **argvec, int num);
  *  fails, then a negative number is returned.
  */
 int do_exec(void *arg_packet) {
+    task_struct_t *t = get_curr_task();
+
+	sem_wait(&t->exec_sem);
+
     char *execname = (char *)(*((int *)arg_packet));
     char **argvec = (char **)(*((int *)arg_packet + 1));
     int num_args, retval;
@@ -71,7 +75,6 @@ int do_exec(void *arg_packet) {
         sfree(execname_kern, EXECNAME_MAX);
         return ERR_FAILURE;
     }
-    task_struct_t *t = get_curr_task();
 
     retval = load_task(execname_kern, num_args, argvec_kern, t);
     if (retval < 0) {
@@ -85,6 +88,8 @@ int do_exec(void *arg_packet) {
     free_paging_info(old_pd);
     sfree(execname_kern, EXECNAME_MAX);
     sfree(argvec_kern, (num_args + 1) * sizeof(char *));
+	
+	sem_signal(&t->exec_sem);
 
     return 0;
 }

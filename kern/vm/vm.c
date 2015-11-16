@@ -455,7 +455,7 @@ int handle_cow(void *addr) {
 	unlock_frame(frame_addr);
 	pt[pt_index] |= READ_WRITE_ENABLE;
 
-	/* TODO: REMOVE THIS. INVLPG is not working for some reason */
+	/* INVLPG is not working for some reason :( */
 	set_cur_pd(pd);
 
 	return 0;
@@ -674,7 +674,7 @@ int map_new_pages(void *base, int length) {
     pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
     pt_addr[pt_index] = SET_NEWPAGE_START(pt_addr[pt_index]);
 
-	/* TODO: REMOVE THIS. INVLPG is not working for some reason */
+	/* INVLPG is not working for some reason :( */
 	set_cur_pd(pd_addr);
 
     return 0;
@@ -706,7 +706,6 @@ int unmap_new_pages(void *base) {
 	}
 	unlock_frame(frame_addr);
 	pt_addr[pt_index] = PAGE_TABLE_ENTRY_DEFAULT;
-	invalidate_tlb_page(base);
     
     base = (char *)base + PAGE_SIZE;
     pd_index = GET_PD_INDEX(base);
@@ -722,14 +721,13 @@ int unmap_new_pages(void *base) {
 		}
 		unlock_frame(frame_addr);
         pt_addr[pt_index] = PAGE_TABLE_ENTRY_DEFAULT;
-		invalidate_tlb_page(base);
         base = (char *)base + PAGE_SIZE;
         pd_index = GET_PD_INDEX(base);
         pt_index = GET_PT_INDEX(base);
         pt_addr = (int *)GET_ADDR_FROM_ENTRY(pd_addr[pd_index]);
     }
 
-	/* TODO: REMOVE THIS. INVLPG is not working for some reason */
+	/* INVLPG is not working for some reason :( */
 	set_cur_pd(pd_addr);
 
     return 0;

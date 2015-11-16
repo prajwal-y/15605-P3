@@ -21,8 +21,10 @@
  *  @return int the ID of the new task. If fork
  *  fails, then a negative number is returned.
  */
-int do_fork() {//TODO: Prevent multiple threads of a task from calling fork()
+int do_fork() {
 	task_struct_t *curr_task = get_curr_task();
+
+	sem_wait(&curr_task->fork_sem);
 
 	/* Create a child task */
 	task_struct_t *child_task = create_task(curr_task);
@@ -37,12 +39,17 @@ int do_fork() {//TODO: Prevent multiple threads of a task from calling fork()
 		return ERR_FAILURE;
 	}
 	child_task->pdbr = new_pd_addr;
-	//lprintf("Parent task %d (PDBR = %p). Child task %d (PDBR = %p)", 
-	//		curr_task->id, curr_task->pdbr, child_task->id, child_task->pdbr);
+
+	/* Copy the software exception handler data */
+	child_task->eip = curr_task->eip;
+	child_task->swexn_args = curr_task->swexn_args;
+	child_task->swexn_esp = curr_task->swexn_esp;
 
 	/* Clone the kernel stack */
-	memcpy(child_task->thr->k_stack, curr_task->thr->k_stack, KERNEL_STACK_SIZE);
-	*((int *)(child_task->thr->k_stack_base) - 14) = (int)iret_fun; //TODO: REMOVE THAT CONSTANT
+	memcpy(child_task->thr->k_stack, curr_task->thr->k_stack, 
+							KERNEL_STACK_SIZE);
+	*((int *)(child_task->thr->k_stack_base) - 
+							IRET_FUN_OFFSET) = (int)iret_fun;
 	child_task->thr->cur_esp = child_task->thr->k_stack_base 
 									- DEFAULT_STACK_OFFSET;
 
@@ -51,6 +58,8 @@ int do_fork() {//TODO: Prevent multiple threads of a task from calling fork()
 
 	/* Dummy operation to invalidate TLB */
 	set_cur_pd(curr_task->pdbr);
+
+	sem_signal(&curr_task->fork_sem);
 
 	return child_task->id;	
 }
@@ -72,8 +81,10 @@ int do_thread_fork() {
 	}
 
 	/* Clone the kernel stack */
-	memcpy(child_thread->k_stack, curr_thread->k_stack, KERNEL_STACK_SIZE);
-	*((int *)(child_thread->k_stack_base) - 14) = (int)iret_fun; //TODO: REMOVE THAT CONSTANT
+	memcpy(child_thread->k_stack, curr_thread->k_stack, 
+								KERNEL_STACK_SIZE);
+	*((int *)(child_thread->k_stack_base) - 
+								IRET_FUN_OFFSET) = (int)iret_fun;
 	child_thread->cur_esp = child_thread->k_stack_base 
 								- DEFAULT_STACK_OFFSET;
 

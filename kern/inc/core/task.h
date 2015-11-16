@@ -11,9 +11,19 @@
 #include <core/task.h>
 #include <sync/cond_var.h>
 #include <sync/mutex.h>
+#include <sync/sem.h>
 #include <syscall.h>
 
 #define DEFAULT_STACK_OFFSET 56 
+
+#define DS_OFFSET 1
+#define STACK_OFFSET 2
+#define EFLAGS_OFFSET 3
+#define CS_OFFSET 4
+#define EIP_OFFSET 5
+#define PUSHA_OFFSET 13
+#define PUSHA_SIZE 32
+#define IRET_FUN_OFFSET 14
 
 struct thread_struct;
 
@@ -31,6 +41,7 @@ typedef struct task_struct {
     
     list_head dead_child_head;      /* Linked list head for dead children of THIS task */
     list_head dead_child_link;      /* Link for list of dead children in parent */
+
     swexn_handler_t eip;            /* The swexn handler function */
     void *swexn_args;               /* Arguments to the swexn function */
     void *swexn_esp;                /* ESP to run the swexn handler on */
@@ -43,7 +54,10 @@ typedef struct task_struct {
     mutex_t thread_list_mutex;
     /* Mutex to synchronize access to the vanish() system call */    
     mutex_t vanish_mutex;
-
+	
+	/* Used when tasks containing multiple threads call system calls */
+	sem_t fork_sem;	/* Semaphore to allow only one fork to run per task */
+	sem_t exec_sem; /* Semaphore to allow only one exec to run per task */
      
 } task_struct_t;
 
@@ -51,7 +65,7 @@ task_struct_t *create_task(task_struct_t *parent);
 
 void load_bootstrap_task(const char *prog_name);
 
-void load_kernel_task(const char *prog_name);
+void load_init_task(const char *prog_name);
 
 int load_task(const char *prog_name, int num_arg, char **argvec, 
                task_struct_t *t);

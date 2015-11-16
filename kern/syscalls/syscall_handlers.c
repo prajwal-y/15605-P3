@@ -41,8 +41,6 @@ static int install_set_term_color_handler();
 static int install_set_cursor_pos_handler();
 static int install_get_cursor_pos_handler();
 static int install_getchar_handler();
-
-//TODO: Remove sanity check syscall
 static int install_memcheck_handler();
 
 /** @brief The syscall handlers initialization function
@@ -234,7 +232,7 @@ int install_yield_handler() {
 }
 
 int install_memcheck_handler() {
-    return add_idt_entry(memory_check_handler, MEMORY_CHECK_INT, 
+    return add_idt_entry(memory_check_handler, SYSCALL_RESERVED_1, 
 							INTERRUPT_GATE, USER_DPL);
 }
 

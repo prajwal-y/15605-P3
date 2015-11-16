@@ -19,7 +19,6 @@ static thread_struct_t *curr_thread; /* The thread currently being run */
 static list_head runnable_threads;    /* List of runnable threads */
 
 static thread_struct_t *runq_get_head();
-//static void print_runnable_list(); //TODO: REMOVE THIS
 
 /** @brief initialize the scheduler data structures
  *
@@ -100,6 +99,12 @@ void set_running_thread(thread_struct_t *thr) {
     curr_thread = thr;
 }
 
+/** @brief Prints the runnable thread list
+ *
+ *  Used for debugging
+ *
+ *  @return void
+ */
 void print_runnable_list() {
 	list_head *temp = get_first(&runnable_threads);
 	lprintf("-------Beginning of runnable threads--------");

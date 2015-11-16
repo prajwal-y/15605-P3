@@ -23,6 +23,10 @@ static list_head *sleeping_threads;    /* List of threads that are 'sleep'ing */
 
 static mutex_t sleep_list_mutex;
 
+/** @brief Function to initialize the list of sleeping threads
+ *
+ *  @return void
+ */
 void init_sleeping_threads() {
     mutex_init(&sleep_list_mutex);
     sleeping_threads = (list_head *)smalloc(sizeof(list_head));
@@ -39,7 +43,7 @@ int do_sleep(int ticks) {
     if (ticks == 0) {
         return 0;
     }
-    if (ticks < 0) {    //TODO: what if number of ticks overflows
+    if (ticks < 0) {
         return ERR_INVAL;
     }
     
@@ -92,6 +96,12 @@ thread_struct_t *get_sleeping_thread() {
 void schedule_sleep(int ticks) {
     thread_struct_t *thr = get_curr_thread();
     int curr_ticks = total_ticks();
+
+	/* In case the integer overflow, we don't sleep */
+	if(curr_ticks + ticks < curr_ticks) {
+		return;
+	}
+
     thr->wake_time = curr_ticks + ticks;
 
     mutex_lock(&sleep_list_mutex);

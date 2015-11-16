@@ -26,7 +26,7 @@
 #define EFLAGS_IOPL 0x00000000 
 #define EFLAGS_IF 0x00000200 
 #define EFLAGS_ALIGNMENT_CHECK 0xFFFbFFFF
-
+	
 static task_struct_t *init_task;
 static uint32_t setup_user_eflags();
 static void set_task_stack(void *kernel_stack_base, int entry_addr,
@@ -88,24 +88,29 @@ void init_task_structures(task_struct_t *t) {
     /* initialize swexn handler */
     t->eip = NULL;
     t->swexn_args = NULL;
+
+	sem_init(&t->fork_sem, 1);
+	sem_init(&t->exec_sem, 1);
+
 }
 
 /** @brief Creates a task for a given program and calls
- * the function to load the task
+ * the function to load the task. This function is only
+ * called by init when the kernel boots
  *
  * @param prog_name Program for which the task has to be
  * created and loaded.
  *
  * @return void
  */
-void load_kernel_task(const char *prog_name) {
+void load_init_task(const char *prog_name) {
     /* Allocate memory for a task struct from kernel memory */
-	task_struct_t *t = create_task(NULL); //TODO: should it be NULL or init ?
-    kernel_assert(t != NULL); //TODO: !!!!SHOULD NOT BE KERNEL ASSERT!!!!
+	task_struct_t *t = create_task(NULL);
+    kernel_assert(t != NULL);
 
     int retval = load_task(prog_name, 0, NULL, t);
     kernel_assert(retval == 0);
-    init_task = t; //TODO: Fix this. Only init task should call this function
+    init_task = t;
 	
     runq_add_thread_interruptible(t->thr);
 }
@@ -115,16 +120,6 @@ void load_kernel_task(const char *prog_name) {
  *  This process is started in a special way since it is one of
  *  the first processes to run on the system. We use an IRET
  *  to get to running this task.
- *  Multithreaded hazards: None (no other threads running)
- *  1) create a task struct for the task
- *  2) get a frame to hold page directory information
- *  3) parse ELF binary header
- *  4) set up paging information with the ELF binary
- *  5) enable paging
- *  6) load program contents into segments
- *  7) create a thread
- *  8) ??
- *  9) IRET!!
  *
  *  @return void
  */
@@ -140,7 +135,7 @@ void load_bootstrap_task(const char *prog_name) {
 	set_cur_pd(pd_addr);
 
     /* Allocate memory for a task struct from kernel memory */
-	task_struct_t *t = create_task(NULL); //TODO: NUll or init?
+	task_struct_t *t = create_task(NULL);
 
     kernel_assert(t != NULL);
     t->pdbr = pd_addr;
@@ -244,17 +239,16 @@ void set_task_stack(void *kernel_stack_base, int entry_addr,
     /* Add the registers required for IRET */
 	uint32_t EFLAGS = setup_user_eflags();
 
-	//TODO: !!! REMOVE THE CONSTANTS !!!
-    *((int *)(kernel_stack_base) - 1) = SEGSEL_USER_DS;
-    *((int *)(kernel_stack_base) - 2) = (int)user_stack_top;
-    *((int *)(kernel_stack_base) - 3) = EFLAGS;
-    *((int *)(kernel_stack_base) - 4) = SEGSEL_USER_CS;
-    *((int *)(kernel_stack_base) - 5) = entry_addr;
+    *((int *)(kernel_stack_base) - DS_OFFSET) = SEGSEL_USER_DS;
+    *((int *)(kernel_stack_base) - STACK_OFFSET) = (int)user_stack_top;
+    *((int *)(kernel_stack_base) - EFLAGS_OFFSET) = EFLAGS;
+    *((int *)(kernel_stack_base) - CS_OFFSET) = SEGSEL_USER_CS;
+    *((int *)(kernel_stack_base) - EIP_OFFSET) = entry_addr;
 
     /* Simulate a pusha for the 8 registers that are pushed */
-    memset(((int *)(kernel_stack_base) - 13), 0, 32);
+    memset(((int *)(kernel_stack_base) - PUSHA_OFFSET), 0, PUSHA_SIZE);
 
-	*((int *)(kernel_stack_base) - 14) = (int)iret_fun;
+	*((int *)(kernel_stack_base) - IRET_FUN_OFFSET) = (int)iret_fun;
 }
 
 /** @brief Function to copy the arguments to a given program
@@ -289,7 +283,7 @@ void *copy_user_args(int num_args, char **argvec) {
     user_stack_top -= sizeof(int *);
     *user_stack_top = (int)num_args;
     user_stack_top -= sizeof(int *);
-    *user_stack_top = (int)0;    /* TODO: Add exit handler function here */
+    *user_stack_top = (int)0;
 
     return user_stack_top;
 }

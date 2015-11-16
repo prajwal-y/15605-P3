@@ -38,11 +38,11 @@ static void reparent_to_init(list_head *task_list, int task_type,
 int do_wait(void *arg_packet) {
 
     int *status_ptr = (int *)arg_packet;
-    if (is_pointer_valid(status_ptr, sizeof(int *)) < 0
-        || is_memory_writable(status_ptr, sizeof(int *))) {
+    if (status_ptr != NULL && 
+			((is_pointer_valid(status_ptr, sizeof(int *)) < 0)
+        		|| (is_memory_writable(status_ptr, sizeof(int *)) < 0))) {
         return ERR_INVAL;
     }
-
     
     task_struct_t *curr_task = get_curr_task();
     thread_struct_t *curr_thread = get_curr_thread();

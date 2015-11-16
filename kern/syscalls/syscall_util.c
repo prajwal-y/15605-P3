@@ -29,7 +29,6 @@ int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base) {
     if (retval < 0) {
         return retval;
     }
-	//TODO: !!! REMOVE THE CONSTANTS !!!
     *((int *)(kernel_stack_base) - 1) = ureg->ds;   //Check for validity
     *((int *)(kernel_stack_base) - 2) = ureg->esp;
     *((int *)(kernel_stack_base) - 3) = ureg->eflags;
@@ -37,17 +36,14 @@ int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base) {
     *((int *)(kernel_stack_base) - 5) = ureg->eip;
 
     /* Simulate a pusha for the 8 registers that are pushed */
-    //memset(((int *)(kernel_stack_base) - 13), 0, 32);
     *((int *)(kernel_stack_base) - 6) = ureg->eax;
     *((int *)(kernel_stack_base) - 7) = ureg->ecx;
     *((int *)(kernel_stack_base) - 8) = ureg->edx;
     *((int *)(kernel_stack_base) - 9) = ureg->ebx;
-    //*((int *)(kernel_stack_base) - 10) = ureg->esp;
     *((int *)(kernel_stack_base) - 11) = ureg->ebp;
     *((int *)(kernel_stack_base) - 12) = ureg->esi;
     *((int *)(kernel_stack_base) - 13) = ureg->edi;
 
-	//*((int *)(kernel_stack_base) - 14) = (int)iret_fun;
     return 0;
 }
 

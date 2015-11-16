@@ -12,7 +12,7 @@
 
 #define NEXT(i) (((i) + 1) % (KEYBOARD_BUFFER_SIZE))
 #define PREV(i) (((i) == 0) ? (KEYBOARD_BUFFER_SIZE - 1) : ((i) - 1))
-#define MINUS_ONE -1
+#define NOT_PRESENT -1
 
 static int key_buf[KEYBOARD_BUFFER_SIZE];
 static void update_newline_ptr();
@@ -113,7 +113,7 @@ void update_newline_ptr() {
     newline_ptr = NEXT(newline_ptr);
     while (key_buf[newline_ptr] != '\n') {
         if (newline_ptr == end_ptr) {
-            newline_ptr = MINUS_ONE;
+            newline_ptr = NOT_PRESENT;
             return;
         }
         newline_ptr = NEXT(newline_ptr);

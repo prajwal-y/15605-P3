@@ -79,12 +79,10 @@ void page_fault_handler_c() {
         return;
     }
     else {
-		lprintf("Address that caused page fault: %p Cause of error= %d.", page_fault_addr, error_code);
+		lprintf("Address that caused page fault: %p Cause of error= %d.", 
+						page_fault_addr, error_code);
 		kill_current_thread();
-		//MAGIC_BREAK;
 	}
-
-	//TODO: HANDLE OTHER CASES OF PAGE FAULT. AND MOVE THIS TO OTHER FILE
 }
 
 /** @brief this function handles a debug exception

@@ -17,7 +17,6 @@
 #include <simics.h>
 #include <core/context.h>
 #include <core/scheduler.h>
-#include <interrupts/interrupt_handlers.h> //TODO: Remove
 
 /** @brief initialize a cond var
  *

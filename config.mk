@@ -73,7 +73,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory.
 #
-STUDENTTESTS = thr_exit_join join_specific_test agility_drill
+STUDENTTESTS =
 
 ###########################################################################
 # Data files provided by course staff to build into the RAM disk

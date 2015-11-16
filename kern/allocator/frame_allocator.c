@@ -55,7 +55,7 @@ void init_frame_allocator() {
  */
 void init_free_list() {
 
-	/*Initialize the free list array TODO FIX THIS*/
+	/*Initialize the free list array*/
 	free_frames_arr = (int *)smalloc(FREE_FRAMES_COUNT*sizeof(int));
 	kernel_assert(free_frames_arr != NULL);
 	free_frames_lock = (int *)smalloc(FREE_FRAMES_COUNT*sizeof(int));
@@ -102,7 +102,6 @@ void *allocate_frame() {
  *
  *  @param frame_addr the address of the frame to be freed.
  *  @return void
- *  TODO : FIX THIS
  */
 void deallocate_frame(void *frame_addr) {
     kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
