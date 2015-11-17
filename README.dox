@@ -15,27 +15,81 @@ module explaining the various code files and the design decisions taken.
 
 VM
 --
+All the code required by the VM module is present in vm/vm.c. This module is
+responsible for handling the virtual memory interactions for the P3 kernel.
+When the VM module is initialized, it sets up a direct mapping for the kernel
+memory, sets up a special page directory (which is later used by vanish to
+free resources), and enables paging. It also initializes a refernce count array
+which is used to keep track of the number of tasks referring to a single
+physical frame during Copy on Write (COW) operations. The VM module has 
+functions to create new page directories and page tables. Whenever a new page
+directory is created, the direct map is used to fill the entries required for
+accessing kernel memory. There are functions implemented in the VM module to 
+handle COW functionality. is_addr_cow() and handle_cow() are functions that are 
+called by the page fault handler to handle COW operations. The 
+clone_paging_info() function makes a copy of the entire address space which is 
+used by the fork() system call. There are also functions to map various 
+segments to the page tables, which are invoked when a program is being loaded 
+to memory.
+
+Interesting design decisions: We use the three extra bits present in the page
+table entries for various purposes. Bit 9 is used to indicate that the page
+table entry is a COW entry. Bits 10 and 11 are used by the new_pages and 
+remove_pages system calls to determine the entries to be allocated and
+removed. This enables us to not use extra data structures to store the
+required information. 
 
 Physical Frame Allocator
 ------------------------
+The frame allocator code present in allocator/frame_allocator.c is reponsible
+for allocating physical frames. This file has functions to allocate_frame()
+and deallocate_frame(). This file uses an array stored in kernel memory to
+keep track of the physical frames that are being allocated and deallocated.
+Along with allocating and deallocating frames, this file also provides a 
+function to lock/unlock a particular frame. This is particularly useful
+when the reference counts for these frames are being modified by the VM
+module.
 
 Loader
 ------
+The loader module (loader/loader.c) is responsible for parsing the executable
+file to be loaded. This file also includes the elf_load_helper() and the 
+getbytes() function, which is used by the readfile system call.
 
 Scheduler
 ---------
+The code for the round robin scheduler for the P3 kernel is present in 
+core/scheduler.c. This file implements all the functionality required for
+adding threads to the runnable queue and returning the head of the queue
+to the context switch code. 
 
 Context Switch
 --------------
+The code for context switch is present in core/context.c. Context switch
+works by changing the stack pointer from the current thread stack to the
+stack of the thread to which the switching is being done. Context switch
+is invoked from several places (timer interrupt callback function, the
+kernel cond_var implementation, sleep system call, vanish system call etc)
 
 System calls
 ------------
-We classify the system calls into the following categories. In each category, we describe
-the implementation and design decisions taken for each system call.
+We classify the system calls into the following categories. In each category, 
+we describe the implementation and design decisions taken for each system call.
+The system call handlers are all present in the folder syscalls. The files are
+divided based on the category of the system call.
 
 Task and Thread IDs:
 
 Life Cycle:
+
+fork() - The code for fork system call is present in core/fork.c
+
+thread_fork() - The code for thread_fork system call is present in core/fork.c
+
+exec() - The code for exec system call is present in core/exec.c
+
+vanish() and wait() - The code for vanish and wait system calls are present
+in core/wait_vanish.c
 
 Thread Management:
 

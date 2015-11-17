@@ -52,6 +52,10 @@ thread_struct_t *next_thread() {
     return head;
 }
 
+/** @brief Function to get the first thread present in the runnable queue.
+ *
+ *  @return thread_struct_t * Pointer to the thread struct.
+ */
 thread_struct_t *runq_get_head() {
     list_head *head = get_first(&runnable_threads);
     if (head == NULL) {
@@ -62,12 +66,30 @@ thread_struct_t *runq_get_head() {
     return head_thread;
 }
 
+/** @brief Function to add a particular thread to the runnable queue.
+ *
+ *  This function disable interrupts when adding the thread to the queue
+ *  to maintain the data structure consistency.
+ *
+ *  @param thr The thread struct that must be added to the runnable queue
+ *
+ *  @return void
+ */
 void runq_add_thread(thread_struct_t *thr) {
     disable_interrupts();
     add_to_tail(&thr->runq_link, &runnable_threads);
     enable_interrupts();
 }
 
+/** @brief Function to add a particular thread to the runnable queue.
+ *
+ *  This function is called only from places where interrupts are
+ *  disabled. Example, from context_switch()
+ *
+ *  @param thr The thread struct that must be added to the runnable queue
+ *
+ *  @return void
+ */
 void runq_add_thread_interruptible(thread_struct_t *thr) {
     add_to_tail(&thr->runq_link, &runnable_threads);
 }

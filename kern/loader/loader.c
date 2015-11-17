@@ -1,13 +1,10 @@
-/**
- * The 15-410 kernel project.
- * @name loader.c
+/** @name loader.c
  *
- * Functions for the loading
- * of user programs from binary 
- * files should be written in
- * this file. The function 
- * elf_load_helper() is provided
- * for your use.
+ * Functions for the loading of user programs are
+ * present in this file.
+ *
+ * @author Rohit Upadhyaya (rjupadhy)
+ * @author Prajwal Yadapadithaya (pyadapad)
  */
 
 /* --- Includes --- */

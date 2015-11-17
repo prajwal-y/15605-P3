@@ -17,7 +17,7 @@
 
 #define FRAME_LOCK 1
 
-#define FREE_FRAME_LIST_END UINT_MAX //((UINT_MAX) & (~(FRAME_LOCK)))
+#define FREE_FRAME_LIST_END UINT_MAX
 #define PAGE_ALIGNMENT_CHECK 0x00000fff
 #define GET_FRAME_LOCK(x) ((x) & 1)
 
@@ -144,6 +144,12 @@ void unlock_frame(void *frame_addr) {
 	test_and_set(&free_frames_lock[FRAME_INDEX(frame_addr)]);
 }
 
+/** @brief Function used to check the physical frames status
+ *
+ *  Used for debugging
+ * 
+ *  @return int Number of free physical frames
+ */
 int check_physical_memory() {
     int free_count = 0;
     void *first = free_list_head;

@@ -146,13 +146,11 @@ void enable_paging() {
     set_cr0(cr0);
 }
 
-void disable_paging() {
-	unsigned int cr0 = get_cr0();
-    cr0 = cr0 & (~CR0_PG);
-    set_cr0(cr0);
-}
-
-
+/** @brief Function to enable setting of 
+ *  global flag.
+ * 
+ *  @return void
+ */
 void enable_page_pinning() {
     unsigned int cr4 = get_cr4();
     cr4 = cr4 | CR4_PGE;
@@ -414,7 +412,6 @@ int handle_cow(void *addr) {
     int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[pd_index]);
 	void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[pt_index]);
     void *page_addr = (void *)((int)addr & PAGE_ROUND_DOWN);
-	//mutex_lock(&frame_ref_mutex); /* Need to lock the data structure */
 	lock_frame(frame_addr);
 	if(frame_ref_count[FRAME_INDEX(frame_addr)] == 1) {
 		pt[pt_index] &= COW_MODE_DISABLE_MASK;
@@ -451,7 +448,6 @@ int handle_cow(void *addr) {
 		frame_ref_count[FRAME_INDEX(new_frame)]++;
 		unlock_frame(new_frame);
 	}
-	//mutex_unlock(&frame_ref_mutex);
 	unlock_frame(frame_addr);
 	pt[pt_index] |= READ_WRITE_ENABLE;
 
