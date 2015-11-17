@@ -120,34 +120,30 @@ unsigned int get_ticks_handler_c() {
  *
  *  @return int 0 on success, -ve integer on failure
  */
-void swexn_handler_c(void *arg_packet) {
+int swexn_handler_c(void *arg_packet) {
     void *esp3 = (void *)(*((int *)arg_packet));
     if (esp3 != NULL && (is_pointer_valid(esp3, 4) < 0
         || is_memory_writable(esp3, 4) < 0)) {
-        set_kernel_stack_eax(ERR_INVAL);
-        return;
+        return ERR_INVAL;
     }
 
     swexn_handler_t eip = (void *)(*((int *)arg_packet + 1));
     if (eip != NULL && (is_pointer_valid(eip, 4) < 0)) {
-        set_kernel_stack_eax(ERR_INVAL);
-        return;
+        return ERR_INVAL;
     }
 
     void *arg = (void *)(*((int *)arg_packet + 2));
 
     ureg_t *newureg = (ureg_t *)(*((int *)arg_packet + 3));
     if (newureg != NULL && (is_pointer_valid(newureg, 4) < 0)) {
-        set_kernel_stack_eax(ERR_INVAL);
-        return;
+        return ERR_INVAL;
     }
 
     task_struct_t *curr_task = get_curr_task();
     thread_struct_t *curr_thread = get_curr_thread();
     if (esp3 == NULL || eip == NULL) {
         curr_task->eip = NULL;
-        set_kernel_stack_eax(0);
-        return;
+		return 0;
     }
 
     curr_task->eip = eip;
@@ -158,10 +154,9 @@ void swexn_handler_c(void *arg_packet) {
         int retval = setup_kernel_stack(newureg, 
                                        (void *)curr_thread->k_stack_base);
         if (retval < 0) {
-            set_kernel_stack_eax(ERR_FAILURE);
-            return;
+            return ERR_FAILURE;
         }
-        return;
+		return newureg->eax;
     }
-    set_kernel_stack_eax(0);
+    return 0;
 }

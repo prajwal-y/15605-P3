@@ -34,6 +34,6 @@ unsigned int get_ticks_handler_c();
 
 int swexn_handler();
 
-void swexn_handler_c(void *arg_packet);
+int swexn_handler_c(void *arg_packet);
 
 #endif  /* __THREAD_SYSCALLS_H */

@@ -29,20 +29,20 @@ int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base) {
     if (retval < 0) {
         return retval;
     }
-    *((int *)(kernel_stack_base) - 1) = ureg->ds;   //Check for validity
+    *((int *)(kernel_stack_base) - 1) = ureg->ds;
     *((int *)(kernel_stack_base) - 2) = ureg->esp;
     *((int *)(kernel_stack_base) - 3) = ureg->eflags;
-    *((int *)(kernel_stack_base) - 4) = ureg->cs;   //Check for validity
+    *((int *)(kernel_stack_base) - 4) = ureg->cs;
     *((int *)(kernel_stack_base) - 5) = ureg->eip;
 
-    /* Simulate a pusha for the 8 registers that are pushed */
-    *((int *)(kernel_stack_base) - 6) = ureg->eax;
-    *((int *)(kernel_stack_base) - 7) = ureg->ecx;
+    /* Simulate a SAVE_REGS for the 8 registers that are pushed */
+    *((int *)(kernel_stack_base) - 6) = ureg->ecx;
+    *((int *)(kernel_stack_base) - 7) = ureg->eax;
     *((int *)(kernel_stack_base) - 8) = ureg->edx;
     *((int *)(kernel_stack_base) - 9) = ureg->ebx;
     *((int *)(kernel_stack_base) - 11) = ureg->ebp;
-    *((int *)(kernel_stack_base) - 12) = ureg->esi;
-    *((int *)(kernel_stack_base) - 13) = ureg->edi;
+    *((int *)(kernel_stack_base) - 12) = ureg->edi;
+    *((int *)(kernel_stack_base) - 13) = ureg->esi;
 
     return 0;
 }

@@ -13,12 +13,12 @@
     	pushl %ebx; \
     	pushl %esp; \
     	pushl %ebp; \
-    	pushl %esi; \
-    	pushl %edi;
+    	pushl %edi; \
+    	pushl %esi;
 
 #define RESTORE_REGS \
-		popl %edi; \
-	    popl %esi; \
+		popl %esi; \
+	    popl %edi; \
     	popl %ebp; \
 	    popl %esp; \
 	    popl %ebx; \
