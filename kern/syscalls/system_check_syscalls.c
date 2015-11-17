@@ -19,9 +19,9 @@
  *  @return void
  */
 void memory_check_handler_c() {
-    /* Check kernel memory */
-    lmm_dump(&malloc_lmm);
-
     /* Check physical frame (count, etc) */
     check_physical_memory();
+
+    /* Check kernel memory */
+    lmm_dump(&malloc_lmm);
 }

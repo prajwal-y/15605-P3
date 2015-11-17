@@ -31,7 +31,9 @@ int do_fork() {
 	if(child_task == NULL) {
 		return ERR_NOMEM;
 	}
+    mutex_lock(&curr_task->vanish_mutex);
     add_to_tail(&child_task->child_task_link, &curr_task->child_task_head);
+    mutex_unlock(&curr_task->vanish_mutex);
 	
 	/* Clone the address space */
 	void *new_pd_addr = clone_paging_info(curr_task->pdbr);

@@ -494,7 +494,6 @@ int setup_page_table(simple_elf_t *se_hdr, void *pd_addr) {
     if((retval = map_stack_segment(pd_addr)) < 0) {
         return retval;
     }
-	//increment_ref_count(pd_addr);
     return 0;
 }
 

@@ -107,12 +107,22 @@ void load_init_task(const char *prog_name) {
     /* Allocate memory for a task struct from kernel memory */
 	task_struct_t *t = create_task(NULL);
     kernel_assert(t != NULL);
+    char **args = (char **)smalloc(sizeof(char *));
+    char *arg1 = (char *)smalloc(ARGNAME_MAX);
+    char *arg2 = (char *)smalloc(1);
+    strncpy(arg1, "init", ARGNAME_MAX);
+    arg2[0] = '\0';
+    args[0] = arg1;
+    args[1] = arg2;
 
-    int retval = load_task(prog_name, 0, NULL, t);
+    int retval = load_task(prog_name, 1, args, t);
     kernel_assert(retval == 0);
     init_task = t;
 	
     runq_add_thread_interruptible(t->thr);
+    sfree(arg1, ARGNAME_MAX);
+    sfree(arg2, 1);
+    sfree(args, sizeof(char *));
 }
 
 /** @brief start a bootstrap task
@@ -212,6 +222,9 @@ int load_task(const char *prog_name, int num_args, char **argvec,
 
     /* Copy arguments onto user stack */
     void *user_stack_top = copy_user_args(num_args, argvec);
+    if (user_stack_top == NULL) {
+        return ERR_FAILURE;
+    }
 
 	set_task_stack((void *)t->thr->k_stack_base, 
 					se_hdr->e_entry, user_stack_top);
@@ -261,18 +274,21 @@ void set_task_stack(void *kernel_stack_base, int entry_addr,
  */
 void *copy_user_args(int num_args, char **argvec) {
     char *user_stack_top = (char *)STACK_START;
+    char **argvec_copy = (char **)smalloc((num_args + 1) * sizeof(char *));
+    if (argvec_copy == NULL) {
+        return NULL;
+    }
     int i;
     for (i = 0; i < num_args; i++) {
         user_stack_top -= strlen(argvec[i]) + 1;
         strcpy((void *)user_stack_top, argvec[i]);
-        sfree(argvec[i], strlen(argvec[i]) + 1);
-        argvec[i] = user_stack_top;
+        argvec_copy[i] = user_stack_top;
     }
     user_stack_top -= 1;
     *user_stack_top ='\0';
-    argvec[i] = (char *)user_stack_top;
+    argvec_copy[i] = (char *)user_stack_top;
     user_stack_top -= (num_args + 1) * sizeof(char *);
-    memcpy(user_stack_top, (void *)argvec, (num_args + 1) * sizeof(char *));
+    memcpy(user_stack_top, (void *)argvec_copy, (num_args + 1) * sizeof(char *));
     char **argvec_usr = (char **)user_stack_top;
     user_stack_top -= sizeof(int *);
     *(int *)user_stack_top = STACK_END;
@@ -284,6 +300,7 @@ void *copy_user_args(int num_args, char **argvec) {
     *user_stack_top = (int)num_args;
     user_stack_top -= sizeof(int *);
     *user_stack_top = (int)0;
+    sfree(argvec_copy, (num_args + 1) * sizeof(char *));
 
     return user_stack_top;
 }

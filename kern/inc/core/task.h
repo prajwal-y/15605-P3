@@ -25,6 +25,11 @@
 #define PUSHA_SIZE 32
 #define IRET_FUN_OFFSET 14
 
+#define EXECNAME_MAX 255
+#define NUM_ARGS_MAX 16
+#define ARGNAME_MAX 255 
+
+
 struct thread_struct;
 
 /** @brief the protection domain comprising a task */

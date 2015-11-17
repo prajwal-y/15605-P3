@@ -19,11 +19,6 @@
 #include <loader/loader.h>
 #include <syscalls/syscall_util.h>
 
-#define EXECNAME_MAX 255
-#define NUM_ARGS_MAX 16
-#define ARGNAME_MAX 255 
-
-
 static int get_num_args(char **argvec);
 static char **copy_args(int num_args,char **argvec);
 static void free_args(char **argvec, int num);
@@ -39,7 +34,7 @@ static void free_args(char **argvec, int num);
 int do_exec(void *arg_packet) {
     task_struct_t *t = get_curr_task();
 
-	sem_wait(&t->exec_sem);
+    sem_wait(&t->exec_sem);
 
     char *execname = (char *)(*((int *)arg_packet));
     char **argvec = (char **)(*((int *)arg_packet + 1));
@@ -47,6 +42,9 @@ int do_exec(void *arg_packet) {
 
     /* Copy execname to kernel memory after checking validity */
     char *execname_kern = (char *)smalloc(EXECNAME_MAX);
+    if (execname_kern == NULL) {
+        return ERR_NOMEM;
+    }
     if (copy_user_data(execname_kern, execname, EXECNAME_MAX) < 0) {
         sfree(execname_kern, EXECNAME_MAX);
         return ERR_INVAL;
@@ -87,9 +85,9 @@ int do_exec(void *arg_packet) {
     /* Free kernel argvec and execname */
     free_paging_info(old_pd);
     sfree(execname_kern, EXECNAME_MAX);
-    sfree(argvec_kern, (num_args + 1) * sizeof(char *));
-	
-	sem_signal(&t->exec_sem);
+    free_args(argvec_kern, num_args);
+
+    sem_signal(&t->exec_sem);
 
     return 0;
 }
@@ -106,9 +104,9 @@ char **copy_args(int num_args,char **argvec) {
     int i;
     char *arg;
     char **argvec_kern = (char **)smalloc((num_args + 1) * sizeof(char *));
-	if(argvec_kern == NULL) {
-		return NULL;
-	}
+    if(argvec_kern == NULL) {
+        return NULL;
+    }
     for (i = 0; i < num_args; i++) {
         arg = (char *)smalloc(ARGNAME_MAX);
         if (arg == NULL) {
@@ -122,20 +120,29 @@ char **copy_args(int num_args,char **argvec) {
         argvec_kern[i] = arg;
     }
     arg = (char *)smalloc(sizeof(char));
-	if(arg == NULL) {
+    if(arg == NULL) {
         free_args(argvec_kern, num_args);
-		return NULL;
-	}
-    *arg = '\0';
+        return NULL;
+    }
+    arg[0] = '\0';
     argvec_kern[i] = arg;
     return argvec_kern;
 }
 
-void free_args(char **argvec, int num) {
+/** @brief free the kernel args
+ *
+ *  @param argvec the argument array to be freed
+ *  @param num_args number of arguments
+ *
+ *  @return void
+ */
+void free_args(char **argvec, int num_args) {
     int i;
-    for (i = 0; i < num; i++) {
+    for (i = 0; i < num_args; i++) {
         sfree(argvec[i], ARGNAME_MAX);
     }
+    sfree(argvec[i], sizeof(char));
+    sfree(argvec, (num_args + 1) * sizeof(char *));
 }
 
 

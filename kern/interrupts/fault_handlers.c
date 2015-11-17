@@ -52,7 +52,7 @@ void tickback(unsigned int ticks) {
  *  @return void
  */
 void divide_error_handler_c() {
-	handle_fault(SWEXN_CAUSE_PAGEFAULT);
+	handle_fault(SWEXN_CAUSE_DIVIDE);
 }
 
 /** @brief This function handles the page fault
@@ -68,21 +68,14 @@ void divide_error_handler_c() {
  */
 void page_fault_handler_c() {
 
-	int error_code = get_err_code();
-
 	void *page_fault_addr = (void *)get_cr2();
 	
 	if(is_addr_cow(page_fault_addr)) {
 		handle_cow(page_fault_addr);
 	} 
-    else if (invoke_swexn_handler(SWEXN_CAUSE_PAGEFAULT) == 0) {
-        return;
-    }
     else {
-		lprintf("Address that caused page fault: %p Cause of error= %d.", 
-						page_fault_addr, error_code);
-		kill_current_thread();
-	}
+        handle_fault(SWEXN_CAUSE_PAGEFAULT);
+    } 
 }
 
 /** @brief this function handles a debug exception
@@ -93,12 +86,12 @@ void debug_exception_handler_c() {
 	handle_fault(SWEXN_CAUSE_DEBUG);
 }
 
-/** @brief this function handles a divide by zero error condition.
+/** @brief this function handles a non maskable interrupt 
  *
  *  @return void
  */
 void non_maskable_interrupt_handler_c() {
-	kill_current_thread();
+    kill_current_thread();
 }
 
 /** @brief this function handles a breakpoint exception
@@ -107,12 +100,6 @@ void non_maskable_interrupt_handler_c() {
  */
 void breakpoint_handler_c() {
 	handle_fault(SWEXN_CAUSE_BREAKPOINT);
-	if (invoke_swexn_handler(SWEXN_CAUSE_BREAKPOINT) == 0) {
-        return;
-    }
-    else {
-        kill_current_thread();
-	}
 }
 
 /** @brief this function handles a overflow exception
@@ -262,6 +249,7 @@ int invoke_swexn_handler(int cause) {
 											ureg, curr_task->swexn_args);
 	update_fault_stack(stack_bottom, curr_task->eip, curr_thread);
 	curr_task->eip = NULL;
+    sfree(ureg, sizeof(ureg_t));
 	return 0;
 }
 
