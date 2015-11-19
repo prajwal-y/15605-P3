@@ -94,8 +94,8 @@ void init_task_structures(task_struct_t *t) {
     t->eip = NULL;
     t->swexn_args = NULL;
 
-	sem_init(&t->fork_sem, 1);
-	sem_init(&t->exec_sem, 1);
+	mutex_init(&t->fork_mutex);
+	mutex_init(&t->exec_mutex);
 
 }
 

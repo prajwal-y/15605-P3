@@ -9,14 +9,14 @@
 #include <simics.h>
 #include <syscall.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+void recursive(int num) {
+	recursive(num+1);
+}
 
 int main()
 {
-	int a = 0;
-    while (1) {
-		a += 1;
-		if(a%100000 == 0) {
-			printf("This is prog3 %d, TID: %d\n", a, gettid());
-		}
-    }
+	recursive(1);
+	exit(0);
 }

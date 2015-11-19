@@ -61,8 +61,8 @@ typedef struct task_struct {
     mutex_t vanish_mutex;
 	
 	/* Used when tasks containing multiple threads call system calls */
-	sem_t fork_sem;	/* Semaphore to allow only one fork to run per task */
-	sem_t exec_sem; /* Semaphore to allow only one exec to run per task */
+	mutex_t fork_mutex;	/* Semaphore to allow only one fork to run per task */
+	mutex_t exec_mutex; /* Semaphore to allow only one exec to run per task */
      
 } task_struct_t;
 

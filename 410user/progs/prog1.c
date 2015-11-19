@@ -45,5 +45,5 @@ int main()
 			}
     	}
 	}
-	exit(111);
+	return 111;
 }

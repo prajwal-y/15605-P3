@@ -34,7 +34,7 @@ static void free_args(char **argvec, int num);
 int do_exec(void *arg_packet) {
     task_struct_t *t = get_curr_task();
 
-    sem_wait(&t->exec_sem);
+    mutex_lock(&t->exec_mutex);
 
     char *execname = (char *)(*((int *)arg_packet));
     char **argvec = (char **)(*((int *)arg_packet + 1));
@@ -43,10 +43,12 @@ int do_exec(void *arg_packet) {
     /* Copy execname to kernel memory after checking validity */
     char *execname_kern = (char *)smalloc(EXECNAME_MAX);
     if (execname_kern == NULL) {
+    	mutex_unlock(&t->exec_mutex);
         return ERR_NOMEM;
     }
     if (copy_user_data(execname_kern, execname, EXECNAME_MAX) < 0) {
         sfree(execname_kern, EXECNAME_MAX);
+    	mutex_unlock(&t->exec_mutex);
         return ERR_INVAL;
     }
 
@@ -54,6 +56,7 @@ int do_exec(void *arg_packet) {
     retval = check_program(execname_kern);
     if (retval == PROG_ABSENT_INVALID) {
         sfree(execname_kern, EXECNAME_MAX);
+    	mutex_unlock(&t->exec_mutex);
         return ERR_FAILURE;
     }
 
@@ -62,6 +65,7 @@ int do_exec(void *arg_packet) {
     num_args = get_num_args(argvec);
     if (num_args < 0) {
         sfree(execname_kern, EXECNAME_MAX);
+    	mutex_unlock(&t->exec_mutex);
         return ERR_FAILURE;
     }
     void *old_pd = (void *)get_cr3();
@@ -71,6 +75,7 @@ int do_exec(void *arg_packet) {
     char **argvec_kern = copy_args(num_args, argvec);
     if (argvec_kern == NULL) {
         sfree(execname_kern, EXECNAME_MAX);
+    	mutex_unlock(&t->exec_mutex);
         return ERR_FAILURE;
     }
 
@@ -79,6 +84,7 @@ int do_exec(void *arg_packet) {
         sfree(execname_kern, EXECNAME_MAX);
         free_args(argvec_kern, num_args);
         set_cur_pd(old_pd);
+    	mutex_unlock(&t->exec_mutex);
         return retval;
     }
 
@@ -87,7 +93,7 @@ int do_exec(void *arg_packet) {
     sfree(execname_kern, EXECNAME_MAX);
     free_args(argvec_kern, num_args);
 
-    sem_signal(&t->exec_sem);
+    mutex_unlock(&t->exec_mutex);
 
     return 0;
 }

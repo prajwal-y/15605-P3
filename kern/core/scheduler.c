@@ -61,8 +61,8 @@ thread_struct_t *runq_get_head() {
     if (head == NULL) {
         return NULL;
     }
-    del_entry(head);
     thread_struct_t *head_thread = get_entry(head, thread_struct_t, runq_link);
+    del_entry(head);
     return head_thread;
 }
 

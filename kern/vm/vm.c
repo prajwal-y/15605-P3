@@ -229,6 +229,7 @@ void *clone_page_table(void *pt) {
 		return NULL;
 	}
 	memcpy(new_pt, pt, PAGE_SIZE);
+	increment_ref_count(new_pt);
 	return new_pt;	
 }
 
@@ -285,7 +286,6 @@ void *clone_paging_info(int *pd) {
 			new_pd[i] = (unsigned int)new_pt | GET_FLAGS_FROM_ENTRY(pd[i]);
 		}
     }
-	increment_ref_count(pd);
 	make_pages_cow(pd);
 	make_pages_cow(new_pd);
 	return new_pd;
@@ -311,26 +311,21 @@ void free_paging_info(int *pd) {
 }
 
 /** @brief Increments the reference count for all the physical frames
- *  allocated for a given page directory
+ *  allocated for a given page table
  *
  *  @return void
  */
-void increment_ref_count(int *pd) {
-	if(pd == NULL) {
+void increment_ref_count(int *pt) {
+	if(pt == NULL) {
 		return;
 	}
-	int i, j;
+	int i;
 	for(i=KERNEL_MAP_NUM_ENTRIES; i<NUM_PAGE_TABLE_ENTRIES; i++) {
-		if(pd[i] != PAGE_DIR_ENTRY_DEFAULT) {
-			int *pt = (int *)GET_ADDR_FROM_ENTRY(pd[i]);
-			for(j=0; j<NUM_PAGE_TABLE_ENTRIES; j++) {
-				if(pt[j] != PAGE_TABLE_ENTRY_DEFAULT) {
-					void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[j]);
-					lock_frame(frame_addr);
-                    frame_ref_count[FRAME_INDEX(frame_addr)]++;
-					unlock_frame(frame_addr);
-				}
-			}
+		if(pt[i] != PAGE_TABLE_ENTRY_DEFAULT) {
+			void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[i]);
+			lock_frame(frame_addr);
+			frame_ref_count[FRAME_INDEX(frame_addr)]++;
+			unlock_frame(frame_addr);
 		}
 	}
 }

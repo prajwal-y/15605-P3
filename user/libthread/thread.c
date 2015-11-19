@@ -158,6 +158,7 @@ void thr_exit(void *status) {
 	if(tcb->stack_base != NULL) {
 		free(tcb->stack_base);
 	}
+	set_status(0);
 	vanish();
 }
 
