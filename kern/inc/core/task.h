@@ -77,5 +77,7 @@ int load_task(const char *prog_name, int num_arg, char **argvec,
 
 task_struct_t *get_init_task();
 
+task_struct_t *get_idle_task();
+
 #endif  /* __TASK_H */
 

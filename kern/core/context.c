@@ -31,16 +31,24 @@ void context_switch() {
 
 	disable_interrupts();	/* Context switching is a critical section */
 
+	thread_struct_t *idle_thread = get_idle_task()->thr;
+	
 	/* Get the next thread to be run from scheduler */
     thread_struct_t *thr = next_thread();
+
+	thread_struct_t *curr_thread = get_curr_thread();
 	
-	if(thr == NULL) { /* There are no other threads to schedule */
-		enable_interrupts();
-		return;
+	if(thr == NULL) { /* There are no other threads to schedule, run idle */
+		if(curr_thread->id == idle_thread->id) {
+			enable_interrupts();
+			return;
+		} else {
+			thr = idle_thread;
+		}
 	}
     
-	thread_struct_t *curr_thread = get_curr_thread();
-	if(curr_thread != NULL && curr_thread->status == RUNNING) {
+	if(curr_thread != NULL && curr_thread->status == RUNNING &&
+			curr_thread->id != idle_thread->id) {
 		curr_thread->status = RUNNABLE;
 		runq_add_thread_interruptible(curr_thread);
 	}

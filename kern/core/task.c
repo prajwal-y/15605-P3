@@ -28,6 +28,7 @@
 #define EFLAGS_ALIGNMENT_CHECK 0xFFFbFFFF
 	
 static task_struct_t *init_task;
+static task_struct_t *idle_task;
 static uint32_t setup_user_eflags();
 static void set_task_stack(void *kernel_stack_base, int entry_addr,
                            void *user_stack_top);
@@ -177,6 +178,8 @@ void load_bootstrap_task(const char *prog_name) {
 	unsigned long entry = se_hdr->e_entry;
 	sfree(se_hdr, sizeof(simple_elf_t));
 	
+	idle_task = t;
+
 	enable_mutex_lib(); /* We need to enable mutex library */
 
 	call_iret(EFLAGS, entry);
@@ -334,4 +337,12 @@ uint32_t setup_user_eflags() {
  */
 task_struct_t *get_init_task() {
     return init_task;
+}
+
+/** @brief get a pointer to the idle task
+ *
+ * @return task_struct_t* pointer to the idle task
+ */
+task_struct_t *get_idle_task() {
+    return idle_task;
 }
