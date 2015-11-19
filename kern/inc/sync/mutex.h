@@ -7,6 +7,8 @@
 
 #include <sync/mutex_type.h>
 
+void enable_mutex_lib();
+
 int mutex_init( mutex_t *mp );
 void mutex_destroy( mutex_t *mp );
 void mutex_lock( mutex_t *mp );

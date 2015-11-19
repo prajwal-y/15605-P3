@@ -42,6 +42,7 @@ typedef struct thread_struct {
     list_head sleepq_link;      /* Link structure for the sleep queue */
     list_head thread_map_link;  /* Link structure for the hash map */
 	list_head cond_wait_link;	/* Link structure for cond_wait */
+	list_head mutex_link;		/* Link structure for mutex */
     list_head task_thread_link; /* Link structure for list of threads in parent */
     long wake_time;             /* Time when this thread is to be woken up */
 

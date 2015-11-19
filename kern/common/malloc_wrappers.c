@@ -8,16 +8,16 @@
 
 #include <stddef.h>
 #include <malloc_internal.h>
-#include <sync/sem.h>
+#include <sync/mutex.h>
 
-static sem_t sem;
+static mutex_t mutex;
 
 /** @brief Initializes the thread safe malloc library
  *
  *  @return void
  */
 void init_thr_safe_malloc_lib() {
-	sem_init(&sem, 1);
+	mutex_init(&mutex);
 }
 
 /** @brief Thread safe function for malloc
@@ -27,9 +27,9 @@ void init_thr_safe_malloc_lib() {
  *  @return void * Address of the memory allocated
  */
 void *malloc(size_t size) {
-    sem_wait(&sem);
+	mutex_lock(&mutex);
     void *addr = _malloc(size);
-    sem_signal(&sem);
+	mutex_unlock(&mutex);
     return addr;
 }
 
@@ -41,9 +41,9 @@ void *malloc(size_t size) {
  *  @return void * Address of the buffer allocated
  */
 void *memalign(size_t alignment, size_t size) {
-    sem_wait(&sem);
+	mutex_lock(&mutex);
     void *addr = _memalign(alignment, size);
-    sem_signal(&sem);
+	mutex_unlock(&mutex);
     return addr;
 }
 
@@ -55,9 +55,9 @@ void *memalign(size_t alignment, size_t size) {
  *  @return void * Address of the memory allocated
  */
 void *calloc(size_t nelt, size_t eltsize) {
-    sem_wait(&sem);
+	mutex_lock(&mutex);
     void *addr = _calloc(nelt, eltsize);
-    sem_signal(&sem);
+	mutex_unlock(&mutex);
     return addr;
 }
 
@@ -69,9 +69,9 @@ void *calloc(size_t nelt, size_t eltsize) {
  *  @return void * Address of the memory allocated
  */
 void *realloc(void *buf, size_t new_size) {
-    sem_wait(&sem);
+	mutex_lock(&mutex);
     void *addr = _realloc(buf, new_size);
-    sem_signal(&sem);
+	mutex_unlock(&mutex);
     return addr;
 }
 
@@ -82,9 +82,9 @@ void *realloc(void *buf, size_t new_size) {
  *  @return void
  */
 void free(void *buf) {
-    sem_wait(&sem);
+	mutex_lock(&mutex);
     _free(buf);
-    sem_signal(&sem);
+	mutex_unlock(&mutex);
 }
 
 /** @brief Thread safe function for smalloc
@@ -94,9 +94,9 @@ void free(void *buf) {
  *  @return void * Address of the memory allocated
  */
 void *smalloc(size_t size) {
-    sem_wait(&sem);
+	mutex_lock(&mutex);
     void *addr = _smalloc(size);
-    sem_signal(&sem);
+	mutex_unlock(&mutex);
     return addr;
 }
 
@@ -108,9 +108,9 @@ void *smalloc(size_t size) {
  *  @return void * Address of the buffer allocated
  */
 void *smemalign(size_t alignment, size_t size) {
-    sem_wait(&sem);
+	mutex_lock(&mutex);
     void *addr = _smemalign(alignment, size);
-    sem_signal(&sem);
+	mutex_unlock(&mutex);
     return addr;
 }
 
@@ -122,7 +122,7 @@ void *smemalign(size_t alignment, size_t size) {
  *  @return void
  */
 void sfree(void *buf, size_t size) {
-    sem_wait(&sem);
+	mutex_lock(&mutex);
     _sfree(buf, size);
-    sem_signal(&sem);
+	mutex_unlock(&mutex);
 }

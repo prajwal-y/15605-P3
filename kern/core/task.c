@@ -69,6 +69,10 @@ task_struct_t *create_task(task_struct_t *parent) {
     return t;
 }
 
+/** @brief Function to initialize the task struct
+ *
+ *  @return void
+ */
 void init_task_structures(task_struct_t *t) {
     /* Initialize the thread list */
     init_head(&t->thread_head);
@@ -172,6 +176,9 @@ void load_bootstrap_task(const char *prog_name) {
 	uint32_t EFLAGS = setup_user_eflags();
 	unsigned long entry = se_hdr->e_entry;
 	sfree(se_hdr, sizeof(simple_elf_t));
+	
+	enable_mutex_lib(); /* We need to enable mutex library */
+
 	call_iret(EFLAGS, entry);
 }
 

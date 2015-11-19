@@ -4,11 +4,21 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
+#include <asm.h>
 #include <sync/mutex.h>
 #include <sync/mutex_asm.h>
 #include <list/list.h>
+#include <core/thread.h>
+#include <core/scheduler.h>
+#include <core/context.h>
 #include <syscall.h>
+#include <simics.h>
+#include <common/assert.h>
 #include <common/errors.h>
+
+static int enable = 0;
+static void disable_interrupts_mutex();
+static void enable_interrupts_mutex();
 
 /** @brief initialize a mutex
  *
@@ -25,7 +35,44 @@ int mutex_init(mutex_t *mp) {
         return ERR_INVAL;
     }
     mp->value = MUTEX_VALID;
+	init_head(&mp->waiting);
     return 0;
+}
+
+/** @brief Function to allow enabling interrupts in mutex lock
+ *  and unlock. This function is called before the bootstrap
+ *  task is about to enter user space
+ *
+ *  @return void
+ */
+void enable_mutex_lib() {
+	enable = 1;
+}
+
+/** @brief Wrapper for disabling interrupts.
+ *
+ *  Before the first task is loaded, there is only
+ *  one thread running, and we do not disable interrupts.
+ *
+ *  @return void
+ */
+void disable_interrupts_mutex() {
+	if(enable) {
+		disable_interrupts();
+	}
+}
+
+/** @brief Wrapper for enabling interrupts.
+ *
+ *  Before the first task is loaded, there is only
+ *  one thread running, and we do not enable interrupts.
+ *
+ *  @return void
+ */
+void enable_interrupts_mutex() {
+	if(enable) {
+		enable_interrupts();
+	}
 }
 
 /** @brief destroy a mutex
@@ -44,15 +91,11 @@ void mutex_destroy(mutex_t *mp) {
 
 /** @brief attempt to acquire the lock
  *
- *  We use the x86 xchg command to atomically test and set the value of the mutex.
- *  Spin lock till we get the lock. Theoretically this does not provide bounded
- *  waiting. But we are on a uniprocessor environment assuming a scheduler that
- *  does not starve any process and is fair. Assuming this and given that the
- *  number of instructions required to test and get the lock is small, once a 
- *  lock is released, it is highly likely that the next thread (that is fairly
- *  scheduled by the kernel) will get the lock. By fair scheduling we mean that
- *  no thread will wait forever (maybe something as simple as a round robin
- *  scheduler).
+ *  This function disables interrupts to check for the lock.
+ *  If the lock is present, then the value of the lock is
+ *  0 (lock is aquired), and the function returns after enabling 
+ *  interrupts. Otherwise, the thread is added to waiting queue
+ *  and context_switch() is called.
  *
  *  If the mutex is corrupted or destroyed, calling this function will result 
  *  in undefined behaviour
@@ -60,16 +103,40 @@ void mutex_destroy(mutex_t *mp) {
  *  @return void
  */
 void mutex_lock(mutex_t *mp) {
-    while (!test_and_unset(&mp->value));
+	thread_assert(mp != NULL);
+	disable_interrupts_mutex();
+	if(mp->value == 0) {
+		thread_struct_t *curr_thread = get_curr_thread();
+		curr_thread->status = WAITING;
+		add_to_tail(&curr_thread->mutex_link, &mp->waiting);
+		context_switch();
+	}
+	mp->value = 0;
+	enable_interrupts_mutex();
 }
 
 /** @brief release a lock
  *
+ *  When the lock is released, the lock is given to the first thread
+ *  in the waiting queue (by making it runnable). If no threads are present, 
+ *  the value of the lock is set to 1 (lock is available)
+ *  
  *  If the mutex is corrupted or destroyed, calling this function will result 
  *  in undefined behaviour
  *
  *  @return void
  */
 void mutex_unlock(mutex_t *mp) {
-    test_and_set(&mp->value);
+	thread_assert(mp != NULL);
+    disable_interrupts();
+	list_head *waiting_thread = get_first(&mp->waiting);
+	if(waiting_thread != NULL) {
+		thread_struct_t *thr = get_entry(waiting_thread, thread_struct_t,
+                                          mutex_link);
+		thr->status = RUNNABLE;
+		runq_add_thread(thr);
+		del_entry(&thr->mutex_link);
+	}
+	mp->value = 1;
+	enable_interrupts_mutex();
 }
