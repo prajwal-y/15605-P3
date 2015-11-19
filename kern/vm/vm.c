@@ -320,7 +320,7 @@ void increment_ref_count(int *pt) {
 		return;
 	}
 	int i;
-	for(i=KERNEL_MAP_NUM_ENTRIES; i<NUM_PAGE_TABLE_ENTRIES; i++) {
+	for(i=0; i<NUM_PAGE_TABLE_ENTRIES; i++) {
 		if(pt[i] != PAGE_TABLE_ENTRY_DEFAULT) {
 			void *frame_addr = (void *)GET_ADDR_FROM_ENTRY(pt[i]);
 			lock_frame(frame_addr);
