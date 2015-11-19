@@ -39,16 +39,28 @@ remove_pages system calls to determine the entries to be allocated and
 removed. This enables us to not use extra data structures to store the
 required information. 
 
+Copy-On-Write
+--------------
+Forking a new process does not clone the entire virtual address space of the 
+parent process. A fork() clones the page information of the parent to the child
+task and makes all pages read only and sets a special bit (bit 9) in the page 
+table entry to indicate that this is a writable page made readable for COW. 
+This bit is inspected on page fault to determine if the page is a COW page and
+hence must be cloned and made writable. We keep track of the number of 
+references to each physical frame for garbage collection.
+
 Physical Frame Allocator
 ------------------------
 The frame allocator code present in allocator/frame_allocator.c is reponsible
 for allocating physical frames. This file has functions to allocate_frame()
-and deallocate_frame(). This file uses an array stored in kernel memory to
-keep track of the physical frames that are being allocated and deallocated.
+and deallocate_frame(). This file uses an integer array stored in kernel memory
+to keep track of the physical frames that are being allocated and deallocated.
+The array functions as a stack and new frames are allocated from the top of
+the stack and free frames are pushed to the top of the stack. 
 Along with allocating and deallocating frames, this file also provides a 
 function to lock/unlock a particular frame. This is particularly useful
 when the reference counts for these frames are being modified by the VM
-module.
+module. 
 
 Loader
 ------
@@ -61,7 +73,9 @@ Scheduler
 The code for the round robin scheduler for the P3 kernel is present in 
 core/scheduler.c. This file implements all the functionality required for
 adding threads to the runnable queue and returning the head of the queue
-to the context switch code. 
+to the context switch code. The scheduler implements a simple round-robin
+scheduling algorithm by returning the first thread in the run queue when 
+requested.
 
 Context Switch
 --------------
@@ -106,12 +120,22 @@ Faults and Exceptions
 
 Locking Architecture
 --------------------
+Mutex: The kernel uses a blocking mutex when mutual exclusion is required.
+The mutex disables interrupts and checks the value of the mutex variable going
+to sleep if currently locked. The unlock functions signals the next thread that
+is blocked.
+
+Condition variable: 
 
 
 Key Data Structures
 -------------------
 
 Generic doubly linked list:
+We use a generic linked list implementation inspired by the Linux kernel 
+linked list. The linked list data structure can be added to any user struct
+and forms the traversal link. This allows a single struct to be on multiple
+lists which can be useful at times. 
 
 A Simple map for threads:
 The map we use for a quick lookup of thread control blocks is keyed on the 
