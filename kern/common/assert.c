@@ -9,6 +9,9 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <simics.h>
+#include <core/wait_vanish.h>
+#include <syscalls/lifecycle_syscalls.h>
+#include <syscalls/misc_syscalls.h>
 
 #define die(expression)  \
 	((void)((expression) ? 0 : (panic_exit("PANIC! `%s' at %s:%u." \
@@ -54,8 +57,25 @@ void kernel_panic(const char *fmt, ...)
 	vprintf(fmt, vl);
 	va_end(vl);
 	printf("\n");
-	lprintf("Assertion failed : %s", fmt);
-    // TODO: Halt instead of exiting
-    //exit(-1);
+	lprintf("KERNEL_PANIC! Going to kill kernel!: %s", fmt);
+    halt_handler();
 }
 
+void thread_panic(const char *fmt, ...)
+{
+	va_list vl;
+	char buf[80];
+
+	va_start(vl, fmt);
+	vsnprintf(buf, sizeof (buf), fmt, vl);
+	va_end(vl);
+	lprintf(buf);
+
+	va_start(vl, fmt);
+	vprintf(fmt, vl);
+	va_end(vl);
+	printf("\n");
+	lprintf("THREAD_PANIC! Going to kill thread!: %s", fmt);
+    set_status_handler_c(-2);
+    do_vanish();
+}

@@ -11,13 +11,14 @@
 void panic_exit(const char *fmt, ...);
 void panic(const char *format, ...);
 void kernel_panic(const char *format, ...);
+void thread_panic(const char *format, ...);
 
 #define assert(expression)  \
 	((void)((expression) ? 0 : (panic("%s:%u: failed assertion `%s'", \
 					  __FILE__, __LINE__, #expression), 0)))
 
 #define thread_assert(expression)  \
-	((void)((expression) ? 0 : (panic("%s:%u: failed assertion `%s'", \
+	((void)((expression) ? 0 : (thread_panic("%s:%u: failed assertion `%s'", \
 					  __FILE__, __LINE__, #expression), 0)))
 
 #define kernel_assert(expression)  \

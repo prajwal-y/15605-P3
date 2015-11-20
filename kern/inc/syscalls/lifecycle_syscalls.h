@@ -22,7 +22,7 @@ int exec_handler_c();
 
 void set_status_handler();
 
-void set_status_handler_c();
+void set_status_handler_c(int status);
 
 int wait_handler(int *status_ptr);
 

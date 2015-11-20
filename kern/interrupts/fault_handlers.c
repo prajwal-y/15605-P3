@@ -27,12 +27,13 @@
 #include <common/assert.h>
 
 #define THREAD_KILL_EXIT_STATUS -2
+#define THREAD_KILL_MSG_LEN 256
 
 /*Static functions*/
 static void *setup_swexn_stack(void *esp3, ureg_t *ureg, void *arg);
 static void update_fault_stack(void *esp3, swexn_handler_t eip, 
                                thread_struct_t *curr_thread);
-static void kill_current_thread();
+static void kill_current_thread(int cause);
 void handle_fault(int cause);
 int invoke_swexn_handler(int cause);
 
@@ -91,7 +92,7 @@ void debug_exception_handler_c() {
  *  @return void
  */
 void non_maskable_interrupt_handler_c() {
-    kill_current_thread();
+    kill_current_thread(IDT_NMI);
 }
 
 /** @brief this function handles a breakpoint exception
@@ -131,7 +132,7 @@ void undefined_opcode_handler_c() {
  *  @return void
  */
 void no_math_coprocessor_handler_c() {
-	kill_current_thread();
+	kill_current_thread(IDT_NM);
 }
 
 /** @brief this function handles coprocessor segment overrun
@@ -140,7 +141,7 @@ void no_math_coprocessor_handler_c() {
  *  @return void
  */
 void cso_handler_c() {
-	kill_current_thread();
+	kill_current_thread(IDT_CSO);
 }
 
 /** @brief this function handles a invalid TSS error
@@ -148,7 +149,7 @@ void cso_handler_c() {
  *  @return void
  */
 void invalid_tss_handler_c() {
-	kill_current_thread();
+	kill_current_thread(IDT_TS);
 }
 
 /** @brief this function handles a segment not present error
@@ -180,7 +181,7 @@ void gpf_handler_c() {
  *  @return void
  */
 void math_fault_handler_c() {
-	kill_current_thread();
+	kill_current_thread(IDT_MF);
 }
 
 /** @brief this function handles an alignment fault
@@ -196,7 +197,7 @@ void alignment_check_handler_c() {
  *  @return void
  */
 void machine_check_handler_c() {
-	kill_current_thread();
+	kill_current_thread(IDT_MC);
 }
 
 /** @brief this function handles a floating point exception
@@ -218,7 +219,7 @@ void handle_fault(int cause) {
         return;
     }
     else {
-        kill_current_thread();
+        kill_current_thread(cause);
 	}
 }
 
@@ -287,10 +288,24 @@ void update_fault_stack(void *esp, swexn_handler_t eip,
  * 	This function prints some thread info to the console and
  * 	then kills the thread
  *
- *  @return void
+ *  @return does not return
  */
-void kill_current_thread() {
-	putbytes("Segmentation fault", 18);
+void kill_current_thread(int cause) {
+	putbytes("Critical error in thread! Killing it...\n", 40);
+	ureg_t ureg;
+    char buf[THREAD_KILL_MSG_LEN];
+    thread_struct_t *curr_thread = get_curr_thread();
+    char *fmt = "Fault code: %d\n \
+eax = %p    ecx = %p\n \
+edx = %p    ebx = %p\n \
+esp = %p    ebp = %p\n \
+esi = %p    edi = %p\n \
+eip = %p\n";
+	populate_ureg(&ureg, ERR_CODE_AVAIL, curr_thread);
+    snprintf(buf, THREAD_KILL_MSG_LEN, fmt, cause, ureg.eax, ureg.ecx, 
+             ureg.edx, ureg.ebx, ureg.esp, ureg.ebp, ureg.esi,
+             ureg.edi, ureg.eip);
+    putbytes(buf, strlen(buf));
 	get_curr_task()->exit_status = THREAD_KILL_EXIT_STATUS;
 	do_vanish();
 }
