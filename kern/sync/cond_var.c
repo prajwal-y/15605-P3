@@ -53,6 +53,7 @@ int cond_init(cond_t *cv) {
  */
 void cond_destroy(cond_t *cv) {
 	thread_assert(cv != NULL);
+	thread_assert(cv->status != COND_VAR_INVALID);
     mutex_destroy(&cv->queue_mutex);
     cv->status = COND_VAR_INVALID;
 }

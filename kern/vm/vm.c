@@ -32,7 +32,7 @@
 
 static int *frame_ref_count;
 static void *kernel_pd;
-static void *dead_thr_kernel_stack;
+static char dead_thr_kernel_stack[PAGE_SIZE];
 static mutex_t frame_ref_mutex;
 
 static void init_frame_ref_count();
@@ -79,9 +79,6 @@ void vm_init() {
 void setup_kernel_pd() {
     kernel_pd = create_page_directory();
     kernel_assert(kernel_pd != NULL);
-	dead_thr_kernel_stack = smemalign(PAGE_SIZE, PAGE_SIZE);
-	kernel_assert(dead_thr_kernel_stack != NULL);
-	dead_thr_kernel_stack = (char *)dead_thr_kernel_stack + PAGE_SIZE;
 }
 
 /** @brief Initializes the array which stored the 
@@ -119,7 +116,7 @@ void *get_kernel_pd() {
  *  threads
  */
 void *get_dead_thr_kernel_stack() {
-	return dead_thr_kernel_stack;
+	return &dead_thr_kernel_stack[PAGE_SIZE-1];
 }
 
 /** @brief Sets the control register %cr3 with the given
@@ -412,11 +409,7 @@ int handle_cow(void *addr) {
 		pt[pt_index] &= COW_MODE_DISABLE_MASK;
 	} else {
         /* Copy the data from the old frame to a kernel frame */
-		void *frame_contents = smemalign(PAGE_SIZE, PAGE_SIZE);
-		if(frame_contents == NULL) {
-			unlock_frame(frame_addr);
-			return ERR_FAILURE;
-		}
+		char frame_contents[PAGE_SIZE];
 		memcpy(frame_contents, page_addr, PAGE_SIZE);
 
 		void *new_frame = allocate_frame();
@@ -434,7 +427,6 @@ int handle_cow(void *addr) {
         /* Copy data from kernel frame into the new allocated frame and free 
          * the kernel scratch space */
         memcpy(page_addr, frame_contents, PAGE_SIZE);
-        sfree(frame_contents, PAGE_SIZE);
 
 		/* Adjust reference counts */
 		frame_ref_count[FRAME_INDEX(frame_addr)]--;

@@ -7,6 +7,7 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 
+#include <core/fork.h>
 #include <core/task.h>
 #include <core/scheduler.h>
 #include <vm/vm.h>
@@ -18,7 +19,7 @@
 #include <simics.h>
 
 static void thread_free_resources(thread_struct_t *thr);
-static int fork_fail = 0;
+static int fork_fail = 0; /* To prevent a program from abusing the kernel */
 
 /** @brief The entry point for fork
  *
@@ -39,7 +40,7 @@ int do_fork() {
 	/* Create a child task */
 	task_struct_t *child_task = create_task(curr_task);
 	if(child_task == NULL) {
-		fork_fail = 1;
+		disable_forking();
 		mutex_unlock(&curr_task->fork_mutex);
 		return ERR_NOMEM;
 	}
@@ -50,7 +51,7 @@ int do_fork() {
 	/* Clone the address space */
 	void *new_pd_addr = clone_paging_info(curr_task->pdbr);
 	if(new_pd_addr == NULL) {
-		fork_fail = 1;
+		disable_forking();
 		thread_free_resources(child_task->thr);
 		sfree(child_task, sizeof(task_struct_t));
 		mutex_unlock(&curr_task->fork_mutex);
@@ -121,6 +122,32 @@ int do_thread_fork() {
  *  @return void
  **/
 void thread_free_resources(thread_struct_t *thr) {
-    sfree(thr->k_stack, KERNEL_STACK_SIZE);
+	mutex_destroy(&thr->deschedule_mutex);
+	cond_destroy(&thr->deschedule_cond_var);
     sfree(thr, sizeof(thread_struct_t));
+}
+
+/** @brief Function to enable the fork_fail flag
+ *
+ *  Fork flag is enabled when the system is low on 
+ *  resources. This flag helps in preventing abuse of 
+ *  system resources until some resources become free.
+ *
+ * @return void
+ */
+void disable_forking() {
+	fork_fail = 1;	
+}
+
+/** @brief Function disable the fork_fail flag
+ *
+ *  When system regains resources, the fork_fail flag can
+ *  be disabled. This function will be called by vanish
+ *  whenever a task exists. We use this as a heuristic to
+ *  enable further forking.
+ *
+ *  @return void
+ */
+void enable_forking() {
+	fork_fail = 0;
 }

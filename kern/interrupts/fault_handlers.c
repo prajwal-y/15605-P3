@@ -72,7 +72,9 @@ void page_fault_handler_c() {
 	void *page_fault_addr = (void *)get_cr2();
 	
 	if(is_addr_cow(page_fault_addr)) {
-		handle_cow(page_fault_addr);
+		if(handle_cow(page_fault_addr) < 0) {
+			kill_current_thread(SWEXN_CAUSE_PAGEFAULT);
+		}
 	} 
     else {
         handle_fault(SWEXN_CAUSE_PAGEFAULT);
@@ -291,18 +293,20 @@ void update_fault_stack(void *esp, swexn_handler_t eip,
  *  @return does not return
  */
 void kill_current_thread(int cause) {
-	putbytes("Critical error in thread! Killing it...\n", 40);
+	putbytes("Critical error in thread! Killing it...\n", 47);
 	ureg_t ureg;
     char buf[THREAD_KILL_MSG_LEN];
     thread_struct_t *curr_thread = get_curr_thread();
     char *fmt = "Fault code: %d\n \
+Thread id: %d\n \
 eax = %p    ecx = %p\n \
 edx = %p    ebx = %p\n \
 esp = %p    ebp = %p\n \
 esi = %p    edi = %p\n \
 eip = %p\n";
 	populate_ureg(&ureg, ERR_CODE_AVAIL, curr_thread);
-    snprintf(buf, THREAD_KILL_MSG_LEN, fmt, cause, ureg.eax, ureg.ecx, 
+    snprintf(buf, THREAD_KILL_MSG_LEN, fmt, cause, curr_thread->id,
+			 ureg.eax, ureg.ecx, 
              ureg.edx, ureg.ebx, ureg.esp, ureg.ebp, ureg.esi,
              ureg.edi, ureg.eip);
     putbytes(buf, strlen(buf));

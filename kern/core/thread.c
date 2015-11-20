@@ -69,16 +69,8 @@ thread_struct_t *create_thread(task_struct_t *task) {
     mutex_init(&thr->deschedule_mutex);  
     cond_init(&thr->deschedule_cond_var);
 
-	/* Allocate space for thread's kernel stack */
-	void *stack = smalloc(KERNEL_STACK_SIZE);
-    if(stack == NULL) {
-        sfree(thr, sizeof(thread_struct_t));
-        return NULL;
-    }
-
     thr->parent_task = task;
-    thr->k_stack = stack;
-	thr->k_stack_base = (uint32_t)((char *)stack + KERNEL_STACK_SIZE);
+	thr->k_stack_base = (uint32_t)((char *)thr->k_stack + KERNEL_STACK_SIZE);
 	thr->cur_esp = thr->k_stack_base;
 	thr->cur_ebp = thr->k_stack_base;
 	thr->status = RUNNABLE; /* Default value */

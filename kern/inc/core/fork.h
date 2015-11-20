@@ -13,4 +13,8 @@ int do_fork();
 
 int do_thread_fork();
 
+void disable_forking();
+
+void enable_forking();
+
 #endif  /* __FORK_H */
