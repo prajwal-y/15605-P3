@@ -65,7 +65,8 @@ UPDATE_METHOD = afs
 		   cho2 cho_variant swexn_basic_test swexn_cookie_monster swexn_regs \
 		   swexn_dispatch swexn_uninstall_test swexn_stands_for_swextensible \
 		   mem_permissions deschedule_hang halt_test mem_eat_test minclone_mem \
-		   register_test chow fib ack slaughter coolness mandelbrot
+		   register_test chow fib ack slaughter coolness mandelbrot \
+		   prog1 prog2 prog3
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -73,7 +74,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory.
 #
-STUDENTTESTS = beady_test agility_drill cvar_test join_specific_test largetest multitest startle switzerland thr_exit_join
+STUDENTTESTS = beady_test agility_drill cvar_test join_specific_test largetest multitest switzerland thr_exit_join
 
 ###########################################################################
 # Data files provided by course staff to build into the RAM disk

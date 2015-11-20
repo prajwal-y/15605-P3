@@ -12,9 +12,12 @@
 #include <vm/vm.h>
 #include <asm/asm.h>
 #include <common/errors.h>
+#include <common/malloc_wrappers.h>
 #include <string.h>
 #include <syscall.h>
 #include <simics.h>
+
+static void thread_free_resources(thread_struct_t *thr);
 
 /** @brief The entry point for fork
  *
@@ -24,11 +27,13 @@
 int do_fork() {
 	task_struct_t *curr_task = get_curr_task();
 
-	sem_wait(&curr_task->fork_sem);
+	/* Allow only one thread per task to fork() */
+	mutex_lock(&curr_task->fork_mutex);
 
 	/* Create a child task */
 	task_struct_t *child_task = create_task(curr_task);
 	if(child_task == NULL) {
+		mutex_unlock(&curr_task->fork_mutex);
 		return ERR_NOMEM;
 	}
     mutex_lock(&curr_task->vanish_mutex);
@@ -38,6 +43,9 @@ int do_fork() {
 	/* Clone the address space */
 	void *new_pd_addr = clone_paging_info(curr_task->pdbr);
 	if(new_pd_addr == NULL) {
+		thread_free_resources(child_task->thr);
+		sfree(child_task, sizeof(task_struct_t));
+		mutex_unlock(&curr_task->fork_mutex);
 		return ERR_FAILURE;
 	}
 	child_task->pdbr = new_pd_addr;
@@ -61,7 +69,7 @@ int do_fork() {
 	/* Dummy operation to invalidate TLB */
 	set_cur_pd(curr_task->pdbr);
 
-	sem_signal(&curr_task->fork_sem);
+	mutex_unlock(&curr_task->fork_mutex);
 
 	return child_task->id;	
 }
@@ -94,4 +102,18 @@ int do_thread_fork() {
 	runq_add_thread(child_thread);
 
 	return child_thread->id;
+}
+
+/** @brief Free the resources associated with a thread
+ *  
+ *  Free the thread kernel stack and the thread struct
+ *  itself.
+ *
+ *  @param thr the thread who will go missing soon
+ *  @return void
+ **/
+void thread_free_resources(thread_struct_t *thr) {
+    sfree(thr->k_stack, KERNEL_STACK_SIZE);
+    sfree(thr->regs, sizeof(ureg_t));
+    sfree(thr, sizeof(thread_struct_t));
 }

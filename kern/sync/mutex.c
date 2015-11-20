@@ -134,7 +134,7 @@ void mutex_unlock(mutex_t *mp) {
 		thread_struct_t *thr = get_entry(waiting_thread, thread_struct_t,
                                           mutex_link);
 		thr->status = RUNNABLE;
-		runq_add_thread(thr);
+		runq_add_thread_interruptible(thr);
 		del_entry(&thr->mutex_link);
 	}
 	mp->value = 1;

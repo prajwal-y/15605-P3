@@ -51,6 +51,7 @@ int readline_handler_c(void *arg_packet) {
     mutex_lock(&readline_mutex);
     int retval = nextline(buf, len);
     if (retval == ERR_INVAL) {
+		mutex_unlock(&readline_mutex);
         return ERR_INVAL;
     }
     while (retval == ERR_NOTAVAIL) {
