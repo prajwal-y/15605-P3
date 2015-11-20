@@ -18,6 +18,7 @@
 #include <simics.h>
 
 static void thread_free_resources(thread_struct_t *thr);
+static int fork_fail = 0;
 
 /** @brief The entry point for fork
  *
@@ -25,6 +26,11 @@ static void thread_free_resources(thread_struct_t *thr);
  *  fails, then a negative number is returned.
  */
 int do_fork() {
+
+	if(fork_fail) {
+		return ERR_FAILURE;
+	}
+
 	task_struct_t *curr_task = get_curr_task();
 
 	/* Allow only one thread per task to fork() */
@@ -33,6 +39,7 @@ int do_fork() {
 	/* Create a child task */
 	task_struct_t *child_task = create_task(curr_task);
 	if(child_task == NULL) {
+		fork_fail = 1;
 		mutex_unlock(&curr_task->fork_mutex);
 		return ERR_NOMEM;
 	}
@@ -43,6 +50,7 @@ int do_fork() {
 	/* Clone the address space */
 	void *new_pd_addr = clone_paging_info(curr_task->pdbr);
 	if(new_pd_addr == NULL) {
+		fork_fail = 1;
 		thread_free_resources(child_task->thr);
 		sfree(child_task, sizeof(task_struct_t));
 		mutex_unlock(&curr_task->fork_mutex);

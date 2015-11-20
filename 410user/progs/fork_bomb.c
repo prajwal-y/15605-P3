@@ -20,12 +20,8 @@ int main() {
     report_start(START_4EVER);
     TEST_PROG_ENGAGE(200);
 
-	int i = 0;
-    while (i < 200) {
+    while (1) {
         fork();
         TEST_PROG_PROGRESS;
-		i++;
     }
-	
-	exit(0);
 }

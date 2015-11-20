@@ -159,8 +159,7 @@ void load_bootstrap_task(const char *prog_name) {
     t->pdbr = pd_addr;
 
     /* Read the idle task header to set up VM */
-	simple_elf_t se_hdr;// = (simple_elf_t *)smalloc(sizeof(simple_elf_t));
-    //kernel_assert(se_hdr != NULL);
+	simple_elf_t se_hdr;
 
     elf_load_helper(&se_hdr, prog_name);
     
@@ -178,7 +177,6 @@ void load_bootstrap_task(const char *prog_name) {
 
 	uint32_t EFLAGS = setup_user_eflags();
 	unsigned long entry = se_hdr.e_entry;
-	//sfree(se_hdr, sizeof(simple_elf_t));
 	
 	idle_task = t;
 
@@ -213,21 +211,18 @@ int load_task(const char *prog_name, int num_args, char **argvec,
     t->pdbr = pd_addr;
 
     /* Read the idle task header to set up VM */
-	simple_elf_t *se_hdr = (simple_elf_t *)smalloc(sizeof(simple_elf_t));
-    if (se_hdr == NULL) {
-        return ERR_NOMEM;
-    }
+	simple_elf_t se_hdr;
 
-    elf_load_helper(se_hdr, prog_name);
+    elf_load_helper(&se_hdr, prog_name);
     
     /* Invoke VM to setup the page directory/page table for a given binary */
-    retval = setup_page_table(se_hdr, pd_addr);
+    retval = setup_page_table(&se_hdr, pd_addr);
     if (retval < 0) {
         return retval;
     }
 
     /* Copy program into memory */
-    retval = load_program(se_hdr);
+    retval = load_program(&se_hdr);
     if (retval < 0) {
         return retval;
     }
@@ -239,10 +234,8 @@ int load_task(const char *prog_name, int num_args, char **argvec,
     }
 
 	set_task_stack((void *)t->thr->k_stack_base, 
-					se_hdr->e_entry, user_stack_top);
+					se_hdr.e_entry, user_stack_top);
 	t->thr->cur_esp = (t->thr->k_stack_base - DEFAULT_STACK_OFFSET);
-
-	sfree(se_hdr, sizeof(simple_elf_t));
 
     return 0;
 }
