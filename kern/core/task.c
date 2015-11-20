@@ -112,9 +112,12 @@ void load_init_task(const char *prog_name) {
     /* Allocate memory for a task struct from kernel memory */
 	task_struct_t *t = create_task(NULL);
     kernel_assert(t != NULL);
-    char **args = (char **)smalloc(sizeof(char *));
+    char **args = (char **)smalloc(2*sizeof(char *));
+	kernel_assert(args != NULL);
     char *arg1 = (char *)smalloc(ARGNAME_MAX);
-    char *arg2 = (char *)smalloc(1);
+	kernel_assert(arg1 != NULL);
+    char *arg2 = (char *)smalloc(sizeof(char));
+	kernel_assert(arg2 != NULL);
     strncpy(arg1, "init", ARGNAME_MAX);
     arg2[0] = '\0';
     args[0] = arg1;
@@ -126,8 +129,8 @@ void load_init_task(const char *prog_name) {
 	
     runq_add_thread_interruptible(t->thr);
     sfree(arg1, ARGNAME_MAX);
-    sfree(arg2, 1);
-    sfree(args, sizeof(char *));
+    sfree(arg2, sizeof(char));
+    sfree(args, 2*sizeof(char *));
 }
 
 /** @brief start a bootstrap task
@@ -156,18 +159,17 @@ void load_bootstrap_task(const char *prog_name) {
     t->pdbr = pd_addr;
 
     /* Read the idle task header to set up VM */
-	simple_elf_t *se_hdr = (simple_elf_t *)smalloc(sizeof(simple_elf_t));
+	simple_elf_t se_hdr;// = (simple_elf_t *)smalloc(sizeof(simple_elf_t));
+    //kernel_assert(se_hdr != NULL);
 
-    kernel_assert(se_hdr != NULL);
-
-    elf_load_helper(se_hdr, prog_name);
+    elf_load_helper(&se_hdr, prog_name);
     
     /* Invoke VM to setup the page directory/page table for a given binary */
-    retval = setup_page_table(se_hdr, pd_addr);
+    retval = setup_page_table(&se_hdr, pd_addr);
     kernel_assert(retval == 0);
 
     /* Copy program into memory */
-    retval = load_program(se_hdr);
+    retval = load_program(&se_hdr);
     kernel_assert(retval == 0);
 
 	set_running_thread(t->thr);
@@ -175,8 +177,8 @@ void load_bootstrap_task(const char *prog_name) {
     set_esp0(t->thr->k_stack_base);
 
 	uint32_t EFLAGS = setup_user_eflags();
-	unsigned long entry = se_hdr->e_entry;
-	sfree(se_hdr, sizeof(simple_elf_t));
+	unsigned long entry = se_hdr.e_entry;
+	//sfree(se_hdr, sizeof(simple_elf_t));
 	
 	idle_task = t;
 

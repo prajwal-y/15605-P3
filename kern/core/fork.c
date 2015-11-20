@@ -114,6 +114,5 @@ int do_thread_fork() {
  **/
 void thread_free_resources(thread_struct_t *thr) {
     sfree(thr->k_stack, KERNEL_STACK_SIZE);
-    sfree(thr->regs, sizeof(ureg_t));
     sfree(thr, sizeof(thread_struct_t));
 }

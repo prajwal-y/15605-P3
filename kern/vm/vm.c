@@ -230,7 +230,7 @@ void *clone_page_table(void *pt) {
 	}
 	memcpy(new_pt, pt, PAGE_SIZE);
 	increment_ref_count(new_pt);
-	return new_pt;	
+	return new_pt;
 }
 
 /** @brief free a page table

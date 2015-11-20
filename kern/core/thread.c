@@ -24,7 +24,6 @@ static mutex_t mutex;
 static mutex_t map_mutex;
 static list_head thread_map[HASHMAP_SIZE];
 
-static void set_user_thread_regs(ureg_t *reg);
 static void init_thread_map();
 static void add_thread_to_map(thread_struct_t *thr);
 
@@ -50,20 +49,13 @@ thread_struct_t *create_thread(task_struct_t *task) {
     if(task == NULL) {
         return NULL;
     }
-    /* Create the register set */
-	ureg_t *reg = (ureg_t *)smalloc(sizeof(ureg_t));
-    if(reg == NULL) {
-        return NULL;
-    }
-
-    set_user_thread_regs(reg);
 
     /* Create the thread struct */
 	thread_struct_t *thr = (thread_struct_t *)smalloc(sizeof(thread_struct_t));
     if(thr == NULL) {
-		sfree(reg, sizeof(ureg_t));
         return NULL;
     }
+
     /* Assign thread id to thread and add it to task's thread list*/
     mutex_lock(&mutex);
     thr->id = ++next_tid;
@@ -81,11 +73,9 @@ thread_struct_t *create_thread(task_struct_t *task) {
 	void *stack = smalloc(KERNEL_STACK_SIZE);
     if(stack == NULL) {
         sfree(thr, sizeof(thread_struct_t));
-        sfree(reg, sizeof(ureg_t));
         return NULL;
     }
 
-    thr->regs = reg;
     thr->parent_task = task;
     thr->k_stack = stack;
 	thr->k_stack_base = (uint32_t)((char *)stack + KERNEL_STACK_SIZE);
@@ -96,21 +86,6 @@ thread_struct_t *create_thread(task_struct_t *task) {
 }
 
 /* --------------- Static local functions ----------------*/
-/** @brief Creates the register set for the thread
- *
- *  @param reg Register set which needs to be initialized
- *
- *  @return Void
- */
-void set_user_thread_regs(ureg_t *reg) {
-    reg->ds = SEGSEL_USER_DS;
-    reg->es = SEGSEL_USER_DS;
-    reg->fs = SEGSEL_USER_DS;
-    reg->gs = SEGSEL_USER_DS;
-    reg->ss = SEGSEL_USER_DS;
-    reg->cs = SEGSEL_USER_CS;
-    reg->eax = 0;
-}
 
 /** @brief Initialize the buckets of the hash map
  *
