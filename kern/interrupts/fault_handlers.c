@@ -293,7 +293,7 @@ void update_fault_stack(void *esp, swexn_handler_t eip,
  *  @return does not return
  */
 void kill_current_thread(int cause) {
-	putbytes("Critical error in thread! Killing it...\n", 47);
+	putbytes("Critical error in thread! Killing it...\n", 40);
 	ureg_t ureg;
     char buf[THREAD_KILL_MSG_LEN];
     thread_struct_t *curr_thread = get_curr_thread();
