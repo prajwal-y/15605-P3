@@ -105,11 +105,12 @@ void mutex_lock(mutex_t *mp) {
 	thread_assert(mp != NULL);
 	thread_assert(mp->value != MUTEX_INVALID);
 	disable_interrupts_mutex();
-	if(mp->value == 0) {
+	while(mp->value == 0) {
 		thread_struct_t *curr_thread = get_curr_thread();
 		curr_thread->status = WAITING;
 		add_to_tail(&curr_thread->mutex_link, &mp->waiting);
 		context_switch();
+		disable_interrupts_mutex();
 	}
 	mp->value = 0;
 	enable_interrupts_mutex();

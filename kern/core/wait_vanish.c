@@ -131,10 +131,6 @@ void do_vanish() {
 
 		disable_interrupts(); /* Ensuring that only I run after signaling the parent */
 		
-		/* We enable the forking flag in case it is 
- 		 * disabled due to low system resources */
-		enable_forking();
-		
         if (parent_alive_head == NULL) {
             cond_broadcast(&parent_task->exit_cond_var);
         }

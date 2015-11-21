@@ -108,29 +108,18 @@ void init_task_structures(task_struct_t *t) {
  *
  * @return void
  */
-void load_init_task(const char *prog_name) {
+void load_init_task(char *prog_name) {
     /* Allocate memory for a task struct from kernel memory */
 	task_struct_t *t = create_task(NULL);
     kernel_assert(t != NULL);
-    char **args = (char **)smalloc(2*sizeof(char *));
-	kernel_assert(args != NULL);
-    char *arg1 = (char *)smalloc(ARGNAME_MAX);
-	kernel_assert(arg1 != NULL);
-    char *arg2 = (char *)smalloc(sizeof(char));
-	kernel_assert(arg2 != NULL);
-    strncpy(arg1, "init", ARGNAME_MAX);
-    arg2[0] = '\0';
-    args[0] = arg1;
-    args[1] = arg2;
+
+	char *args[] = {prog_name, 0};
 
     int retval = load_task(prog_name, 1, args, t);
     kernel_assert(retval == 0);
     init_task = t;
 	
     runq_add_thread_interruptible(t->thr);
-    sfree(arg1, ARGNAME_MAX);
-    sfree(arg2, sizeof(char));
-    sfree(args, 2*sizeof(char *));
 }
 
 /** @brief start a bootstrap task
@@ -141,7 +130,7 @@ void load_init_task(const char *prog_name) {
  *
  *  @return void
  */
-void load_bootstrap_task(const char *prog_name) {
+void load_bootstrap_task(char *prog_name) {
 
     int retval;
     /* ask vm to give us a zero filled frame for the page directory */
@@ -195,7 +184,7 @@ void load_bootstrap_task(const char *prog_name) {
  *
  *  @return 0 on success -ve integer on failure
  */
-int load_task(const char *prog_name, int num_args, char **argvec,
+int load_task(char *prog_name, int num_args, char **argvec,
                task_struct_t *t) {
 
 	int retval;

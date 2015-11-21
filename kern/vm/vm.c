@@ -414,7 +414,6 @@ int handle_cow(void *addr) {
 
 		void *new_frame = allocate_frame();
 		if(new_frame == NULL) {
-        	sfree(frame_contents, PAGE_SIZE);
 			unlock_frame(frame_addr);
 			return ERR_FAILURE;
 		}

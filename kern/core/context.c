@@ -39,8 +39,8 @@ void context_switch() {
 	thread_struct_t *curr_thread = get_curr_thread();
 	
 	if(thr == NULL) { /* There are no other threads to schedule, run idle */
-		if(curr_thread->id == idle_thread->id || 
-				curr_thread->status == RUNNING) {
+		if(curr_thread != NULL && (curr_thread->id == idle_thread->id || 
+				curr_thread->status == RUNNING)) {
 			enable_interrupts();
 			return;
 		} else {
