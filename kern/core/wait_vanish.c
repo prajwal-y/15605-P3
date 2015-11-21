@@ -7,6 +7,7 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 #include <asm.h>
+#include <core/fork.h>
 #include <core/scheduler.h>
 #include <common/errors.h>
 #include <core/thread.h>
@@ -71,6 +72,14 @@ int do_wait(void *arg_packet) {
         if (status_ptr != NULL) {
             *status_ptr = dead_task->exit_status;
         }
+	
+		/* Free task resources */
+		mutex_destroy(&dead_task->child_list_mutex);
+		mutex_destroy(&dead_task->thread_list_mutex);
+		mutex_destroy(&dead_task->vanish_mutex);
+		mutex_destroy(&dead_task->fork_mutex);
+		mutex_destroy(&dead_task->exec_mutex);
+		cond_destroy(&dead_task->exit_cond_var);
         sfree(dead_task, sizeof(task_struct_t));
         return dead_task_id;
     }
@@ -121,6 +130,7 @@ void do_vanish() {
        	free_paging_info(curr_pdbr);
 
 		disable_interrupts(); /* Ensuring that only I run after signaling the parent */
+		
         if (parent_alive_head == NULL) {
             cond_broadcast(&parent_task->exit_cond_var);
         }
@@ -161,8 +171,8 @@ void remove_thread_from_task(thread_struct_t *thr) {
  *  @return void
  */ 
 void thread_free_resources(thread_struct_t *thr) {
-   	sfree(thr->k_stack, KERNEL_STACK_SIZE);
-    sfree(thr->regs, sizeof(ureg_t));
+	mutex_destroy(&thr->deschedule_mutex);
+	cond_destroy(&thr->deschedule_cond_var);
 	sfree(thr, sizeof(thread_struct_t));
 }
 

@@ -68,11 +68,11 @@ typedef struct task_struct {
 
 task_struct_t *create_task(task_struct_t *parent);
 
-void load_bootstrap_task(const char *prog_name);
+void load_bootstrap_task(char *prog_name);
 
-void load_init_task(const char *prog_name);
+void load_init_task(char *prog_name);
 
-int load_task(const char *prog_name, int num_arg, char **argvec, 
+int load_task(char *prog_name, int num_arg, char **argvec, 
                task_struct_t *t);
 
 task_struct_t *get_init_task();

@@ -11,7 +11,7 @@
 #include <list/list.h>
 
 #define MUTEX_VALID 1
-#define MUTEX_INVALID 0
+#define MUTEX_INVALID -1
 
 typedef struct mutex {
     int value;          /* Will be 0 or 1 */

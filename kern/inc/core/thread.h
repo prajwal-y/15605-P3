@@ -15,7 +15,7 @@
 #include <sync/mutex.h>
 #include <sync/cond_var.h>
 
-#define KERNEL_STACK_SIZE ((PAGE_SIZE) * 2)
+#define KERNEL_STACK_SIZE ((PAGE_SIZE) * 3)
 /* Thread states */
 #define RUNNING 0
 #define RUNNABLE 1
@@ -31,10 +31,9 @@
  */
 typedef struct thread_struct {
     int id;                     /* A unique identifier for a thread */
-    ureg_t *regs;               /* The set of registers for this thread */
     task_struct_t *parent_task; /* The parent task for this thread */
-    void *k_stack;              /* The address of the kernel task base (low) */
-	uint32_t k_stack_base;		/* Top of the kernel stack for the thread (top) */
+    char k_stack[KERNEL_STACK_SIZE];	/* Kernel stack for the thread */
+	uint32_t k_stack_base;		/* Top of the kernel stack for the thread */
 	uint32_t cur_esp;		 	/* Current value of the kernel stack %esp */
 	uint32_t cur_ebp;			/* Current value of the kernel stack %ebp */
 	int status;         	    /* Life state of the thread */

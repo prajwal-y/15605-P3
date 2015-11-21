@@ -39,7 +39,6 @@ void init_sleeping_threads() {
  *  @return int 0 if succesful, -ve integer on failure
  */
 int do_sleep(int ticks) {
-    lprintf("Sleep for %d", ticks);
     if (ticks == 0) {
         return 0;
     }

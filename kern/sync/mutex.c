@@ -83,9 +83,8 @@ void enable_interrupts_mutex() {
  *  @return void
  */
 void mutex_destroy(mutex_t *mp) {
-    if (mp == NULL) {
-        return;
-    }
+	thread_assert(mp != NULL);
+	thread_assert(mp->value != MUTEX_INVALID);
     mp->value = MUTEX_INVALID;
 }
 
@@ -104,12 +103,14 @@ void mutex_destroy(mutex_t *mp) {
  */
 void mutex_lock(mutex_t *mp) {
 	thread_assert(mp != NULL);
+	thread_assert(mp->value != MUTEX_INVALID);
 	disable_interrupts_mutex();
-	if(mp->value == 0) {
+	while(mp->value == 0) {
 		thread_struct_t *curr_thread = get_curr_thread();
 		curr_thread->status = WAITING;
 		add_to_tail(&curr_thread->mutex_link, &mp->waiting);
 		context_switch();
+		disable_interrupts_mutex();
 	}
 	mp->value = 0;
 	enable_interrupts_mutex();
@@ -128,7 +129,8 @@ void mutex_lock(mutex_t *mp) {
  */
 void mutex_unlock(mutex_t *mp) {
 	thread_assert(mp != NULL);
-    disable_interrupts();
+	thread_assert(mp->value != MUTEX_INVALID);
+    disable_interrupts_mutex();
 	list_head *waiting_thread = get_first(&mp->waiting);
 	if(waiting_thread != NULL) {
 		thread_struct_t *thr = get_entry(waiting_thread, thread_struct_t,

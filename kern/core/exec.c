@@ -41,13 +41,12 @@ int do_exec(void *arg_packet) {
     int num_args, retval;
 
     /* Copy execname to kernel memory after checking validity */
-    char *execname_kern = (char *)smalloc(EXECNAME_MAX);
+    char execname_kern[EXECNAME_MAX];
     if (execname_kern == NULL) {
     	mutex_unlock(&t->exec_mutex);
         return ERR_NOMEM;
     }
     if (copy_user_data(execname_kern, execname, EXECNAME_MAX) < 0) {
-        sfree(execname_kern, EXECNAME_MAX);
     	mutex_unlock(&t->exec_mutex);
         return ERR_INVAL;
     }
@@ -55,7 +54,6 @@ int do_exec(void *arg_packet) {
     /* Check if program exists in ramdisk and is a valid ELF prog */
     retval = check_program(execname_kern);
     if (retval == PROG_ABSENT_INVALID) {
-        sfree(execname_kern, EXECNAME_MAX);
     	mutex_unlock(&t->exec_mutex);
         return ERR_FAILURE;
     }
@@ -64,7 +62,6 @@ int do_exec(void *arg_packet) {
      * the maximum number of arguments */
     num_args = get_num_args(argvec);
     if (num_args < 0) {
-        sfree(execname_kern, EXECNAME_MAX);
     	mutex_unlock(&t->exec_mutex);
         return ERR_FAILURE;
     }
@@ -74,14 +71,12 @@ int do_exec(void *arg_packet) {
      * the old process's address space soon */
     char **argvec_kern = copy_args(num_args, argvec);
     if (argvec_kern == NULL) {
-        sfree(execname_kern, EXECNAME_MAX);
     	mutex_unlock(&t->exec_mutex);
         return ERR_FAILURE;
     }
 
     retval = load_task(execname_kern, num_args, argvec_kern, t);
     if (retval < 0) {
-        sfree(execname_kern, EXECNAME_MAX);
         free_args(argvec_kern, num_args);
         set_cur_pd(old_pd);
     	mutex_unlock(&t->exec_mutex);
@@ -90,7 +85,6 @@ int do_exec(void *arg_packet) {
 
     /* Free kernel argvec and execname */
     free_paging_info(old_pd);
-    sfree(execname_kern, EXECNAME_MAX);
     free_args(argvec_kern, num_args);
 
     mutex_unlock(&t->exec_mutex);

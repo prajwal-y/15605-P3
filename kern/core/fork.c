@@ -25,6 +25,7 @@ static void thread_free_resources(thread_struct_t *thr);
  *  fails, then a negative number is returned.
  */
 int do_fork() {
+
 	task_struct_t *curr_task = get_curr_task();
 
 	/* Allow only one thread per task to fork() */
@@ -113,7 +114,7 @@ int do_thread_fork() {
  *  @return void
  **/
 void thread_free_resources(thread_struct_t *thr) {
-    sfree(thr->k_stack, KERNEL_STACK_SIZE);
-    sfree(thr->regs, sizeof(ureg_t));
+	mutex_destroy(&thr->deschedule_mutex);
+	cond_destroy(&thr->deschedule_cond_var);
     sfree(thr, sizeof(thread_struct_t));
 }

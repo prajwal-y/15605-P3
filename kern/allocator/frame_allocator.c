@@ -126,6 +126,8 @@ void deallocate_frame(void *frame_addr) {
  */
 void lock_frame(void *frame_addr) {
 	kernel_assert(frame_addr != NULL);
+	kernel_assert(FRAME_INDEX(frame_addr) >= 0);
+	kernel_assert(FRAME_INDEX(frame_addr) < FREE_FRAMES_COUNT);
 	mutex_lock(&free_frames_lock[FRAME_INDEX(frame_addr)]);
 }
 
@@ -141,6 +143,8 @@ void lock_frame(void *frame_addr) {
  */
 void unlock_frame(void *frame_addr) {
 	kernel_assert(frame_addr != NULL);
+	kernel_assert(FRAME_INDEX(frame_addr) >= 0);
+	kernel_assert(FRAME_INDEX(frame_addr) < FREE_FRAMES_COUNT);
 	mutex_unlock(&free_frames_lock[FRAME_INDEX(frame_addr)]);
 }
 

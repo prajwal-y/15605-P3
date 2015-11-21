@@ -6,7 +6,7 @@
 #define _COND_TYPE_H
 
 #define COND_VAR_VALID 1
-#define COND_VAR_INVALID 0
+#define COND_VAR_INVALID -1
 
 #include <list/list.h>
 
