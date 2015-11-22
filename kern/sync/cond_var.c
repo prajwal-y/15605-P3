@@ -111,7 +111,7 @@ void cond_signal(cond_t *cv) {
 	thread_assert(cv != NULL);
 	thread_assert(cv->status != COND_VAR_INVALID);
 
-	mutex_lock(&cv->queue_mutex); 
+	mutex_lock_int_save(&cv->queue_mutex); 
     list_head *waiting_thread = get_first(&cv->waiting);
     if (waiting_thread != NULL) {
         thread_struct_t *thr = get_entry(waiting_thread, thread_struct_t, 
@@ -120,7 +120,7 @@ void cond_signal(cond_t *cv) {
 		runq_add_thread(thr);
 		del_entry(&thr->cond_wait_link);
     }
-    mutex_unlock(&cv->queue_mutex);
+    mutex_unlock_int_save(&cv->queue_mutex);
 }
 
 /** @brief this function signals all threads waiting on this cond var
@@ -134,7 +134,7 @@ void cond_broadcast(cond_t *cv) {
 	thread_assert(cv != NULL);
 	thread_assert(cv->status != COND_VAR_INVALID);
 	
-	mutex_lock(&cv->queue_mutex);
+	mutex_lock_int_save(&cv->queue_mutex);
     list_head *waiting_thread = get_first(&cv->waiting);
 	while(waiting_thread != NULL && waiting_thread != &cv->waiting) {
         thread_struct_t *thr = get_entry(waiting_thread, thread_struct_t, 
@@ -144,5 +144,5 @@ void cond_broadcast(cond_t *cv) {
 		waiting_thread = waiting_thread->next;
 		del_entry(&thr->cond_wait_link);
 	}
-    mutex_unlock(&cv->queue_mutex);
+    mutex_unlock_int_save(&cv->queue_mutex);
 }

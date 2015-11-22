@@ -32,8 +32,7 @@
 
 static int *frame_ref_count;
 static void *kernel_pd;
-static char dead_thr_kernel_stack[PAGE_SIZE];
-static mutex_t frame_ref_mutex;
+static void *dead_thr_kernel_stack;
 
 static void init_frame_ref_count();
 static void zero_fill(void *addr, int size);
@@ -79,6 +78,7 @@ void vm_init() {
 void setup_kernel_pd() {
     kernel_pd = create_page_directory();
     kernel_assert(kernel_pd != NULL);
+    dead_thr_kernel_stack = (void *)smalloc(PAGE_SIZE);
 }
 
 /** @brief Initializes the array which stored the 
@@ -90,7 +90,6 @@ void init_frame_ref_count() {
     frame_ref_count = (int *)smalloc(size);
 	kernel_assert(frame_ref_count != NULL);
 	memset(frame_ref_count, 0, size);
-	mutex_init(&frame_ref_mutex);
 }
 
 /** @brief Set the current page directory to kernel page
@@ -116,7 +115,7 @@ void *get_kernel_pd() {
  *  threads
  */
 void *get_dead_thr_kernel_stack() {
-	return &dead_thr_kernel_stack[PAGE_SIZE-1];
+	return ((char *)dead_thr_kernel_stack + PAGE_SIZE - 1);
 }
 
 /** @brief Sets the control register %cr3 with the given
@@ -421,7 +420,7 @@ int handle_cow(void *addr) {
 		int flags = GET_FLAGS_FROM_ENTRY(pt[pt_index]);
 		pt[pt_index] = (unsigned int)new_frame | flags;
 		pt[pt_index] &= COW_MODE_DISABLE_MASK;
-        invalidate_tlb_page(addr);
+        set_cur_pd(pd);
 
         /* Copy data from kernel frame into the new allocated frame and free 
          * the kernel scratch space */
@@ -730,6 +729,7 @@ int unmap_new_pages(void *base) {
  *  @return int error code, 0 on success negative integer on failure
  */
 int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) {
+    set_cur_pd(pd_addr);
     void *end_addr = (char *)start_addr + length;
     int pd_index, pt_index;
     int *pt_addr;
@@ -756,7 +756,6 @@ int map_segment(void *start_addr, unsigned int length, int *pd_addr, int flags) 
                 frame_ref_count[FRAME_INDEX(new_frame)]++;
 				unlock_frame(new_frame);
                 pt_addr[pt_index] = (unsigned int)new_frame | flags;
-				invalidate_tlb_page(start_addr);
                 zero_fill(start_addr, PAGE_SIZE);
             }
             else {

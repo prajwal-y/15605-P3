@@ -128,7 +128,7 @@ void *smemalign(size_t alignment, size_t size) {
  *  @return void
  */
 void sfree(void *buf, size_t size) {
-	mutex_lock(&mutex);
+	mutex_lock_int_save(&mutex);
     _sfree(buf, size);
-	mutex_unlock(&mutex);
+	mutex_unlock_int_save(&mutex);
 }
