@@ -60,7 +60,9 @@ the stack and free frames are pushed to the top of the stack.
 Along with allocating and deallocating frames, this file also provides a 
 function to lock/unlock a particular frame. This is particularly useful
 when the reference counts for these frames are being modified by the VM
-module. 
+module. We maintain a lock per physical frame in the system. While this may seem
+wasteful in terms of memory, we concluded that the frame allocator is critical
+and used often enough that using a giant lock would be bad for performance.
 
 Loader
 ------
@@ -75,7 +77,10 @@ core/scheduler.c. This file implements all the functionality required for
 adding threads to the runnable queue and returning the head of the queue
 to the context switch code. The scheduler implements a simple round-robin
 scheduling algorithm by returning the first thread in the run queue when 
-requested.
+requested. The scheduler may also return a sleeping thread from a separate
+sleeping queue if the first thread in that queue has a wake time less than 
+or equal to the current time (ticks). The scheduler is O(1) since we just
+check the heads of the sleeping and running queues. 
 
 Context Switch
 --------------
@@ -83,7 +88,9 @@ The code for context switch is present in core/context.c. Context switch
 works by changing the stack pointer from the current thread stack to the
 stack of the thread to which the switching is being done. Context switch
 is invoked from several places (timer interrupt callback function, the
-kernel cond_var implementation, sleep system call, vanish system call etc)
+kernel cond_var implementation, sleep system call, vanish system call etc). 
+context_switch() invokes scheduler to get the next runnable thread. If there
+is no runnable thread we run the idle task.
 
 System calls
 ------------
@@ -103,7 +110,12 @@ thread) is created, we add the newly created thread to the runnable queue of
 the scheduler. We also suspend execution when multiple threads from a single
 task call fork() so that at any point in time, only one thread per task is
 fork()ing. Forks for different tasks are executed in parallel. If any of the
-steps during forking fail, we return an error code (defined in common.errors.h)
+steps during forking fail, we return an error code (defined in common/errors.h).
+When a COW page fault is triggered by either the parent or the child, we clone the 
+frame, remove the COW flag, decrement ref count and assign the cloned frame to 
+the process that caused the page fault. Our page fault handler is a trap gate
+and hence appropriate locking is done to avoid TOCTTOU and similar concurrency
+issues.
 
 thread_fork() - The code for thread_fork system call is present in core/fork.c.
 The functionality of thread fork is similar to fork with the exception that 
@@ -120,22 +132,24 @@ vanish() and wait() - The code for vanish and wait system calls are present
 in core/wait_vanish.c. We maintain a list of alive child tasks and dead child
 tasks for every task. When a thread is vanishing, it free's all the resources
 allocated to it (including the stack and the thread struct), by switching to
-a temporary stack in the kernel. We ensure that at any point in time, only
-one thread is using this special stack. In case the thread is the last thread
-in the task, then we re-parent all the tasks present in the alive and dead
-child lists to init task, remove ourselves from the parent task's alive child
-list and add to the dead child list, notify the parent about the death, and 
-then continue with free'ing the thread resources as before using the special 
-kernel stack. Whenever a task calls wait(), we first look at the dead child
-list, if any child is dead already, then we can reap that child and read its
-exit status. If there are no dead child tasks, then we look at the alive
-child list. If there are no alive child tasks, then we can return immediately
+a static temporary stack in the kernel. We ensure that at any point in time, only
+one thread is using this special stack by disbling interrupts. We call 
+context_switch (which disables interrupts anyway) very soon after so preemption 
+does not take a major hit. Doing so we free kernel resources much sooner.
+In case the thread is the last thread in the task, then we re-parent all the 
+tasks present in the alive and dead child lists to init task, remove ourselves 
+from the parent task's alive child list and add to the dead child list, notify 
+the parent about the death, and then continue with free'ing the thread resources 
+as before using the special kernel stack. Whenever a task calls wait(), we first 
+look at the dead child list, if any child is dead already, then we can reap that
+child and read its exit status. If there are no dead child tasks, then we look at 
+the alive child list. If there are no alive child tasks, then we can return immediately
 with an error value. If there are alive child tasks, then the task calling
 wait() is descheduled with the help of the condition variable abstraction
 implemented in the kernel. When the task is woken up because of the exiting
 of a child, it will reap the task, read its exit status and free the task
 struct and other resources of the dead task.
-The advantage of using a special kernel stack when a task is vanishing is
+The advantage of using a special kernel stack when a thread is vanishing is
 that we can free the resources of the thread (including the stack) 
 immediately and this helps in regaining the resources as quickly as 
 possible. The downside of this implementation is that, since only one
@@ -152,8 +166,8 @@ when doing it. In an ideal scenario, we should serialize the re-parenting
 only among the same child hierarchy, but this involves acquiring a mutex
 on the parent task struct, and there is no way to prevent the parent
 from vanishing before the mutex is unlocked by the child (which can cause
-memory corrruption). Hence, we decided to disable interrupts in this one
-critical section.
+memory corrruption). Hence, we decided to disable interrupts for this critical
+section.
 
 Thread Management:
 Most of the thread management system calls are implemented in the file
@@ -161,12 +175,12 @@ syscalls/thread_syscalls.c.
 
 Memory Management:
 The syscalls are present in syscalls/memory_syscalls.c. The new_pages and
-remove_pages are implemented as part of vm/vm.c. We use the unused bits
-(bits 10 and 11) to keep track of the pages allocated via new_pages()
+remove_pages are implemented as part of vm/vm.c. We use the unused bits in page
+table entries(bits 10 and 11) to keep track of the pages allocated via new_pages()
 system call. This helps us in keeping track of the allocated pages when
 a remove_pages system call is called. We do not need any additional
 data structure to know the size to be free'd. We use the two bits to
-indicate the end of an allocated memory (via new_pages system call)
+indicate the start, end and middle of a new_pages allocated memory block 
 which is used by the remove pages system call to free the pages.
 
 Console I/O:
@@ -192,7 +206,7 @@ to sleep if currently locked. The unlock functions signals the next thread that
 is blocked. We also have a special version of the mutex_lock and mutex_unlock
 functions which checks for the current interrupt flag but from EFLAGS and 
 doesn't enable interrupts when a mutex_lock/mutex_unlock is called from
-a interrupt deisabled environment. Currently this is used only in condition
+a interrupt disabled environment. Currently this is used only in condition
 variables and the sfree() function in malloc wrappers (because we needed them
 in these two scenarios), but they can be made generic to be used everywhere.
 As a result of these two special functions, there is a slight code duplication
