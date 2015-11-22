@@ -27,7 +27,6 @@ static int validate_uregs(ureg_t *uregs);
  *  @return 0 on success, -ve integer on failure
  */
 int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base) {
-    check_kernel_stack();
     int retval = validate_uregs(ureg);
     if (retval < 0) {
         return retval;
@@ -46,7 +45,6 @@ int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base) {
     *((int *)(kernel_stack_base) - 11) = ureg->ebp;
     *((int *)(kernel_stack_base) - 12) = ureg->edi;
     *((int *)(kernel_stack_base) - 13) = ureg->esi;
-    check_kernel_stack();
 
     return 0;
 }
@@ -76,7 +74,6 @@ int validate_uregs(ureg_t *uregs) {
  */
 void populate_ureg(ureg_t *ureg, int err_code_avail, 
                    thread_struct_t *curr_thread) {
-    check_kernel_stack();
     void *kernel_stack_base = (void *)curr_thread->k_stack_base;
 
     ureg->ds = SEGSEL_USER_DS;
@@ -105,7 +102,6 @@ void populate_ureg(ureg_t *ureg, int err_code_avail,
     ureg->eflags = *((int *)(kernel_stack_base) - 3);
     ureg->esp = *((int *)(kernel_stack_base) - 2);
     ureg->ss = *((int *)(kernel_stack_base) - 1);
-    check_kernel_stack();
 }
 
 /** @brief check if address is (valid) mapped in user space
@@ -142,7 +138,6 @@ int is_pointer_valid(void *ptr, int bytes) {
  *  @return bytes copied on success, -ve integer on failure 
  */
 int copy_user_data(char *buf, char *ptr, int max_size) {
-    check_kernel_stack();
     if (buf == NULL || ptr == NULL || max_size <= 0) {
         return ERR_INVAL;
     }
@@ -162,6 +157,5 @@ int copy_user_data(char *buf, char *ptr, int max_size) {
     if (count == max_size) {
         return ERR_BIG;
     }
-    check_kernel_stack();
     return count + 1;
 }

@@ -100,10 +100,11 @@ void do_vanish() {
     /* If this is the last thread in the task, take care 
  	 * of dead and alive tasks in the current task */
     if (thread_head == NULL) {
-        //task_struct_t *parent_task = curr_task->parent;
     
-        /* We need to serialize the vanish() calls among the same child hierarchy */
-        //mutex_lock(&parent_task->vanish_mutex);
+        /* We need to disable interrupts when re-parenting the child tasks. 
+ 		  	This is a little inefficient. But using a mutex on the parent
+			task can cause memory corruption problems as parent can exit
+			before child unlocks the mutex. */
         disable_interrupts();
         mutex_lock(&curr_task->vanish_mutex);
 
@@ -118,7 +119,6 @@ void do_vanish() {
 
         mutex_unlock(&curr_task->vanish_mutex);
         enable_interrupts();
-        //mutex_unlock(&parent_task->vanish_mutex);
 		
 		void *curr_pdbr = curr_task->pdbr;
 		curr_task->pdbr = get_kernel_pd();

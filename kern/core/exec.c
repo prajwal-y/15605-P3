@@ -33,7 +33,6 @@ static void free_args(char **argvec, int num);
  *  fails, then a negative number is returned.
  */
 int do_exec(void *arg_packet) {
-    check_kernel_stack();
     task_struct_t *t = get_curr_task();
 
     /* Prevent multiple threads from same task from running exec at the 
@@ -92,7 +91,6 @@ int do_exec(void *arg_packet) {
     free_args(argvec_kern, num_args);
 
     mutex_unlock(&t->exec_mutex);
-    check_kernel_stack();
 
     return 0;
 }
@@ -106,7 +104,6 @@ int do_exec(void *arg_packet) {
  *  NULL on failure.
  */
 char **copy_args(int num_args,char **argvec) {
-    check_kernel_stack();
     int i;
     char *arg;
     char **argvec_kern = (char **)smalloc((num_args + 1) * sizeof(char *));
@@ -132,7 +129,6 @@ char **copy_args(int num_args,char **argvec) {
     }
     arg[0] = '\0';
     argvec_kern[i] = arg;
-    check_kernel_stack();
     return argvec_kern;
 }
 

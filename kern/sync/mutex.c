@@ -145,7 +145,9 @@ void mutex_unlock(mutex_t *mp) {
  *  0 (lock is aquired), and the function returns after enabling 
  *  interrupts. Otherwise, the thread is added to waiting queue
  *  and context_switch() is called. When it returns we enable interrupts
- *  only if it was previously enabled.
+ *  only if it was previously enabled. Currently this is used only by condition
+ *  variables and sfree() which are called in a interrupt disabled scenario
+ *  from vanish(). It can be extended to be used in other places as well.
  *
  *  @param mp the mutex to be locked
  *  @return void
@@ -174,7 +176,10 @@ void mutex_lock_int_save(mutex_t *mp) {
  *  When the lock is released, the first thread
  *  in the waiting queue is made runnable and the value of the
  *  mutex is set to 1. We enable interrupts only if it was previously enabled.
- *  
+ *  Currently this is used only by condition variables and sfree() which are 
+ *  called in a interrupt disabled scenario from vanish(). It can be extended 
+ *  to be used in other places as well.
+ *
  *  @param mp the mutex to be unlocked
  *  @return void
  */

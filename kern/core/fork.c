@@ -26,7 +26,6 @@ static void thread_free_resources(thread_struct_t *thr);
  *  fails, then a negative number is returned.
  */
 int do_fork() {
-    check_kernel_stack();
 	task_struct_t *curr_task = get_curr_task();
 
 	/* Allow only one thread per task to fork() */
@@ -72,7 +71,6 @@ int do_fork() {
 	set_cur_pd(curr_task->pdbr);
 
 	mutex_unlock(&curr_task->fork_mutex);
-    check_kernel_stack();
 
 	return child_task->id;	
 }
@@ -85,7 +83,6 @@ int do_fork() {
  *  @return the thread ID of the new thread
  */
 int do_thread_fork() {
-    check_kernel_stack();
 	task_struct_t *curr_task = get_curr_task();
 
 	thread_struct_t *curr_thread = get_curr_thread();
@@ -104,7 +101,6 @@ int do_thread_fork() {
 
 	/* Add the first thread of the new task to runnable queue */
 	runq_add_thread(child_thread);
-    check_kernel_stack();
 
 	return child_thread->id;
 }

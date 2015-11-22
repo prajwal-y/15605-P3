@@ -17,7 +17,6 @@
  *  @return int 0 on success, -ve integer on failure
  */
 int new_pages_handler_c(void *arg_packet) {
-    check_kernel_stack();
     void *base = (void *)(*(int *)arg_packet);
     int len = (int)(*((int *)arg_packet + 1));  
     if (len <= 0 || (len % PAGE_SIZE) != 0 || ((int)base % PAGE_SIZE) != 0) {
@@ -27,7 +26,6 @@ int new_pages_handler_c(void *arg_packet) {
         return ERR_INVAL;
     }
     
-    check_kernel_stack();
     return map_new_pages(base, len);
 }
 
@@ -36,11 +34,9 @@ int new_pages_handler_c(void *arg_packet) {
  *  @return int 0 on success, -ve integer on failure
  */
 int remove_pages_handler_c(void *base) {
-    check_kernel_stack();
     if (((int)base % PAGE_SIZE) != 0) {
         return ERR_INVAL;
     }
     
-    check_kernel_stack();
     return unmap_new_pages(base);
 }

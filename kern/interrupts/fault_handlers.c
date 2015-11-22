@@ -53,7 +53,6 @@ void tickback(unsigned int ticks) {
  *  @return void
  */
 void divide_error_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_DIVIDE);
 }
 
@@ -86,7 +85,6 @@ void page_fault_handler_c() {
  *  @return void
  */
 void debug_exception_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_DEBUG);
 }
 
@@ -95,7 +93,6 @@ void debug_exception_handler_c() {
  *  @return void
  */
 void non_maskable_interrupt_handler_c() {
-    check_kernel_stack();
     kill_current_thread(IDT_NMI);
 }
 
@@ -104,7 +101,6 @@ void non_maskable_interrupt_handler_c() {
  *  @return void
  */
 void breakpoint_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_BREAKPOINT);
 }
 
@@ -113,7 +109,6 @@ void breakpoint_handler_c() {
  *  @return void
  */
 void overflow_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_OVERFLOW);
 }
 
@@ -122,7 +117,6 @@ void overflow_handler_c() {
  *  @return void
  */
 void bound_range_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_BOUNDCHECK);
 }
 
@@ -131,7 +125,6 @@ void bound_range_handler_c() {
  *  @return void
  */
 void undefined_opcode_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_OPCODE);
 }
 
@@ -140,7 +133,6 @@ void undefined_opcode_handler_c() {
  *  @return void
  */
 void no_math_coprocessor_handler_c() {
-    check_kernel_stack();
 	kill_current_thread(IDT_NM);
 }
 
@@ -150,7 +142,6 @@ void no_math_coprocessor_handler_c() {
  *  @return void
  */
 void cso_handler_c() {
-    check_kernel_stack();
 	kill_current_thread(IDT_CSO);
 }
 
@@ -159,7 +150,6 @@ void cso_handler_c() {
  *  @return void
  */
 void invalid_tss_handler_c() {
-    check_kernel_stack();
 	kill_current_thread(IDT_TS);
 }
 
@@ -168,7 +158,6 @@ void invalid_tss_handler_c() {
  *  @return void
  */
 void snp_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_SEGFAULT);
 }
 
@@ -177,7 +166,6 @@ void snp_handler_c() {
  *  @return void
  */
 void ssf_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_STACKFAULT);
 }
 
@@ -186,7 +174,6 @@ void ssf_handler_c() {
  *  @return void
  */
 void gpf_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_PROTFAULT);
 }
 
@@ -195,7 +182,6 @@ void gpf_handler_c() {
  *  @return void
  */
 void math_fault_handler_c() {
-    check_kernel_stack();
 	kill_current_thread(IDT_MF);
 }
 
@@ -204,7 +190,6 @@ void math_fault_handler_c() {
  *  @return void
  */
 void alignment_check_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_ALIGNFAULT);
 }
 
@@ -213,7 +198,6 @@ void alignment_check_handler_c() {
  *  @return void
  */
 void machine_check_handler_c() {
-    check_kernel_stack();
 	kill_current_thread(IDT_MC);
 }
 
@@ -222,7 +206,6 @@ void machine_check_handler_c() {
  *  @return void
  */
 void floating_point_exp_handler_c() {
-    check_kernel_stack();
 	handle_fault(SWEXN_CAUSE_FPUFAULT);
 }
 
@@ -252,7 +235,6 @@ void handle_fault(int cause) {
  *	@return 0 if successful, -1 on error
  */
 int invoke_swexn_handler(int cause) {
-    check_kernel_stack();
 	task_struct_t *curr_task = get_curr_task();
 	thread_struct_t *curr_thread = get_curr_thread();
 	if(curr_task->eip == NULL) {
@@ -267,7 +249,6 @@ int invoke_swexn_handler(int cause) {
 											&ureg, curr_task->swexn_args);
 	update_fault_stack(stack_bottom, curr_task->eip, curr_thread);
 	curr_task->eip = NULL;  /* Deregister the handler */
-    check_kernel_stack();
 	return 0;
 }
 
@@ -279,14 +260,12 @@ int invoke_swexn_handler(int cause) {
  *  @return void* the bottom of the stack 
  */
 void *setup_swexn_stack(void *esp3, ureg_t *ureg, void *arg) {
-    check_kernel_stack();
     void *stack_bottom = (char *)esp3 - sizeof(ureg_t);
     memcpy(stack_bottom, ureg, sizeof(ureg_t));
 
     *((int *)(stack_bottom) - 1) = (int)stack_bottom;
     *((int *)(stack_bottom) - 2) = (int)arg;
     *((int *)(stack_bottom) - 3) = (int)ureg->eip;
-    check_kernel_stack();
     return (int *)stack_bottom - 3;
 }
 
@@ -310,7 +289,6 @@ void update_fault_stack(void *esp, swexn_handler_t eip,
  *  @return does not return
  */
 void kill_current_thread(int cause) {
-    check_kernel_stack();
 	putbytes("Critical error in thread! Killing it...\n", 40);
 	ureg_t ureg;
     char buf[THREAD_KILL_MSG_LEN];
@@ -329,6 +307,5 @@ eip = %p\n";
              ureg.edi, ureg.eip);
     putbytes(buf, strlen(buf));
 	get_curr_task()->exit_status = THREAD_KILL_EXIT_STATUS;
-    check_kernel_stack();
 	do_vanish();
 }

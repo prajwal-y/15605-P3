@@ -22,14 +22,12 @@
  *  @return int 0 on success, -ve integer on failure
  */
 int print_handler_c(void *arg_packet) {
-    check_kernel_stack();
     int len = *(int *)arg_packet;
     char *buf = (char *)(*((int *)arg_packet + 1));
     if (is_pointer_valid(buf, len) < 0) {
         return ERR_INVAL;
     }
     putbytes(buf, len);
-    check_kernel_stack();
     return 0;
 }
 
@@ -39,7 +37,6 @@ int print_handler_c(void *arg_packet) {
  *  @return int number of bytes copied into the buffer
  */
 int readline_handler_c(void *arg_packet) {
-    check_kernel_stack();
     int len = *(int *)arg_packet;
     if (len <= 0) {
         return ERR_INVAL;
@@ -63,7 +60,6 @@ int readline_handler_c(void *arg_packet) {
         retval = nextline(buf, len);
     }
     mutex_unlock(&readline_mutex);
-    check_kernel_stack();
     return retval;
 }
 
@@ -72,7 +68,6 @@ int readline_handler_c(void *arg_packet) {
  *  @return char character that is read
  */
 int getchar_handler_c() {
-    check_kernel_stack();
     thread_struct_t *curr_thread = get_curr_thread();
 
     mutex_lock(&readline_mutex);
@@ -83,7 +78,6 @@ int getchar_handler_c() {
         c = readchar();
     }
     mutex_unlock(&readline_mutex);
-    check_kernel_stack();
     return c;
 }
 
