@@ -92,40 +92,118 @@ we describe the implementation and design decisions taken for each system call.
 The system call handlers are all present in the folder syscalls. The files are
 divided based on the category of the system call.
 
-Task and Thread IDs:
-
 Life Cycle:
 
-fork() - The code for fork system call is present in core/fork.c
+fork() - The code for fork system call is present in core/fork.c. When forking,
+we create a new task, and make a copy of the address space by creating new page
+directories and page tables. Once the new page tables are created, we mark all
+the writable pages in both parent and child as COW with the help of the bit 9
+in the page table entry, which is unused. Once the child task (with a single
+thread) is created, we add the newly created thread to the runnable queue of
+the scheduler. We also suspend execution when multiple threads from a single
+task call fork() so that at any point in time, only one thread per task is
+fork()ing. Forks for different tasks are executed in parallel. If any of the
+steps during forking fail, we return an error code (defined in common.errors.h)
 
-thread_fork() - The code for thread_fork system call is present in core/fork.c
+thread_fork() - The code for thread_fork system call is present in core/fork.c.
+The functionality of thread fork is similar to fork with the exception that 
+there is no address space copying involved.
 
-exec() - The code for exec system call is present in core/exec.c
+exec() - The code for exec system call is present in core/exec.c. During an
+exec, we first try to load the new program into memory by creating new page
+directories and page tables. If the program load is successful, then we
+free the old paging info of the task. In case the program load is not
+successful (possibly because of low memory), then we rollback the page
+directory to the old page directory and return an error value.
 
 vanish() and wait() - The code for vanish and wait system calls are present
-in core/wait_vanish.c
+in core/wait_vanish.c. We maintain a list of alive child tasks and dead child
+tasks for every task. When a thread is vanishing, it free's all the resources
+allocated to it (including the stack and the thread struct), by switching to
+a temporary stack in the kernel. We ensure that at any point in time, only
+one thread is using this special stack. In case the thread is the last thread
+in the task, then we re-parent all the tasks present in the alive and dead
+child lists to init task, remove ourselves from the parent task's alive child
+list and add to the dead child list, notify the parent about the death, and 
+then continue with free'ing the thread resources as before using the special 
+kernel stack. Whenever a task calls wait(), we first look at the dead child
+list, if any child is dead already, then we can reap that child and read its
+exit status. If there are no dead child tasks, then we look at the alive
+child list. If there are no alive child tasks, then we can return immediately
+with an error value. If there are alive child tasks, then the task calling
+wait() is descheduled with the help of the condition variable abstraction
+implemented in the kernel. When the task is woken up because of the exiting
+of a child, it will reap the task, read its exit status and free the task
+struct and other resources of the dead task.
+The advantage of using a special kernel stack when a task is vanishing is
+that we can free the resources of the thread (including the stack) 
+immediately and this helps in regaining the resources as quickly as 
+possible. The downside of this implementation is that, since only one
+thread can access the special stack at any point in time, the exiting of
+the threads will be serialized. We made this design decision to ensure
+that the resources are free'd as quickly as possible. We also had a design
+where we would create a special "exit" stack for each thread instead of 
+having just one global special stack, which would help us in running multiple
+exits in parallel. But this involved keeping track of the new stacks created
+and free'ing them at a later point in time (which added more complexity).
+Also, the vanish() system call is slightly inefficient in the sense that 
+the re-parenting of the child tasks is done atomically to avoid race conditions
+when doing it. In an ideal scenario, we should serialize the re-parenting
+only among the same child hierarchy, but this involves acquiring a mutex
+on the parent task struct, and there is no way to prevent the parent
+from vanishing before the mutex is unlocked by the child (which can cause
+memory corrruption). Hence, we decided to disable interrupts in this one
+critical section.
 
 Thread Management:
+Most of the thread management system calls are implemented in the file
+syscalls/thread_syscalls.c.
 
 Memory Management:
+The syscalls are present in syscalls/memory_syscalls.c. The new_pages and
+remove_pages are implemented as part of vm/vm.c. We use the unused bits
+(bits 10 and 11) to keep track of the pages allocated via new_pages()
+system call. This helps us in keeping track of the allocated pages when
+a remove_pages system call is called. We do not need any additional
+data structure to know the size to be free'd. We use the two bits to
+indicate the end of an allocated memory (via new_pages system call)
+which is used by the remove pages system call to free the pages.
 
 Console I/O:
+All the console related system calls are implemented in the file
+syscalls/console_syscalls.c
 
 Miscellaneous System Interaction:
-
+readfile() system call implementation is present in syscalls/misc_syscalls.c.
+It uses the getbytes() function present in loader/loader.c to read
+the file contents.
 
 Faults and Exceptions
 ---------------------
-
+All the fault handlers are present in the file interrupts/fault_handler.c.
+The fault handler file includes all the swexn logic and also the COW logic
+needed in the page fault handler.
 
 Locking Architecture
 --------------------
 Mutex: The kernel uses a blocking mutex when mutual exclusion is required.
 The mutex disables interrupts and checks the value of the mutex variable going
 to sleep if currently locked. The unlock functions signals the next thread that
-is blocked.
+is blocked. We also have a special version of the mutex_lock and mutex_unlock
+functions which checks for the current interrupt flag but from EFLAGS and 
+doesn't enable interrupts when a mutex_lock/mutex_unlock is called from
+a interrupt deisabled environment. Currently this is used only in condition
+variables and the sfree() function in malloc wrappers (because we needed them
+in these two scenarios), but they can be made generic to be used everywhere.
+As a result of these two special functions, there is a slight code duplication
+in the mutex implementation.
 
-Condition variable: 
+Condition variables: We extend the ideas from P2 to implement similar
+condition variable abstraction. Condition variables are used only by the
+wait system call and the readline system call currently
+
+Semaphores: Semaphores are implemented using mutex and condition variables.
+Currently, we do not use the semaphore implementation anywhere in our kernel.
 
 
 Key Data Structures
@@ -135,7 +213,9 @@ Generic doubly linked list:
 We use a generic linked list implementation inspired by the Linux kernel 
 linked list. The linked list data structure can be added to any user struct
 and forms the traversal link. This allows a single struct to be on multiple
-lists which can be useful at times. 
+lists which can be useful at times. This special linked list helped us in
+removing all the unnecessary malloc traffic as a single struct can be part
+of multiple linked lists. 
 
 A Simple map for threads:
 The map we use for a quick lookup of thread control blocks is keyed on the 
@@ -149,5 +229,7 @@ uniformly loaded.
 
 Limitations and Bugs
 --------------------
+Our vanish() implementation is slightly inefficient due to disabling interrupts
+when re-parenting is being done.
 
 */
