@@ -79,6 +79,7 @@ void setup_kernel_pd() {
     kernel_pd = create_page_directory();
     kernel_assert(kernel_pd != NULL);
     dead_thr_kernel_stack = (void *)smalloc(PAGE_SIZE);
+	kernel_assert(dead_thr_kernel_stack != NULL);
 }
 
 /** @brief Initializes the array which stored the 
