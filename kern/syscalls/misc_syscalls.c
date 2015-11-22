@@ -14,6 +14,8 @@
 
 /** @brief read a file
  *
+ * @param arg_packet
+ * @return int 0 on success -ve integer on failure
  */
 int readfile_handler_c(void *arg_packet) {
     char *filename = (char *)(*((int *)arg_packet));

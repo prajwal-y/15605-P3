@@ -6,7 +6,6 @@
  */
 #include <asm.h>
 #include <sync/mutex.h>
-#include <sync/mutex_asm.h>
 #include <list/list.h>
 #include <core/thread.h>
 #include <core/scheduler.h>
@@ -23,10 +22,7 @@ static void enable_interrupts_mutex();
 /** @brief initialize a mutex
  *
  *  Set the mutex value to 1 indicating that it is unlocked
- *  and initialize the wait queue. Initializing a mutex after
- *  initializing it sets the value to 1 and "unlocks" it. Depending
- *  on if another thread holds the lock currently, this can lead to
- *  undefined behavior. 
+ *  and initialize the wait queue.
  *
  *  @return 0 on success and -1 for invalid input
  */
@@ -96,9 +92,7 @@ void mutex_destroy(mutex_t *mp) {
  *  interrupts. Otherwise, the thread is added to waiting queue
  *  and context_switch() is called.
  *
- *  If the mutex is corrupted or destroyed, calling this function will result 
- *  in undefined behaviour
- *
+ *  @param mp the mutex to be locked
  *  @return void
  */
 void mutex_lock(mutex_t *mp) {
@@ -118,13 +112,11 @@ void mutex_lock(mutex_t *mp) {
 
 /** @brief release a lock
  *
- *  When the lock is released, the lock is given to the first thread
- *  in the waiting queue (by making it runnable). If no threads are present, 
- *  the value of the lock is set to 1 (lock is available)
+ *  When the lock is released, the first thread
+ *  in the waiting queue is made runnable and the value of the
+ *  mutex is set to 1.
  *  
- *  If the mutex is corrupted or destroyed, calling this function will result 
- *  in undefined behaviour
- *
+ *  @param mp the mutex to be unlocked
  *  @return void
  */
 void mutex_unlock(mutex_t *mp) {

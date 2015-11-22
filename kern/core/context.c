@@ -14,7 +14,7 @@
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <simics.h>
-#include <common/malloc_wrappers.h>
+#include <common/assert.h>
 
 static void switch_to_thread(thread_struct_t *curr_thread, 
 								thread_struct_t *new_thread);
@@ -69,16 +69,17 @@ void context_switch() {
  *  all the threads are suspended at the same point in execution,
  *  the value of %eip need not be explicitly changed.
  *
- *  @param thread The thread to which we need to switch to
+ *  @param curr_thread the thread from which we are switching
+ *  @param next_thread The thread to which we need to switch to
  *
  *  @return Void
  */
 void switch_to_thread(thread_struct_t *curr_thread, 
 						thread_struct_t *next_thread) {
-	/* This should never happpen as this check exists in the calling function */
-	if(next_thread == NULL) {
-		return;
-	}
+    //kernel_assert(next_thread != NULL);
+    if (next_thread == NULL) {
+        return;
+    }
 	
     /* Set page directory for the new thread */
     task_struct_t *parent_task = next_thread->parent_task;
@@ -99,5 +100,4 @@ void switch_to_thread(thread_struct_t *curr_thread,
     else {
         update_stack_single(next_thread->cur_esp, next_thread->cur_ebp); 
     }
-
 }

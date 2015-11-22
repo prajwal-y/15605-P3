@@ -5,13 +5,15 @@
  *         are defined in p1kern.h
  *
  *  @author Rohit Upadhyaya (rjupadhy)
+ *  @author Prajwal Yadapadithaya (pyadapad)
  */
-
 
 #include <console.h>
 #include <x86/video_defines.h>
 #include <drivers/console/console_util.h>
 #include <simics.h>
+#include <common/errors.h>
+#include <stddef.h>
 
 /** @brief Sets the position of the cursor to the
  *         position (row, col).
@@ -23,18 +25,17 @@
  *
  *  @param row The new row for the cursor.
  *  @param col The new column for the cursor.
- *  @return 0 on success, -1 if cursor currently hidden
- *          -2 if location is invalid
+ *  @return 0 on success, ERR_INVAL if location is invalid
  */
 int set_cursor(int row, int col) {
     if (row < 0 || row >= CONSOLE_HEIGHT
         || col < 0 || col >= CONSOLE_WIDTH) {  
-            return -2;
+            return ERR_INVAL;
     }
 
     set_logical_cursor(row, col);
     if (is_cursor_hidden() == 0) {
-        return -1;
+        return 0;
     }
     
     set_hardware_cursor(row, col);
@@ -112,7 +113,7 @@ void putbytes(const char* s, int len) {
 
     int i;
     for (i = 0; i < len; i++) {
-        putbyte(*(s + i));
+        putbyte(s[i]);
     }
     return;
 }
@@ -123,11 +124,11 @@ void putbytes(const char* s, int len) {
  *  If the color code is invalid, the function has no effect.
  *
  *  @param color The new color code.
- *  @return 0 on success or -1 if color code is invalid.
+ *  @return 0 on success or -ve integer if color code is invalid.
  */
 int set_term_color(int color) {
     if (is_valid_color(color) == -1) {
-        return -1;
+        return ERR_INVAL;
     }
     console_color = color;
     return 0;
@@ -141,7 +142,9 @@ int set_term_color(int color) {
  *  @return Void.
  */
 void get_term_color(int *color) {
-    *color = console_color;
+    if (color != NULL) {
+        *color = console_color;
+    }
     return;
 }
 
@@ -241,8 +244,9 @@ char get_color(int row, int col) {
  *  @return void
  */
 void get_cursor(int *row, int *col) {
-    *row = cursor_row;
-    *col = cursor_col;
+    if (row != NULL && col != NULL) {
+        *row = cursor_row;
+        *col = cursor_col;
+    }
     return;
 }
-

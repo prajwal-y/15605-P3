@@ -5,6 +5,7 @@
  *  which handles the timer interrupt
  * 
  *  @author Rohit Upadhyaya (rjupadhy)
+ *  @author Prajwal Yadapadithaya (pyadapad)
  */ 
 
 .global timer_handler 

@@ -41,8 +41,6 @@ int set_term_color(int color);
 int set_cursor_pos(int row, int col);
 int get_cursor_pos(int *row, int *col);
 
-void memory_check();
-
 /* Color values for set_term_color() */
 #define FGND_BLACK 0x0
 #define FGND_BLUE  0x1

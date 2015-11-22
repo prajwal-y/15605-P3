@@ -22,6 +22,8 @@
 #define WAITING 2
 #define EXITED 3
 #define DESCHEDULED 4
+#define STACK_GUARD_LOW 0xcdcdcdcd
+#define STACK_GUARD_HIGH 0xfafafafa
 
 /** @brief a schedulable "unit"
  *
@@ -32,7 +34,9 @@
 typedef struct thread_struct {
     int id;                     /* A unique identifier for a thread */
     task_struct_t *parent_task; /* The parent task for this thread */
+    int stack_guard_low;        /* Stack guard */
     char k_stack[KERNEL_STACK_SIZE];	/* Kernel stack for the thread */
+    int stack_guard_high;        /* Stack guard */
 	uint32_t k_stack_base;		/* Top of the kernel stack for the thread */
 	uint32_t cur_esp;		 	/* Current value of the kernel stack %esp */
 	uint32_t cur_ebp;			/* Current value of the kernel stack %ebp */
@@ -58,5 +62,7 @@ thread_struct_t *create_thread(task_struct_t *task);
 thread_struct_t *get_thread_from_id(int thr_id);
 
 void remove_thread_from_map(int thr_id);
+
+void check_kernel_stack();
 
 #endif  /* __THREAD_H */

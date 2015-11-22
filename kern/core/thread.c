@@ -16,6 +16,7 @@
 #include <simics.h>
 #include <list/list.h>
 #include <common/assert.h>
+#include <core/scheduler.h>
 
 #define HASHMAP_SIZE (PAGE_SIZE * 2)
 
@@ -42,7 +43,6 @@ void kernel_threads_init() {
  *  Create thread and add mapping in the hash map
  *
  *  @param task the task under which this thread will run
- *  @param regs the register values this thread must take
  *  @return thread_struct_t the newly created thread or null on failure.
  */
 thread_struct_t *create_thread(task_struct_t *task) {
@@ -69,6 +69,8 @@ thread_struct_t *create_thread(task_struct_t *task) {
     mutex_init(&thr->deschedule_mutex);  
     cond_init(&thr->deschedule_cond_var);
 
+    thr->stack_guard_low = STACK_GUARD_LOW;
+    thr->stack_guard_high = STACK_GUARD_HIGH;
     thr->parent_task = task;
 	thr->k_stack_base = (uint32_t)((char *)thr->k_stack + KERNEL_STACK_SIZE);
 	thr->cur_esp = thr->k_stack_base;
@@ -156,4 +158,21 @@ void remove_thread_from_map(int thr_id) {
 		thr_node = thr_node->next;
 	}
     mutex_unlock(&map_mutex);
+}
+
+/** Check if a thread has overflowed its stack
+ *
+ *  Makes use of the stack_guard_low and stack_guard_high variables
+ *  in the thread struct. Overwriting these implies stack overflow and 
+ *  it's time for us to bail. Though with our design it is not possible
+ *  to catch the overflow exactly when it happens, we use this function 
+ *  throughout the kernel to catch an overflow as soon as possible.
+ *
+ *  @return void
+ */
+void check_kernel_stack() {
+    thread_struct_t *curr_thread = get_curr_thread();
+
+    kernel_assert(curr_thread->stack_guard_low == STACK_GUARD_LOW);
+    kernel_assert(curr_thread->stack_guard_high == STACK_GUARD_HIGH);
 }

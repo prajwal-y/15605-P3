@@ -460,6 +460,9 @@ int handle_cow(void *addr) {
  *  @return 0 on success. Negative number on failure
  */
 int setup_page_table(simple_elf_t *se_hdr, void *pd_addr) {
+    if(se_hdr == NULL || pd_addr == NULL) {
+        return ERR_FAILURE;
+    }
     int retval;
     if((retval = map_text_segment(se_hdr, pd_addr)) < 0) {
         return retval;
@@ -568,7 +571,7 @@ int map_text_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *
  *  This function checks the address of the start of the data
  *  segment and length to define the number of physical frames
- *  required for the text segment. Then call a function which allocates
+ *  required for the data segment. Then call a function which allocates
  *  free frames from the frame pool, sets up the mapping in the page directory.
  *
  *  @param se_hdr the parsed elf header
@@ -585,7 +588,7 @@ int map_data_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *
  *  This function checks the address of the start of the rodata
  *  segment and length to define the number of physical frames
- *  required for the text segment. Then call a function which allocates
+ *  required for the rodata segment. Then call a function which allocates
  *  free frames from the frame pool, sets up the mapping in the page directory.
  *
  *  @param se_hdr the parsed elf header
@@ -602,7 +605,7 @@ int map_rodata_segment(simple_elf_t *se_hdr, void *pd_addr) {
  *
  *  This function checks the address of the start of the bss
  *  segment and length to define the number of physical frames
- *  required for the text segment. Then call a function which allocates
+ *  required for the bss segment. Then call a function which allocates
  *  free frames from the frame pool, sets up the mapping in the page directory.
  *
  *  @param se_hdr the parsed elf header

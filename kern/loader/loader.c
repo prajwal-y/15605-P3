@@ -7,7 +7,6 @@
  * @author Prajwal Yadapadithaya (pyadapad)
  */
 
-/* --- Includes --- */
 #include <string.h>
 #include <stdio.h>
 #include <common/malloc_wrappers.h>
@@ -307,7 +306,6 @@ int check_program(const char *prog_name) {
             if (elf_check_header(prog_name) == ELF_SUCCESS) {
                 return PROG_PRESENT_VALID;
             }
-            
         }
     }
     return PROG_ABSENT_INVALID;

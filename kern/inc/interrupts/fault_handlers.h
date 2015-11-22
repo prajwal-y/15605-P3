@@ -4,6 +4,8 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 
+#ifndef __FAULT_HANDLERS_H
+#define __FAULT_HANDLERS_H
 void tickback(unsigned int ticks);
 
 void divide_error_handler_c();
@@ -24,3 +26,5 @@ void math_fault_handler_c();
 void alignment_check_handler_c();
 void machine_check_handler_c();
 void floating_point_exp_handler_c();
+
+#endif /* __FAULT_HANDLERS_H */

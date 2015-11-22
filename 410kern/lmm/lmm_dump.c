@@ -35,13 +35,8 @@ void lmm_dump(lmm_t *lmm)
 
 	printf("lmm_dump(lmm=%p)\n", lmm);
 
-    int i = 0;
-
 	for (reg = lmm->regions; reg; reg = reg->next)
 	{
-        if (i == 2) {
-            break;
-        }
 		struct lmm_node *node;
 		vm_size_t free_check;
 
@@ -58,8 +53,8 @@ void lmm_dump(lmm_t *lmm)
 		free_check = 0;
 		for (node = reg->nodes; node; node = node->next)
 		{
-			//printf("  node %p-%08lx size=%08lx next=%p\n",
-			//	node, (vm_offset_t)node + node->size, node->size, node->next);
+			printf("  node %p-%08lx size=%08lx next=%p\n",
+				node, (vm_offset_t)node + node->size, node->size, node->next);
 
 			assert(((vm_offset_t)node & ALIGN_MASK) == 0);
 			assert((node->size & ALIGN_MASK) == 0);
@@ -72,7 +67,6 @@ void lmm_dump(lmm_t *lmm)
 
 		printf(" free_check=%08lx\n", free_check);
 		assert(reg->free == free_check);
-        i++;
 	}
 
 	printf("lmm_dump done\n");

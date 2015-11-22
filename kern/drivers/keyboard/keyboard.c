@@ -2,8 +2,7 @@
  *  @brief implementation of functions defined in keyboard.h
  *
  *  @author Rohit Upadhyaya (rjupadhy)
- *  @bugs If no application calls readchar() and keys are pressed
- *        continuously we will run out of heap space
+ *  @author Prajwal Yadapadithaya (pyadpad)
  */
 #include <drivers/keyboard/keyboard.h>
 #include <drivers/keyboard/keyboard_circular_buffer.h>
@@ -13,7 +12,6 @@
 #include <interrupts/idt_entry.h>
 #include <interrupts/interrupt_handlers.h>
 #include <asm.h>
-#include <common/malloc_wrappers.h>
 #include <list/list.h>
 #include <stddef.h>
 #include <simics.h>
@@ -26,7 +24,7 @@ mutex_t readline_mutex;
 /** @brief function to install the handler and initialize
  *         our scancode buffer 
  *
- *  @return int 0 on success. -1 on failure
+ *  @return int 0 on success. -ve integer on failure
  */
 int install_keyboard_handler() {
 	int retval = 0;

@@ -1,5 +1,7 @@
 /** @file syscall_util.c
  *
+ *  Util functions for syscalls 
+ *
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
@@ -25,6 +27,7 @@ static int validate_uregs(ureg_t *uregs);
  *  @return 0 on success, -ve integer on failure
  */
 int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base) {
+    check_kernel_stack();
     int retval = validate_uregs(ureg);
     if (retval < 0) {
         return retval;
@@ -43,21 +46,28 @@ int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base) {
     *((int *)(kernel_stack_base) - 11) = ureg->ebp;
     *((int *)(kernel_stack_base) - 12) = ureg->edi;
     *((int *)(kernel_stack_base) - 13) = ureg->esi;
+    check_kernel_stack();
 
     return 0;
 }
 
+/** @brief validate the uregs passed in by the user for swexn
+ *
+ *  @return 0 on success, -ve integer on failure
+ */
 int validate_uregs(ureg_t *uregs) {
-    //TODO: WHAT EFLAGS CAN THE USER CHANGE?
-    
 	/* IOPL shouldn't be user privilege */
     if ((uregs->eflags & EFLAGS_IOPL) == EFLAGS_IOPL) {
+        return ERR_INVAL;
+    }
+    /* USer should not be allowed to modify interrupt flags */
+    if ((uregs->eflags & EFLAGS_IF) != EFLAGS_IF) {
         return ERR_INVAL;
     }
     return 0;
 }
 
-/** @brief populate an ureg struct using the current values on the stack
+/** @brief populate an ureg struct using the current values on the exception stack
  *
  *  @param ureg a pointer to the ureg struct to be filled in
  *  @param err_code_avail whether an error code is available on the stack
@@ -66,6 +76,7 @@ int validate_uregs(ureg_t *uregs) {
  */
 void populate_ureg(ureg_t *ureg, int err_code_avail, 
                    thread_struct_t *curr_thread) {
+    check_kernel_stack();
     void *kernel_stack_base = (void *)curr_thread->k_stack_base;
 
     ureg->ds = SEGSEL_USER_DS;
@@ -85,25 +96,16 @@ void populate_ureg(ureg_t *ureg, int err_code_avail,
     if (err_code_avail == ERR_CODE_AVAIL) {
         ureg->error_code = *((int *)(kernel_stack_base) - 6);
     }
-   else {
+    else {
         ureg->error_code = 0;
-   }
+    }
 
-   ureg->eip = *((int *)(kernel_stack_base) - 5);
-   ureg->cs = *((int *)(kernel_stack_base) - 4);
-   ureg->eflags = *((int *)(kernel_stack_base) - 3);
-   ureg->esp = *((int *)(kernel_stack_base) - 2);
-   ureg->ss = *((int *)(kernel_stack_base) - 1);
-}
-
-/** @brief set the return value in the kernel stack
- *
- *  @param the eax vaue to be taken
- *  @return void
- */
-void set_kernel_stack_eax(int eax) {
-    thread_struct_t *curr_thread = get_curr_thread();
-    *((int *)(curr_thread->k_stack_base) - 6) = eax;
+    ureg->eip = *((int *)(kernel_stack_base) - 5);
+    ureg->cs = *((int *)(kernel_stack_base) - 4);
+    ureg->eflags = *((int *)(kernel_stack_base) - 3);
+    ureg->esp = *((int *)(kernel_stack_base) - 2);
+    ureg->ss = *((int *)(kernel_stack_base) - 1);
+    check_kernel_stack();
 }
 
 /** @brief check if address is (valid) mapped in user space
@@ -140,6 +142,7 @@ int is_pointer_valid(void *ptr, int bytes) {
  *  @return bytes copied on success, -ve integer on failure 
  */
 int copy_user_data(char *buf, char *ptr, int max_size) {
+    check_kernel_stack();
     if (buf == NULL || ptr == NULL || max_size <= 0) {
         return ERR_INVAL;
     }
@@ -159,5 +162,6 @@ int copy_user_data(char *buf, char *ptr, int max_size) {
     if (count == max_size) {
         return ERR_BIG;
     }
+    check_kernel_stack();
     return count + 1;
 }

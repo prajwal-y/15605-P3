@@ -63,6 +63,8 @@ int get_cs();
 int get_ds();
 int get_ss();
 
+/** @brief exit to userspace for new tasks
+ */
 void iret_fun();
 
 /** @brief Function to change the kernel stack during

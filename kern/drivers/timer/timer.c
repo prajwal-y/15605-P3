@@ -3,12 +3,12 @@
  *         driver functionality
  *
  *  @author Rohit Upadhyaya (rjupadhy)
+ *  @author Prajwal Yadapadithaya (pyadapad)
  */
 
 #include <timer_defines.h>
 #include <asm.h>
 #include <seg.h>
-#include <common/malloc_wrappers.h>
 #include <common/errors.h>
 #include <string/string.h>
 #include <interrupts/idt_entry.h>
@@ -26,7 +26,7 @@ static unsigned int tick_counter = 0;
 /** @brief initialize the timer and install handler for it
  *
  *  @param tickback the callback function for the interrupt handler
- *  @return int 0 on success. -1 on failure
+ *  @return int 0 on success. -ve integer on failure
  */
 int initialize_timer(void (*tickback)(unsigned int)) {
     callback = tickback;
@@ -34,7 +34,7 @@ int initialize_timer(void (*tickback)(unsigned int)) {
     return install_timer_handler();
 }
 
-/** @brief function to initialize the tier
+/** @brief function to initialize the timer
  *
  *  This function initializes the timer to square wave mode
  *  and sets the number of interrupts we get per second by
@@ -62,7 +62,10 @@ int install_timer_handler() {
 /** @brief called by interrupt to do any processing needed
  *
  *  This function increments a variable keeping count of the number of
- *  ticks so far and calls the callback function with this variable
+ *  ticks so far and calls the callback function with this variable. We
+ *  acknowledge interrupts immediately since the timer interrupt is an
+ *  interrupt gate and we iret from a different in case of fork and the
+ *  initial task
  *
  *  @return void
  */

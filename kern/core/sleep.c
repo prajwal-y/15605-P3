@@ -78,7 +78,6 @@ thread_struct_t *get_sleeping_thread() {
 }
 
 
-
 /** @brief schedule a thread for sleeping
  *
  *  calculate the time at which the current thread will be woken up given

@@ -23,8 +23,6 @@ int setup_kernel_stack(ureg_t *ureg, void *kernel_stack_base);
 void populate_ureg(ureg_t *ureg, int err_code_available, 
                    thread_struct_t *curr_thread);
 
-void set_kernel_stack_eax(int eax);
-
 int is_pointer_valid(void *ptr, int bytes);
 
 int copy_user_data(char *buf, char *ptr, int max_size);

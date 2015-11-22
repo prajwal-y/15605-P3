@@ -6,8 +6,8 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 
-#ifndef __INTERRUPT_HANDLER_ASM_H
-#define __INTERRUPT_HANDLER_ASM_H
+#ifndef __FAULT_HANDLER_ASM_H
+#define __FAULT_HANDLER_ASM_H
 
 /** @brief The page fault handler
  *  

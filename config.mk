@@ -95,7 +95,7 @@ STUDENTFILES =
 ###########################################################################
 # Object files for your thread library
 ###########################################################################
-THREAD_OBJS = malloc.o panic.o mutex.o asm.o cond_var.o thread.o rwlock.o sem.o list.o
+THREAD_OBJS = malloc.o panic.o mutex.o asm.o cond_var.o thread.o rwlock.o list.o
 
 # Thread Group Library Support.
 #
@@ -135,7 +135,7 @@ KERNEL_OBJS = kernel.o loader/loader.o list/list.o drivers/console/console.o \
 			  interrupts/fault_handlers_asm.o \
 			  drivers/keyboard/keyboard.o drivers/keyboard/keyboard_handler.o allocator/frame_allocator.o \
 			  sync/mutex.o sync/cond_var.o  sync/sem.o \
-			  sync/mutex_asm.o vm/vm.o core/task.o core/thread.o core/fork.o asm/asm.o syscalls/syscall_handlers.o \
+			  vm/vm.o core/task.o core/thread.o core/fork.o asm/asm.o syscalls/syscall_handlers.o \
 			  syscalls/thread_syscalls.o syscalls/thread_syscalls_asm.o syscalls/console_syscalls.o \
 			  syscalls/console_syscalls_asm.o syscalls/lifecycle_syscalls.o syscalls/lifecycle_syscalls_asm.o \
 			  common/assert.o common/malloc_wrappers.o core/context.o core/scheduler.o core/exec.o syscalls/misc_syscalls.o \

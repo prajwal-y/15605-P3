@@ -43,7 +43,8 @@ int cond_init(cond_t *cv) {
 
 /** @brief destroy a cond var
  *
- *  Sets the value of the status to 0 indicating that it is inactive.
+ *  Sets the value of the status to COND_VAR_INVALID indicating that 
+ *  it is inactive.
  *  This function does not reclaim the space used by the cond var.
  *  Once a cond var is destroyed calling cond var functions can lead to
  *  undefined behavior.
@@ -63,8 +64,7 @@ void cond_destroy(cond_t *cv) {
  *
  *  This function adds thread to the queue of blocked threads and deschedules
  *  itself after unlocking the mutex associated with the cond var. When the 
- *  thread is woken up the thread is removed from the queue and the mutex is 
- *  locked before returning.
+ *  thread is woken up we acquire the mutex and return.
  *
  *  @pre the mutex pointed to by mp must be locked
  *  @post the mutex pointed to by mp is locked
@@ -88,9 +88,9 @@ void cond_wait(cond_t *cv, mutex_t *mp, list_head *link,
 	disable_interrupts();
 	thread_struct_t *curr_thread = get_curr_thread();
 	curr_thread->status = status;
-	mutex_unlock(mp);
 
 	/* Release the mutex and call context switch */
+	mutex_unlock(mp);
 	context_switch();
 
 	/* Acquire the mutex again before returning */
@@ -101,18 +101,10 @@ void cond_wait(cond_t *cv, mutex_t *mp, list_head *link,
 /** @brief this function signals an event and wakes up a waiting thread
  *         if present
  *
- *  This function is called to signal a change in the state. This wakes up 
- *  any thread that may be waiting for the change in state. Between the change
- *  of state and the awakened thread getting the lock on the state, the state 
- *  may have changed to an invalid state again. In this case it is the
- *  responsibility of the programmer to check for the condition after being
- *  woken up. This function MUST be called while holding the mutex protecting
- *  the state. Calling cond_signal without holding the mutex can lead to 
- *  undefined behavior.
+ *  Get the first thread in the waiting queue and make it runnable. Deletes 
+ *  it from the waiting queue.
  *
- *  @pre the calling thread must hold the mutex
  *  @param cv a pointer to the condition variable
- *  @param link The "list_head" of the waiting list on this cv
  *  @return void
  */
 void cond_signal(cond_t *cv) {
@@ -132,14 +124,10 @@ void cond_signal(cond_t *cv) {
 }
 
 /** @brief this function signals all threads waiting on this cond var
- *         
- *  This function MUST be called while holding the mutex to the shared state
- *  without which the behavior is undefined. Any thread which calls cond_wait
- *  after cond_broadcast has been called will not be signalled.
+ *  
+ *  Makes all threads waiting on the cond var runnable
  *
- *  @pre the calling thread must hold the mutex
  *  @param cv a pointer to the condition variable
- *  @param link The "list_head" of the waiting list on this cv
  *  @return void
  */
 void cond_broadcast(cond_t *cv) {

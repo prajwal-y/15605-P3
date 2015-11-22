@@ -45,6 +45,7 @@ int yield_handler_c(int tid) {
             return ERR_FAILURE;
         }
     }
+    check_kernel_stack();
     context_switch();
     return 0;
 }
@@ -64,6 +65,7 @@ int sleep_handler_c(int ticks) {
  *              if reject is invalid pointer.
  */
 int deschedule_handler_c(int *reject) {
+    check_kernel_stack();
     if (is_pointer_valid(reject, sizeof(int *)) < 0) {
         return ERR_INVAL;
     }
@@ -76,6 +78,7 @@ int deschedule_handler_c(int *reject) {
     cond_wait(&thr->deschedule_cond_var, &thr->deschedule_mutex, 
               &thr->cond_wait_link, DESCHEDULED);
     mutex_unlock(&thr->deschedule_mutex);
+    check_kernel_stack();
     return 0;
 }
 
@@ -86,6 +89,7 @@ int deschedule_handler_c(int *reject) {
  *              DESCHEDULE'd
  */
 int make_runnable_handler_c(int tid) {
+    check_kernel_stack();
     if (tid < 0) {
         return ERR_INVAL;
     }
@@ -100,6 +104,7 @@ int make_runnable_handler_c(int tid) {
     }
     cond_signal(&thr->deschedule_cond_var);
     mutex_unlock(&thr->deschedule_mutex);
+    check_kernel_stack();
     return 0;
 }
 
@@ -121,6 +126,7 @@ unsigned int get_ticks_handler_c() {
  *  @return int 0 on success, -ve integer on failure
  */
 int swexn_handler_c(void *arg_packet) {
+    check_kernel_stack();
     void *esp3 = (void *)(*((int *)arg_packet));
     if (esp3 != NULL && (is_pointer_valid(esp3, 4) < 0
         || is_memory_writable(esp3, 4) < 0)) {
@@ -158,5 +164,6 @@ int swexn_handler_c(void *arg_packet) {
         }
 		return newureg->eax;
     }
+    check_kernel_stack();
     return 0;
 }

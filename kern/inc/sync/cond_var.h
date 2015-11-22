@@ -5,8 +5,8 @@
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
 
-#ifndef COND_H
-#define COND_H
+#ifndef __COND_H
+#define __COND_H
 
 #include <sync/mutex.h>
 #include <sync/cond_type.h>

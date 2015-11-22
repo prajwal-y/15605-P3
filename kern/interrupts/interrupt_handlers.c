@@ -26,7 +26,6 @@
 #include <syscall.h>
 #include <syscalls/syscall_util.h>
 #include <string.h>
-#include <common/assert.h>
 
 /*All the interrupts initialization*/
 static int install_divide_error_handler();

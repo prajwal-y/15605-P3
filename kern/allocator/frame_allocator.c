@@ -13,16 +13,12 @@
 #include <page.h>
 #include <stddef.h>
 #include <common/assert.h>
-#include <sync/mutex_asm.h>
-
-#define FRAME_LOCK 1
 
 #define FREE_FRAME_LIST_END UINT_MAX
 #define PAGE_ALIGNMENT_CHECK 0x00000fff
-#define GET_FRAME_LOCK(x) ((x) & 1)
 
-static int *free_frames_arr;
-static mutex_t *free_frames_lock;
+static int *free_frames_arr;        /* stack of free physical frames */
+static mutex_t *free_frames_lock;   /* locks for the physical frames */
 
 static void *free_list_head; /* Head of free list,UINT_MAX => no free frames */
 static mutex_t list_mut;     /* Mutex to synchronize access to free frame list */
@@ -40,17 +36,15 @@ void init_frame_allocator() {
     /* create the free list of frames */
     init_free_list();
 
-    mutex_init(&list_mut);
+    kernel_assert(mutex_init(&list_mut) == 0);
 }
 
 /** @brief initialize the free frame list on system startup
  *
- *  Each free frame has a header indicating the address of the next free
- *  frame. The header is very simplistic and just contains the address
- *  of the next free frame. The head of the free frame list is maintained 
- *  in free_list_head.
+ *  allocates space for the free frame stack and the frame locks
+ *  initializes the mutexes for each physical frame. Initialize
+ *  free_list_head to USER_MEM_START
  *
- *  @param frame_addr the address of the frame to be freed.
  *  @return void
  */
 void init_free_list() {
@@ -64,10 +58,10 @@ void init_free_list() {
 	int i;
 	for(i = 0; i < FREE_FRAMES_COUNT - 1; i++) {
 		free_frames_arr[i] = (USER_MEM_START + ((i+1) * PAGE_SIZE));
-		mutex_init(&free_frames_lock[i]);
+		kernel_assert(mutex_init(&free_frames_lock[i]) == 0);
 	}
 	free_frames_arr[FREE_FRAMES_COUNT - 1] = FREE_FRAME_LIST_END;
-	mutex_init(&free_frames_lock[FREE_FRAMES_COUNT - 1]);
+	kernel_assert(mutex_init(&free_frames_lock[FREE_FRAMES_COUNT - 1]) == 0);
 
 	free_list_head = (void *)USER_MEM_START;
 }
@@ -91,14 +85,16 @@ void *allocate_frame() {
 	mutex_unlock(&list_mut);
 
     kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
+	kernel_assert(FRAME_INDEX(frame_addr) >= 0);
+	kernel_assert(FRAME_INDEX(frame_addr) < FREE_FRAMES_COUNT);
 
     return frame_addr;
 }
 
-/** @brief return a physical frame to the free frame list
+/** @brief return a physical frame to the free frame stack
  *
  *  This function locks the frame list (which functions as a stack)
- *  adds a frame back to the top of the frame list.
+ *  adds a frame back to the top of the frame stack.
  *
  *  @param frame_addr the address of the frame to be freed.
  *  @return void
@@ -106,6 +102,8 @@ void *allocate_frame() {
 void deallocate_frame(void *frame_addr) {
     kernel_assert(((int)frame_addr & PAGE_ALIGNMENT_CHECK) == 0);
     kernel_assert(frame_addr != NULL);
+	kernel_assert(FRAME_INDEX(frame_addr) >= 0);
+	kernel_assert(FRAME_INDEX(frame_addr) < FREE_FRAMES_COUNT);
 
     mutex_lock(&list_mut);
 	int index = FRAME_INDEX(frame_addr);
@@ -116,10 +114,6 @@ void deallocate_frame(void *frame_addr) {
 
 /** @brief Function to lock a particular physical frame
  *
- *  This function uses the last bit in the free_frames_arr to
- *  obtain a lock on the frame_addr if the refernce count needs
- *  to be modified
- *
  *  @param frame_addr The address of the frame that must be locked
  *
  *  @return void
@@ -128,14 +122,11 @@ void lock_frame(void *frame_addr) {
 	kernel_assert(frame_addr != NULL);
 	kernel_assert(FRAME_INDEX(frame_addr) >= 0);
 	kernel_assert(FRAME_INDEX(frame_addr) < FREE_FRAMES_COUNT);
+
 	mutex_lock(&free_frames_lock[FRAME_INDEX(frame_addr)]);
 }
 
 /** @brief Function to unlock a particular physical frame
- *
- *  This function uses the last bit in the free_frames_arr to
- *  obtain a lock on the frame_addr if the refernce count needs
- *  to be modified
  *
  *  @param frame_addr The address of the frame that must be unlocked
  *
@@ -145,6 +136,7 @@ void unlock_frame(void *frame_addr) {
 	kernel_assert(frame_addr != NULL);
 	kernel_assert(FRAME_INDEX(frame_addr) >= 0);
 	kernel_assert(FRAME_INDEX(frame_addr) < FREE_FRAMES_COUNT);
+
 	mutex_unlock(&free_frames_lock[FRAME_INDEX(frame_addr)]);
 }
 
@@ -167,4 +159,3 @@ int check_physical_memory() {
     lprintf("Total free physical frames: %d, next free frame %p",free_count, free_list_head);
     return free_count;	
 }
-

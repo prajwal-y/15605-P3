@@ -10,12 +10,14 @@
 #include <syscall.h>
 #include <common/errors.h>
 #include <simics.h>
+#include <core/thread.h>
 
 /** @brief Handler to call the new_pages handler function
  *
  *  @return int 0 on success, -ve integer on failure
  */
 int new_pages_handler_c(void *arg_packet) {
+    check_kernel_stack();
     void *base = (void *)(*(int *)arg_packet);
     int len = (int)(*((int *)arg_packet + 1));  
     if (len <= 0 || (len % PAGE_SIZE) != 0 || ((int)base % PAGE_SIZE) != 0) {
@@ -25,7 +27,8 @@ int new_pages_handler_c(void *arg_packet) {
         return ERR_INVAL;
     }
     
-   return map_new_pages(base, len);
+    check_kernel_stack();
+    return map_new_pages(base, len);
 }
 
 /** @brief Handler to call the remove_pages handler function
@@ -33,9 +36,11 @@ int new_pages_handler_c(void *arg_packet) {
  *  @return int 0 on success, -ve integer on failure
  */
 int remove_pages_handler_c(void *base) {
+    check_kernel_stack();
     if (((int)base % PAGE_SIZE) != 0) {
         return ERR_INVAL;
     }
     
-   return unmap_new_pages(base);
+    check_kernel_stack();
+    return unmap_new_pages(base);
 }

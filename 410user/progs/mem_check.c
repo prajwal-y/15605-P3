@@ -18,7 +18,7 @@
 /* Main */
 int main() {
 
-    memory_check();
+    //memory_check();
 
 	exit(0);
 }

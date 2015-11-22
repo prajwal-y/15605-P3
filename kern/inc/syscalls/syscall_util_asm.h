@@ -5,6 +5,8 @@
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
  */
+#ifndef __SYSCALL_UTIL_ASM_H
+#define __SYSCALL_UTIL_ASM_H
 
 #define SAVE_REGS \
 		pushl %ecx; \
@@ -25,3 +27,5 @@
 	    popl %edx; \
 	    popl %ecx; \
 		popl %ecx;
+
+#endif /* __SYSCALL_UTIL_ASM_H */

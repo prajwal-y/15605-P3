@@ -1,6 +1,8 @@
 /** @file malloc_wrappers.c
  *
- *  Thread safe wrappers for malloc functions
+ *  Thread safe wrappers for malloc functions. The
+ *  wrapper are protected by a blocking mutex. The calling
+ *  thread is supended if it does not get the lock.
  *
  *  @author Rohit Upadhyaya (rjupadhy)
  *  @author Prajwal Yadapadithaya (pyadapad)
@@ -9,15 +11,19 @@
 #include <stddef.h>
 #include <malloc_internal.h>
 #include <sync/mutex.h>
+#include <common/assert.h>
 
 static mutex_t mutex;
 
-/** @brief Initializes the thread safe malloc library
+/** @brief Initializes the thread safe malloc library.
+ *
+ *  This function is called on kernel startup before any
+ *  allocations.
  *
  *  @return void
  */
 void init_thr_safe_malloc_lib() {
-	mutex_init(&mutex);
+	kernel_assert(mutex_init(&mutex) == 0);
 }
 
 /** @brief Thread safe function for malloc
@@ -33,7 +39,7 @@ void *malloc(size_t size) {
     return addr;
 }
 
-/** @brief Thread safe version of smemalign
+/** @brief Thread safe version of memalign
  *
  *  @param alignment alignment of the memory to be allocated
  *  @size size of the buffer to be allocated
@@ -49,8 +55,8 @@ void *memalign(size_t alignment, size_t size) {
 
 /** @brief Thread safe function for calloc
  *
- *  @param nelt
- *  @param eltsize
+ *  @param nelt number of elements
+ *  @param eltsize element size
  *
  *  @return void * Address of the memory allocated
  */
@@ -116,7 +122,7 @@ void *smemalign(size_t alignment, size_t size) {
 
 /** @brief Thread safe version of sfree()
  *
- *  @param buf Buffer to be free'd
+ *  @param buf Buffer to be sfree'd
  *  @param size Size of the buffer
  *
  *  @return void

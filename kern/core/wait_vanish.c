@@ -115,14 +115,13 @@ void do_vanish() {
         concat_lists(&init_task->dead_child_head, &curr_task->dead_child_head);
         mutex_unlock(&init_task->child_list_mutex);
 
-        mutex_unlock(&curr_task->vanish_mutex);
-        mutex_unlock(&parent_task->vanish_mutex);
-
         mutex_lock(&parent_task->child_list_mutex);
         del_entry(&curr_task->child_task_link);
         add_to_tail(&curr_task->dead_child_link, &parent_task->dead_child_head);
-        list_head *parent_alive_head = get_first(&parent_task->child_task_head);
         mutex_unlock(&parent_task->child_list_mutex);
+        
+        mutex_unlock(&curr_task->vanish_mutex);
+        mutex_unlock(&parent_task->vanish_mutex);
 		
 		void *curr_pdbr = curr_task->pdbr;
 		curr_task->pdbr = get_kernel_pd();
@@ -130,7 +129,8 @@ void do_vanish() {
        	free_paging_info(curr_pdbr);
 
 		disable_interrupts(); /* Ensuring that only I run after signaling the parent */
-		
+	    parent_task = curr_task->parent;	
+        list_head *parent_alive_head = get_first(&parent_task->child_task_head);
         if (parent_alive_head == NULL) {
             cond_broadcast(&parent_task->exit_cond_var);
         }

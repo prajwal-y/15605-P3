@@ -3,6 +3,7 @@
  *         are used by the console driver.
  *
  *  @author Rohit Upadhyaya (rjupadhy)
+ *  @author Prajwal Yadapadithaya (pyadapad)
 */
 
 #include <string/string.h>
@@ -10,6 +11,7 @@
 #include <video_defines.h>
 #include <drivers/console/console_util.h>
 #include <common/malloc_wrappers.h>
+#include <common/errors.h>
 
 #define CONSOLE_MEM_END CONSOLE_MEM_BASE + (CONSOLE_HEIGHT * CONSOLE_WIDTH * 2)
 
@@ -83,7 +85,7 @@ void set_hardware_cursor(int row, int col) {
  *
  *  @param color an integer representing the console color with background
  *                 and foreground
- *  @return integer 0 for a valid color and -1 for an invalid color
+ *  @return integer 0 for a valid color and -ve integer for an invalid color
  */
 int is_valid_color(int color) {
     int bg_color = color & 0xF;
@@ -91,7 +93,7 @@ int is_valid_color(int color) {
 
     if (fg_color < 0 || fg_color > 0xF
         || bg_color < 0 || bg_color > 0x8) {
-        return -1;
+        return ERR_INVAL;
     }
     return 0;
 }
@@ -151,11 +153,11 @@ void scroll_screen(int num_rows) {
  *  to mean the cursor is hidden.
  *
  *  @return 0 if cursor is hidden
- *          -1 if cursor is visible
+ *          -ve integer if cursor is visible
  */
 int is_cursor_hidden() {
     if (cursor_row >= CONSOLE_HEIGHT || cursor_col >= CONSOLE_WIDTH) {
         return 0;
     }
-    return -1;
+    return ERR_INVAL;
 }

@@ -1,4 +1,4 @@
-/** @file assert.h
+/** @file assert.c
  *
  *  Various assert functions 
  *
@@ -43,6 +43,10 @@ void panic(const char *fmt, ...)
     ++side_effect;
 }
 
+/** @brief a panicking kernel
+ *
+ *  kill kernel
+ */
 void kernel_panic(const char *fmt, ...)
 {
 	va_list vl;
@@ -61,6 +65,10 @@ void kernel_panic(const char *fmt, ...)
     halt_handler();
 }
 
+/** @brief a panicking thread
+ *
+ *  kill thread
+ */
 void thread_panic(const char *fmt, ...)
 {
 	va_list vl;
